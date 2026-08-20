@@ -1,0 +1,240 @@
+@import "tailwindcss";
+
+/*
+ * ─────────────────────────────────────────────────────────────
+ * CataloGO — Sistema de diseño con THEMES configurables
+ * ─────────────────────────────────────────────────────────────
+ * Arquitectura de tokens en 3 capas:
+ *   1. Primitivos  → valores crudos por theme en [data-theme="..."]
+ *   2. Semánticos  → --primary, --background, --card, ... (por theme)
+ *   3. Utilidades  → @theme inline mapea a bg-primary / text-foreground / etc.
+ *
+ * Cada theme define la paleta completa. `midnight` es el theme oscuro.
+ * Se aplica poniendo data-theme="<id>" en <html> (app) o en el wrapper del
+ * catálogo público (personalizable por mayorista).
+ */
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-secondary: var(--secondary);
+  --color-on-secondary: var(--on-secondary);
+  --color-accent: var(--accent);
+  --color-on-accent: var(--on-accent);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--border);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  --color-on-destructive: var(--on-destructive);
+
+  --radius-theme: var(--radius);
+  --radius-theme-lg: calc(var(--radius) + 6px);
+  --radius-theme-sm: calc(var(--radius) * 0.6);
+
+  --font-sans: var(--font-body, ui-sans-serif, system-ui, sans-serif);
+  --font-heading: var(--font-display, var(--font-body, ui-sans-serif, system-ui, sans-serif));
+}
+
+/* ── Default (= Vibrante) ─────────────────────────────────────── */
+:root,
+[data-theme="vibrant"] {
+  --primary: #059669;
+  --on-primary: #ffffff;
+  --secondary: #10b981;
+  --on-secondary: #052e21;
+  --accent: #ea580c;
+  --on-accent: #ffffff;
+  --background: #ecfdf5;
+  --foreground: #064e3b;
+  --card: #ffffff;
+  --card-foreground: #064e3b;
+  --muted: #e6f5ef;
+  --muted-foreground: #3f6d5c;
+  --border: #a7f3d0;
+  --ring: #059669;
+  --destructive: #dc2626;
+  --on-destructive: #ffffff;
+  --radius: 14px;
+}
+
+/* ── Coral (social, cálido) ───────────────────────────────────── */
+[data-theme="coral"] {
+  --primary: #e11d48;
+  --on-primary: #ffffff;
+  --secondary: #fb7185;
+  --on-secondary: #4c0519;
+  --accent: #8b5cf6;
+  --on-accent: #ffffff;
+  --background: #fff1f2;
+  --foreground: #4c0519;
+  --card: #ffffff;
+  --card-foreground: #4c0519;
+  --muted: #ffe4e6;
+  --muted-foreground: #9f1239;
+  --border: #fecdd3;
+  --ring: #e11d48;
+  --destructive: #dc2626;
+  --on-destructive: #ffffff;
+  --radius: 18px;
+}
+
+/* ── Océano (B2B fresco) ──────────────────────────────────────── */
+[data-theme="ocean"] {
+  --primary: #0284c7;
+  --on-primary: #ffffff;
+  --secondary: #38bdf8;
+  --on-secondary: #082f49;
+  --accent: #f59e0b;
+  --on-accent: #0f172a;
+  --background: #f0f9ff;
+  --foreground: #0c4a6e;
+  --card: #ffffff;
+  --card-foreground: #0c4a6e;
+  --muted: #e0f2fe;
+  --muted-foreground: #386283;
+  --border: #bae6fd;
+  --ring: #0284c7;
+  --destructive: #dc2626;
+  --on-destructive: #ffffff;
+  --radius: 12px;
+}
+
+/* ── Medianoche (oscuro, premium) ─────────────────────────────── */
+[data-theme="midnight"] {
+  --primary: #f59e0b;
+  --on-primary: #0f172a;
+  --secondary: #fbbf24;
+  --on-secondary: #0f172a;
+  --accent: #8b5cf6;
+  --on-accent: #ffffff;
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  --card: #1e2537;
+  --card-foreground: #f8fafc;
+  --muted: #272f42;
+  --muted-foreground: #a5b0c2;
+  --border: #334155;
+  --ring: #f59e0b;
+  --destructive: #f87171;
+  --on-destructive: #0f172a;
+  --radius: 12px;
+}
+
+/* ── Luxe (lujo sobrio) ───────────────────────────────────────── */
+[data-theme="luxe"] {
+  --primary: #1c1917;
+  --on-primary: #ffffff;
+  --secondary: #44403c;
+  --on-secondary: #ffffff;
+  --accent: #a16207;
+  --on-accent: #ffffff;
+  --background: #fafaf9;
+  --foreground: #0c0a09;
+  --card: #ffffff;
+  --card-foreground: #0c0a09;
+  --muted: #f5f5f4;
+  --muted-foreground: #57534e;
+  --border: #e7e5e4;
+  --ring: #1c1917;
+  --destructive: #b91c1c;
+  --on-destructive: #ffffff;
+  --radius: 4px;
+}
+
+/* ── Swiss (minimal, alto contraste) ──────────────────────────── */
+[data-theme="swiss"] {
+  --primary: #111827;
+  --on-primary: #ffffff;
+  --secondary: #374151;
+  --on-secondary: #ffffff;
+  --accent: #2563eb;
+  --on-accent: #ffffff;
+  --background: #ffffff;
+  --foreground: #111827;
+  --card: #ffffff;
+  --card-foreground: #111827;
+  --muted: #f3f4f6;
+  --muted-foreground: #4b5563;
+  --border: #e5e7eb;
+  --ring: #2563eb;
+  --destructive: #dc2626;
+  --on-destructive: #ffffff;
+  --radius: 0px;
+}
+
+/* ── Base ─────────────────────────────────────────────────────── */
+* {
+  border-color: var(--border);
+}
+
+html {
+  scroll-behavior: smooth;
+  color-scheme: light;
+}
+html[data-theme="midnight"] {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body, ui-sans-serif, system-ui, sans-serif);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Enfoque visible para accesibilidad de teclado */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-theme-sm);
+}
+
+/* Respeta la preferencia de movimiento reducido */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Utilidades de marca reutilizables */
+@layer utilities {
+  .bg-brand-gradient {
+    background-image: linear-gradient(135deg, var(--primary), var(--accent));
+  }
+  .text-brand-gradient {
+    background-image: linear-gradient(135deg, var(--primary), var(--accent));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .shadow-soft {
+    box-shadow:
+      0 1px 2px rgb(0 0 0 / 0.04),
+      0 8px 24px -12px rgb(0 0 0 / 0.18);
+  }
+  .animate-fade-up {
+    animation: fade-up 0.5s ease-out both;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
