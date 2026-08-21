@@ -240,7 +240,11 @@ desplegar. Resultado: los catálogos se sirven desde caché y se regeneran cada
    Connect to Git**, elige el repo.
 3. Configura el build:
    - **Build command:** `pnpm cf:build`
-   - **Deploy command:** `npx wrangler deploy` (o deja el que sugiere Cloudflare)
+     ⚠️ Cloudflare suele pre-rellenarlo con `next build` / `npm run build`.
+     **Debes cambiarlo a `pnpm cf:build`**, si no, no se genera `.open-next/` y
+     el deploy falla con *"Could not find compiled Open Next config"*.
+   - **Deploy command:** `npx opennextjs-cloudflare deploy`
+     (usa el `.open-next/` del build; equivale a `wrangler deploy` pero sin doble build)
    - **Root directory:** `/` (o la ruta del proyecto si es un monorepo)
    - El gestor de paquetes se detecta por `packageManager` (pnpm). Los build
      scripts nativos ya están aprobados en `pnpm-workspace.yaml` (`allowBuilds`),
@@ -257,3 +261,17 @@ desplegar. Resultado: los catálogos se sirven desde caché y se regeneran cada
 
 > Node: Cloudflare usa Node 20+ por defecto (compatible con Next 16). Si tu CI
 > necesita fijarlo, define la variable `NODE_VERSION` en los ajustes de build.
+
+
+### Troubleshooting deploy
+
+**`ERROR Could not find compiled Open Next config, did you run the build command?`**
+El paso de deploy no encontró `.open-next/`. Casi siempre es porque el **Build
+command** del proyecto en Cloudflare NO es `pnpm cf:build` (quedó `next build`,
+que compila Next pero no genera el Worker de OpenNext). Solución: en Settings →
+Build, pon **Build command = `pnpm cf:build`** y **Deploy command =
+`npx opennextjs-cloudflare deploy`**, y vuelve a desplegar.
+
+Pista rápida: en los logs del build debes ver las líneas de OpenNext
+(`Bundling middleware...`, `Worker saved in .open-next/worker.js`,
+`OpenNext build complete`). Si no aparecen, el build command es incorrecto.
