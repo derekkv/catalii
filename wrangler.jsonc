@@ -1,35 +1,50 @@
 {
-  "name": "catalii",
-  "main": ".open-next/worker.js",
-  "compatibility_date": "2025-09-23",
-  "compatibility_flags": ["nodejs_compat"],
-  "assets": {
-    "directory": ".open-next/assets",
-    "binding": "ASSETS"
-  },
-  "observability": {
-    "enabled": true
-  },
-
-  // ── ISR / caché incremental (páginas con `revalidate`, p. ej. /c/[slug]) ──
-  // Guarda las páginas renderizadas en R2. Crea el bucket antes de desplegar:
-  //   npx wrangler r2 bucket create catalii-cache
-  "r2_buckets": [
-    { "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "catalii-cache" }
-  ],
-
-  // Cola de revalidación en background (Durable Object con SQLite, free-tier).
-  // La clase DOQueueHandler la exporta el Worker de OpenNext automáticamente.
-  "durable_objects": {
-    "bindings": [
-      { "name": "NEXT_CACHE_DO_QUEUE", "class_name": "DOQueueHandler" }
-    ]
-  },
-  "migrations": [
-    { "tag": "v1", "new_sqlite_classes": ["DOQueueHandler"] }
-  ]
-
-  // Variables públicas (NEXT_PUBLIC_*) se inyectan en BUILD (ver README).
-  // Secretos de runtime (SUPABASE_SERVICE_ROLE_KEY, PADDLE_*) se cargan con:
-  //   npx wrangler secret put NOMBRE   (o en .dev.vars para `pnpm cf:preview`)
+	"name": "catalii",
+	"main": ".open-next/worker.js",
+	"compatibility_date": "2025-09-23",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"assets": {
+		"directory": ".open-next/assets",
+		"binding": "ASSETS"
+	},
+	"observability": {
+		"enabled": true
+	},
+	// ── ISR / caché incremental (páginas con `revalidate`, p. ej. /c/[slug]) ──
+	// Guarda las páginas renderizadas en R2. Crea el bucket antes de desplegar:
+	//   npx wrangler r2 bucket create catalii-cache
+	"r2_buckets": [
+		{
+			"binding": "NEXT_INC_CACHE_R2_BUCKET",
+			"bucket_name": "catalii-cache"
+		},
+		{
+			"bucket_name": "catalii-cache",
+			"binding": "catalii_cache",
+			"remote": true
+		}
+	],
+	// Cola de revalidación en background (Durable Object con SQLite, free-tier).
+	// La clase DOQueueHandler la exporta el Worker de OpenNext automáticamente.
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "NEXT_CACHE_DO_QUEUE",
+				"class_name": "DOQueueHandler"
+			}
+		]
+	},
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_sqlite_classes": [
+				"DOQueueHandler"
+			]
+		}
+	]
+	// Variables públicas (NEXT_PUBLIC_*) se inyectan en BUILD (ver README).
+	// Secretos de runtime (SUPABASE_SERVICE_ROLE_KEY, PADDLE_*) se cargan con:
+	//   npx wrangler secret put NOMBRE   (o en .dev.vars para `pnpm cf:preview`)
 }
