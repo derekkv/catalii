@@ -206,8 +206,54 @@ conectas en el dashboard de Cloudflare). Luego:
   conectar el repo y usar como comando de build `pnpm cf:build` y directorio de
   salida el que genera OpenNext. Configura ahí las `NEXT_PUBLIC_*` (build) y los
   secretos (runtime).
-- **ISR/caché** (`revalidate` en `/c/[slug]` y `sitemap`): por defecto se
-  renderiza bajo demanda. Para caché incremental persistente, crea un bucket R2,
-  añade el binding en `wrangler.jsonc` y habilita `incrementalCache` en
-  `open-next.config.ts`.
+- **ISR/caché** (`revalidate` en `/c/[slug]` y `sitemap`): **ya está habilitado**
+  con R2 + Durable Object (ver la sección "ISR con R2" más abajo). Solo debes
+  crear el bucket R2 una vez antes de desplegar.
 - El bundle del Worker pesa ~1.8 MB gzip (dentro del límite de Workers).
+
+
+## ISR con R2 (habilitado) + Despliegue continuo desde Git
+
+### ISR / caché incremental (ya configurado)
+El catálogo público (`/c/[slug]`) y el `sitemap` usan `revalidate`. El proyecto
+ya trae la caché incremental activada en `open-next.config.ts`:
+- `incrementalCache: r2IncrementalCache` → páginas cacheadas en un bucket **R2**
+  (binding `NEXT_INC_CACHE_R2_BUCKET`).
+- `queue: doQueue` → revalidación en background con un **Durable Object**
+  (`NEXT_CACHE_DO_QUEUE`, clase `DOQueueHandler`, SQLite, free-tier).
+
+**Antes del primer deploy, crea el bucket R2** (una sola vez):
+```bash
+npx wrangler r2 bucket create catalii-cache
+```
+El Durable Object y su migración (`new_sqlite_classes`) se aplican solos al
+desplegar. Resultado: los catálogos se sirven desde caché y se regeneran cada
+60 s sin bloquear la respuesta.
+
+> ¿No quieres ISR aún? Comenta `incrementalCache`/`queue` en
+> `open-next.config.ts` y quita `r2_buckets`/`durable_objects`/`migrations` de
+> `wrangler.jsonc`.
+
+### Despliegue continuo (Cloudflare Workers Builds + Git)
+1. Sube el repo a GitHub/GitLab (`git push`).
+2. En el dashboard de Cloudflare: **Workers & Pages → Create → Workers →
+   Connect to Git**, elige el repo.
+3. Configura el build:
+   - **Build command:** `pnpm cf:build`
+   - **Deploy command:** `npx wrangler deploy` (o deja el que sugiere Cloudflare)
+   - **Root directory:** `/` (o la ruta del proyecto si es un monorepo)
+   - El gestor de paquetes se detecta por `packageManager` (pnpm). Los build
+     scripts nativos ya están aprobados en `pnpm-workspace.yaml` (`allowBuilds`),
+     así el `pnpm install` del CI no se bloquea.
+4. **Variables de entorno del proyecto** (en Workers Builds → Settings):
+   - *Build & runtime* — añade las `NEXT_PUBLIC_*` (se necesitan en el build):
+     `NEXT_PUBLIC_SITE_URL=https://catalii.com`, `NEXT_PUBLIC_SUPABASE_URL`,
+     `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_PADDLE_ENV`,
+     `NEXT_PUBLIC_PADDLE_CLIENT_TOKEN`, `NEXT_PUBLIC_PADDLE_PRICE_*`.
+   - *Secrets (runtime, cifrados)* — `SUPABASE_SERVICE_ROLE_KEY`,
+     `PADDLE_API_KEY`, `PADDLE_NOTIFICATION_WEBHOOK_SECRET`,
+     `PADDLE_PRODUCT_STARTER/PRO/BUSINESS`.
+5. Cada `git push` a la rama de producción dispara build + deploy automáticos.
+
+> Node: Cloudflare usa Node 20+ por defecto (compatible con Next 16). Si tu CI
+> necesita fijarlo, define la variable `NODE_VERSION` en los ajustes de build.
