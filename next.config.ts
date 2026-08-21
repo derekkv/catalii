@@ -24,3 +24,8 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+
+// Habilita el acceso a bindings de Cloudflare durante `next dev`.
+// (No afecta a producción; en el Worker el contexto ya está disponible.)
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
+initOpenNextCloudflareForDev();

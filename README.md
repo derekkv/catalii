@@ -1,4 +1,4 @@
-# CataloGO — Catálogos digitales para mayoristas
+# Catalii — Catálogos digitales para mayoristas
 
 MVP funcional de una plataforma SaaS multi-tenant donde un mayorista sube sus
 productos y obtiene un **catálogo público** con búsqueda, filtros, carrito y
@@ -138,3 +138,76 @@ catálogo puede tener su propio theme (o heredar el del negocio).
   considera subirlas a Supabase Storage y usar `next/image` con `remotePatterns`.
 - Para probar webhooks en local, expón el puerto con `ngrok http 3000` y usa esa
   URL en el notification destination de Paddle.
+
+
+## Despliegue en Cloudflare Workers
+
+La app está adaptada para **Cloudflare Workers** con el adaptador oficial
+[`@opennextjs/cloudflare`](https://opennext.js.org/cloudflare) (soporta App
+Router, Server Actions, Route Handlers y middleware en Edge).
+
+### Archivos relevantes
+- `wrangler.jsonc` — configuración del Worker (assets, `nodejs_compat`).
+- `open-next.config.ts` — configuración del adaptador (ISR opcional vía R2).
+- `next.config.ts` — llama a `initOpenNextCloudflareForDev()` para bindings en dev.
+- Middleware en `src/middleware.ts` (Edge). En Next 16 `proxy.ts` corre en Node,
+  que **OpenNext aún no soporta**, por eso usamos `middleware.ts`.
+
+### Scripts
+```bash
+pnpm cf:build      # next build + transforma a Worker (.open-next/)
+pnpm cf:preview    # build + previsualiza local con workerd (usa .dev.vars)
+pnpm cf:deploy     # build + despliega a Cloudflare (requiere wrangler login)
+pnpm cf:typegen    # genera tipos de los bindings (cloudflare-env.d.ts)
+```
+
+> Si `pnpm` avisa `ERR_PNPM_IGNORED_BUILDS`, ejecuta una vez:
+> `pnpm approve-builds --all` (compila los binarios de esbuild/workerd).
+
+### Variables de entorno: build vs runtime
+- **`NEXT_PUBLIC_*` → BUILD.** Se inyectan (inline) durante `pnpm cf:build`.
+  Deben existir como variables de entorno del build (localmente se leen de
+  `.env.local`; en CI, configúralas en el entorno de build).
+- **Secretos de runtime** (`SUPABASE_SERVICE_ROLE_KEY`, `PADDLE_API_KEY`,
+  `PADDLE_NOTIFICATION_WEBHOOK_SECRET`, `PADDLE_PRODUCT_*`) → se cargan como
+  **secrets del Worker** (no se inyectan en el bundle):
+  ```bash
+  npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+  npx wrangler secret put PADDLE_API_KEY
+  npx wrangler secret put PADDLE_NOTIFICATION_WEBHOOK_SECRET
+  npx wrangler secret put PADDLE_PRODUCT_STARTER
+  npx wrangler secret put PADDLE_PRODUCT_PRO
+  npx wrangler secret put PADDLE_PRODUCT_BUSINESS
+  ```
+  Para `pnpm cf:preview` en local, ponlos en `.dev.vars` (ver `.dev.vars.example`).
+
+### Pasos para desplegar
+```bash
+# 1. Autenticar wrangler (abre el navegador)
+npx wrangler login
+
+# 2. Definir las NEXT_PUBLIC_* de producción en .env.local
+#    (NEXT_PUBLIC_SITE_URL=https://catalii.com, claves de Supabase/Paddle, etc.)
+
+# 3. Cargar los secretos de runtime (comandos de arriba)
+
+# 4. Build + deploy
+pnpm cf:deploy
+```
+
+Tras el primer deploy tendrás una URL `*.workers.dev` (o tu dominio si lo
+conectas en el dashboard de Cloudflare). Luego:
+- Apunta el **webhook de Paddle** a `https://TU-DOMINIO/api/webhook`.
+- Agrega `https://TU-DOMINIO/auth/confirm` y `/auth/reset` a las **Redirect URLs**
+  de Supabase, y pon el **Site URL** en Supabase.
+
+### Notas
+- **Despliegue continuo (Git):** en el dashboard de Cloudflare Workers puedes
+  conectar el repo y usar como comando de build `pnpm cf:build` y directorio de
+  salida el que genera OpenNext. Configura ahí las `NEXT_PUBLIC_*` (build) y los
+  secretos (runtime).
+- **ISR/caché** (`revalidate` en `/c/[slug]` y `sitemap`): por defecto se
+  renderiza bajo demanda. Para caché incremental persistente, crea un bucket R2,
+  añade el binding en `wrangler.jsonc` y habilita `incrementalCache` en
+  `open-next.config.ts`.
+- El bundle del Worker pesa ~1.8 MB gzip (dentro del límite de Workers).

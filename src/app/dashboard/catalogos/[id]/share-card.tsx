@@ -70,7 +70,7 @@ export function ShareCard({ url, isPublic }: { url: string; isPublic: boolean })
             </Button>
           </a>
           {qr && (
-            <a href={qr} download="catalogo-qr.png">
+            <a href={qr} download="catalii-qr.png">
               <Button variant="outline" className="gap-2">
                 <Download className="size-4" aria-hidden="true" /> Descargar QR
               </Button>

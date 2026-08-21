@@ -40,7 +40,7 @@ interface Props {
 type Cart = Record<string, number>;
 
 export function Storefront({ slug, displayName, whatsapp, products }: Props) {
-  const storageKey = `catalogo-cart:${slug}`;
+  const storageKey = `catalii-cart:${slug}`;
   const currency = products[0]?.currency ?? "USD";
 
   const [cart, setCart] = useState<Cart>({});

@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { DEFAULT_THEME, resolveTheme } from "@/lib/themes";
 
-const STORAGE_KEY = "catalogo-theme";
+const STORAGE_KEY = "catalii-theme";
 
 interface ThemeContextValue {
   theme: string;

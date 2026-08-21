@@ -25,7 +25,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       {/* Sidebar (desktop) */}
       <aside className="hidden w-60 shrink-0 flex-col border-r border-border bg-card p-4 md:flex">
         <Link href="/dashboard" className="mb-6 px-2 font-heading text-xl font-bold text-brand-gradient">
-          CataloGO
+          Catalii
         </Link>
         <DashboardNav />
         <div className="mt-auto space-y-3 pt-4">
@@ -42,7 +42,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <div className="flex flex-1 flex-col">
         <header className="sticky top-0 z-30 flex items-center justify-between gap-2 border-b border-border bg-card/95 px-4 py-3 backdrop-blur md:px-8">
           <Link href="/dashboard" className="font-heading text-lg font-bold text-brand-gradient md:hidden">
-            CataloGO
+            Catalii
           </Link>
           <div className="ml-auto flex items-center gap-2">
             <ThemeSwitcher />

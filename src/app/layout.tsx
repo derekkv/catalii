@@ -1,21 +1,21 @@
 import type { Metadata } from "next";
-import { Rubik, Nunito_Sans } from "next/font/google";
+import { Fredoka, Nunito } from "next/font/google";
 import "./globals.css";
 import { ThemeScript } from "@/components/theme/theme-script";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { siteConfig, getSiteUrl } from "@/lib/site";
 
-const rubik = Rubik({
+const display = Fredoka({
   variable: "--font-display",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
-const nunito = Nunito_Sans({
+const body = Nunito({
   variable: "--font-body",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700", "800"],
   display: "swap",
 });
 
@@ -48,7 +48,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="es"
       suppressHydrationWarning
-      className={`${rubik.variable} ${nunito.variable} h-full`}
+      data-scroll-behavior="smooth"
+      className={`${display.variable} ${body.variable} h-full`}
     >
       <head>
         <ThemeScript />

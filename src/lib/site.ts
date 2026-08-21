@@ -1,6 +1,7 @@
 /** Configuración global del sitio (SEO, branding, URLs). */
 export const siteConfig = {
-  name: "CataloGO",
+  name: "Catalii",
+  domain: "catalii.com",
   tagline: "Catálogos digitales para mayoristas",
   description:
     "Convierte tu lista de precios en un catálogo online con pedidos en 10 minutos, sin saber programar. Stock en tiempo real, precios por cliente y pedidos directos por WhatsApp.",
@@ -19,5 +20,7 @@ export function getSiteUrl(): string {
   const fromEnv =
     process.env.NEXT_PUBLIC_SITE_URL ??
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined);
-  return (fromEnv ?? "http://localhost:3000").replace(/\/$/, "");
+  const fallback =
+    process.env.NODE_ENV === "production" ? "https://catalii.com" : "http://localhost:3000";
+  return (fromEnv ?? fallback).replace(/\/$/, "");
 }

@@ -1,8 +1,10 @@
 import { type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
-// Next.js 16 renombró la convención "middleware" a "proxy" (misma API).
-export async function proxy(request: NextRequest) {
+// Nota: en Next 16 `proxy.ts` corre en runtime Node (aún no soportado por
+// OpenNext/Cloudflare Workers). Usamos `middleware.ts`, que corre en Edge y sí
+// es compatible con Workers. El código sólo usa Web APIs (fetch/cookies).
+export async function middleware(request: NextRequest) {
   return updateSession(request);
 }
 

@@ -75,7 +75,7 @@ export const THEMES: ThemeMeta[] = [
   },
 ];
 
-export const DEFAULT_THEME = "vibrant";
+export const DEFAULT_THEME = "midnight";
 
 const THEME_IDS = new Set(THEMES.map((t) => t.id));
 

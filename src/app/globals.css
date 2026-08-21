@@ -2,7 +2,7 @@
 
 /*
  * ─────────────────────────────────────────────────────────────
- * CataloGO — Sistema de diseño con THEMES configurables
+ * Catalii — Sistema de diseño con THEMES configurables
  * ─────────────────────────────────────────────────────────────
  * Arquitectura de tokens en 3 capas:
  *   1. Primitivos  → valores crudos por theme en [data-theme="..."]
@@ -236,5 +236,184 @@ body {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+ * Catalii — Capa "divertida": colores de confeti + utilidades
+ * juguetonas (blobs, sticker shadows, animaciones alegres).
+ * Los colores fun son constantes (no dependen del theme) para
+ * mantener el carácter alegre en cualquier apariencia.
+ * ───────────────────────────────────────────────────────────── */
+:root {
+  --fun-pink: #ff5da2;
+  --fun-yellow: #ffc83d;
+  --fun-cyan: #22d3ee;
+  --fun-purple: #8b5cf6;
+  --fun-lime: #a3e635;
+  --fun-orange: #fb7a3c;
+  --fun-blue: #3b82f6;
+}
+
+@layer utilities {
+  /* Sombra "sticker": offset duro (la profundidad que da carácter) +
+     sombra ambiental suave para un acabado más premium. Sin borde. */
+  .shadow-sticker {
+    box-shadow:
+      5px 5px 0 0 color-mix(in srgb, var(--foreground) 85%, transparent),
+      0 18px 32px -20px rgb(0 0 0 / 0.4);
+  }
+  .shadow-sticker-sm {
+    box-shadow:
+      3px 3px 0 0 color-mix(in srgb, var(--foreground) 85%, transparent),
+      0 10px 20px -14px rgb(0 0 0 / 0.32);
+  }
+  .shadow-clay {
+    box-shadow:
+      0 14px 30px -12px rgb(0 0 0 / 0.22),
+      inset 0 -4px 10px -4px rgb(0 0 0 / 0.1);
+  }
+
+  /* Patrón de puntos decorativo */
+  .bg-dots {
+    background-image: radial-gradient(color-mix(in srgb, var(--foreground) 18%, transparent) 1.5px, transparent 1.5px);
+    background-size: 22px 22px;
+  }
+
+  /* Animaciones alegres */
+  .animate-float {
+    animation: fun-float 6s ease-in-out infinite;
+  }
+  .animate-float-slow {
+    animation: fun-float 9s ease-in-out infinite;
+  }
+  .animate-wiggle-hover:hover {
+    animation: fun-wiggle 0.5s ease-in-out;
+  }
+  .animate-bob {
+    animation: fun-bob 3.2s ease-in-out infinite;
+  }
+  .animate-spin-slow {
+    animation: fun-spin 14s linear infinite;
+  }
+  .animate-blob {
+    animation: fun-blob 12s ease-in-out infinite;
+  }
+
+  /* Marquee (cinta que se desplaza) */
+  .marquee {
+    display: flex;
+    width: max-content;
+    animation: fun-marquee 26s linear infinite;
+  }
+
+  /* Blob: forma orgánica redondeada */
+  .blob {
+    border-radius: 42% 58% 63% 37% / 41% 44% 56% 59%;
+  }
+}
+
+@keyframes fun-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-16px); }
+}
+@keyframes fun-bob {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-8px) rotate(2deg); }
+}
+@keyframes fun-wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-6deg); }
+  75% { transform: rotate(6deg); }
+}
+@keyframes fun-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes fun-blob {
+  0%, 100% { border-radius: 42% 58% 63% 37% / 41% 44% 56% 59%; }
+  50% { border-radius: 60% 40% 34% 66% / 57% 63% 37% 43%; }
+}
+@keyframes fun-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+ * Catalii — Theme "warm": editorial cálido-oscuro (identidad landing).
+ * Marrón espresso + naranja de marca + crema. Sin neón.
+ * Se aplica con data-theme="warm" (no está en el selector de la app).
+ * ───────────────────────────────────────────────────────────── */
+[data-theme="warm"] {
+  --primary: #fb7a2b;
+  --on-primary: #231a12;
+  --secondary: #e8b84b;
+  --on-secondary: #231a12;
+  --accent: #fb7a2b;
+  --on-accent: #231a12;
+  --background: #1a1613;
+  --foreground: #f6ece0;
+  --card: #251f18;
+  --card-foreground: #f6ece0;
+  --muted: #2e2820;
+  --muted-foreground: #b8ab99;
+  --border: #3a3129;
+  --ring: #fb7a2b;
+  --destructive: #f2704f;
+  --on-destructive: #231a12;
+  --radius: 16px;
+}
+[data-theme="warm"] {
+  color-scheme: dark;
+}
+
+@layer utilities {
+  /* Serif editorial para titulares de marca */
+  .font-fraunces {
+    font-family: var(--font-fraunces), Georgia, "Times New Roman", serif;
+    font-optical-sizing: auto;
+  }
+
+  /* Sombra de profundidad cálida (sin glow) */
+  .shadow-warm {
+    box-shadow:
+      0 2px 3px rgb(0 0 0 / 0.25),
+      0 26px 50px -28px rgb(0 0 0 / 0.6);
+  }
+  .shadow-warm-sm {
+    box-shadow:
+      0 1px 2px rgb(0 0 0 / 0.25),
+      0 14px 30px -18px rgb(0 0 0 / 0.5);
+  }
+
+  /* Textura de grano (film grain) para acabado artesanal */
+  .grain-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.05;
+    mix-blend-mode: soft-light;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* Patrón de puntos (halftone) para acentos con textura */
+  .dots-accent {
+    background-image: radial-gradient(currentColor 1.4px, transparent 1.4px);
+    background-size: 14px 14px;
+  }
+
+  /* Scroll reveal (JS agrega .is-visible) */
+  .reveal {
+    opacity: 0;
+    transform: translateY(22px);
+    transition:
+      opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .reveal.is-visible {
+    opacity: 1;
+    transform: none;
   }
 }
