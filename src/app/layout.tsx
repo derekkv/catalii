@@ -3,6 +3,7 @@ import { Fredoka, Nunito } from "next/font/google";
 import "./globals.css";
 import { ThemeScript } from "@/components/theme/theme-script";
 import { ThemeProvider } from "@/components/theme/theme-provider";
+import { DevBanner } from "@/components/dev-banner";
 import { siteConfig, getSiteUrl } from "@/lib/site";
 
 const display = Fredoka({
@@ -55,7 +56,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ThemeScript />
       </head>
       <body className="min-h-full flex flex-col antialiased">
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <DevBanner />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );
