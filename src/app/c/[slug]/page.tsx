@@ -1,9 +1,11 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { MessageCircle, PackageOpen } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { resolveTheme } from "@/lib/themes";
 import { getSiteUrl, siteConfig } from "@/lib/site";
 import { Storefront, type PublicProduct } from "./storefront";
+import { ShareButton } from "./catalog-actions";
 import type { Catalog } from "@/types/database";
 
 export const revalidate = 60; // ISR: regenera catálogos públicos cada 60s
@@ -102,23 +104,29 @@ export default async function PublicCatalogPage({
   };
 
   return (
-    <div data-theme={theme} className="min-h-screen bg-background text-foreground">
+    <div
+      data-theme={theme}
+      className="min-h-screen bg-background text-foreground"
+      // Altura del header fijo: única fuente de verdad para el offset de la
+      // barra de filtros (antes era un `top-[57px]` mágico y desalineado).
+      style={{ "--catalog-header-h": "65px" } as React.CSSProperties}
+    >
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-3">
+      <header className="sticky top-0 z-30 h-[var(--catalog-header-h)] border-b border-border bg-background/95 backdrop-blur">
+        <div className="mx-auto flex h-full max-w-3xl items-center gap-3 px-4">
           {catalog.logo_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={catalog.logo_url}
               alt=""
-              className="size-10 rounded-full object-cover"
+              className="size-10 shrink-0 rounded-full object-cover"
             />
           ) : (
-            <span className="flex size-10 items-center justify-center rounded-full bg-brand-gradient font-heading text-lg font-bold text-on-primary">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-gradient font-heading text-lg font-bold text-on-primary">
               {displayName.charAt(0).toUpperCase()}
             </span>
           )}
@@ -128,10 +136,26 @@ export default async function PublicCatalogPage({
               <p className="truncate text-xs text-muted-foreground">{catalog.description}</p>
             )}
           </div>
+
+          {/* Contacto directo: muchos compradores mayoristas prefieren preguntar
+              antes de armar el pedido (disponibilidad, crédito, flete). */}
+          {catalog.whatsapp && (
+            <a
+              href={`https://wa.me/${catalog.whatsapp.replace(/[^0-9]/g, "")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Escribir a ${displayName} por WhatsApp`}
+              title="Escribir por WhatsApp"
+              className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <MessageCircle className="size-5" aria-hidden="true" />
+            </a>
+          )}
+          <ShareButton url={url} title={displayName} />
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-4 pb-24">
+      <main id="contenido" className="mx-auto max-w-3xl px-4 pb-24">
         {catalog.banner_url && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -140,12 +164,33 @@ export default async function PublicCatalogPage({
             className="mt-4 aspect-[3/1] w-full rounded-[var(--radius-theme)] object-cover"
           />
         )}
-        <Storefront
-          slug={catalog.slug}
-          displayName={displayName}
-          whatsapp={catalog.whatsapp}
-          products={products}
-        />
+
+        {products.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 py-24 text-center">
+            <PackageOpen className="size-12 text-muted-foreground" aria-hidden="true" />
+            <h2 className="font-heading text-xl font-bold">Catálogo en preparación</h2>
+            <p className="max-w-sm text-muted-foreground">
+              {displayName} todavía no publicó productos aquí. Vuelve en un rato.
+            </p>
+            {catalog.whatsapp && (
+              <a
+                href={`https://wa.me/${catalog.whatsapp.replace(/[^0-9]/g, "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-11 items-center gap-2 rounded-[var(--radius-theme-sm)] bg-primary px-5 text-sm font-semibold text-on-primary hover:opacity-90"
+              >
+                <MessageCircle className="size-4" aria-hidden="true" /> Escribir por WhatsApp
+              </a>
+            )}
+          </div>
+        ) : (
+          <Storefront
+            slug={catalog.slug}
+            displayName={displayName}
+            whatsapp={catalog.whatsapp}
+            products={products}
+          />
+        )}
       </main>
 
       <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground">

@@ -1,14 +1,18 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { createProduct, updateProduct, type ActionState } from "./actions";
 import { Button } from "@/components/ui/button";
-import { Input, Label, Textarea } from "@/components/ui/input";
+import { Input, Label, Textarea, Select } from "@/components/ui/input";
+import { useToast } from "@/components/ui/toast";
 import type { Product } from "@/types/database";
 
 const initial: ActionState = { ok: false };
+
+/** Monedas habituales en LATAM; el campo acepta cualquier ISO-4217 de 3 letras. */
+const CURRENCIES = ["USD", "MXN", "COP", "ARS", "CLP", "PEN", "GTQ", "DOP", "EUR"];
 
 export function ProductForm({
   product,
@@ -18,18 +22,25 @@ export function ProductForm({
   onDone?: () => void;
 }) {
   const isEdit = Boolean(product);
+  const router = useRouter();
+  const { toast } = useToast();
+
+  // Los efectos del éxito se encadenan dentro de la acción (ver nota en
+  // products-client): nada de observar el estado resultante desde un efecto.
   const [state, action, pending] = useActionState(
-    isEdit ? updateProduct : createProduct,
+    async (prev: ActionState, formData: FormData) => {
+      const result = await (isEdit ? updateProduct : createProduct)(prev, formData);
+      if (result.ok) {
+        toast(result.message ?? (isEdit ? "Producto actualizado." : "Producto agregado."), {
+          tone: "success",
+        });
+        router.refresh();
+        onDone?.();
+      }
+      return result;
+    },
     initial,
   );
-  const router = useRouter();
-
-  useEffect(() => {
-    if (state.ok) {
-      router.refresh();
-      onDone?.();
-    }
-  }, [state.ok, router, onDone]);
 
   return (
     <form action={action} className="space-y-4">
@@ -37,17 +48,40 @@ export function ProductForm({
 
       <div>
         <Label htmlFor="name">Nombre *</Label>
-        <Input id="name" name="name" required maxLength={200} defaultValue={product?.name} />
+        <Input
+          id="name"
+          name="name"
+          required
+          autoFocus
+          maxLength={200}
+          placeholder="Coca-Cola 600 ml"
+          defaultValue={product?.name}
+        />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <Label htmlFor="sku">SKU / Código</Label>
-          <Input id="sku" name="sku" maxLength={60} defaultValue={product?.sku ?? ""} />
+          <Input
+            id="sku"
+            name="sku"
+            maxLength={60}
+            placeholder="CC600"
+            defaultValue={product?.sku ?? ""}
+          />
         </div>
         <div>
           <Label htmlFor="category">Categoría</Label>
-          <Input id="category" name="category" maxLength={80} defaultValue={product?.category ?? ""} />
+          <Input
+            id="category"
+            name="category"
+            maxLength={80}
+            placeholder="Bebidas"
+            defaultValue={product?.category ?? ""}
+          />
+          <p className="mt-1 text-xs text-muted-foreground">
+            Agrupa productos en filtros del catálogo.
+          </p>
         </div>
       </div>
 
@@ -60,62 +94,108 @@ export function ProductForm({
             type="number"
             step="0.01"
             min="0"
+            inputMode="decimal"
             required
+            placeholder="12.50"
             defaultValue={product ? (product.price_cents / 100).toFixed(2) : ""}
           />
         </div>
         <div>
           <Label htmlFor="currency">Moneda</Label>
-          <Input id="currency" name="currency" maxLength={3} defaultValue={product?.currency ?? "USD"} />
+          <Select id="currency" name="currency" defaultValue={product?.currency ?? "USD"}>
+            {CURRENCIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </Select>
         </div>
         <div>
           <Label htmlFor="stock">Stock</Label>
-          <Input id="stock" name="stock" type="number" min="0" defaultValue={product?.stock ?? 0} />
+          <Input
+            id="stock"
+            name="stock"
+            type="number"
+            min="0"
+            inputMode="numeric"
+            defaultValue={product?.stock ?? 0}
+          />
+          <p className="mt-1 text-xs text-muted-foreground">0 = no lo controlas.</p>
         </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <Label htmlFor="min_order_qty">Mínimo por pedido</Label>
+          <Label htmlFor="min_order_qty">Pedido mínimo</Label>
           <Input
             id="min_order_qty"
             name="min_order_qty"
             type="number"
             min="1"
+            inputMode="numeric"
             defaultValue={product?.min_order_qty ?? 1}
           />
+          <p className="mt-1 text-xs text-muted-foreground">
+            Unidades mínimas que debe pedir el cliente.
+          </p>
         </div>
         <div>
           <Label htmlFor="image_url">URL de imagen</Label>
-          <Input id="image_url" name="image_url" type="url" defaultValue={product?.image_url ?? ""} />
+          <Input
+            id="image_url"
+            name="image_url"
+            type="url"
+            placeholder="https://…/producto.jpg"
+            defaultValue={product?.image_url ?? ""}
+          />
+          <p className="mt-1 text-xs text-muted-foreground">
+            Las fotos aumentan mucho la conversión.
+          </p>
         </div>
       </div>
 
       <div>
         <Label htmlFor="description">Descripción</Label>
-        <Textarea id="description" name="description" maxLength={2000} defaultValue={product?.description ?? ""} />
+        <Textarea
+          id="description"
+          name="description"
+          maxLength={2000}
+          placeholder="Presentación, caja por 24 piezas, origen…"
+          defaultValue={product?.description ?? ""}
+        />
+        <p className="mt-1 text-xs text-muted-foreground">
+          Se muestra al abrir el producto en el catálogo.
+        </p>
       </div>
 
-      <label className="flex items-center gap-2 text-sm">
+      <label className="flex items-start gap-3 rounded-[var(--radius-theme-sm)] bg-muted p-3 text-sm">
         <input
           type="checkbox"
           name="active"
           value="true"
           defaultChecked={product ? product.active : true}
-          className="size-4 accent-[var(--primary)]"
+          className="mt-0.5 size-4 accent-[var(--primary)]"
         />
-        Visible en el catálogo
+        <span>
+          <span className="font-medium">Visible en el catálogo</span>
+          <span className="block text-xs text-muted-foreground">
+            Desactívalo para ocultarlo sin borrarlo.
+          </span>
+        </span>
       </label>
 
       {state.error && (
-        <p role="alert" className="text-sm font-medium text-destructive">
+        <p
+          role="alert"
+          className="rounded-[var(--radius-theme-sm)] bg-destructive/10 p-3 text-sm font-semibold text-destructive"
+        >
           {state.error}
         </p>
       )}
 
-      <div className="flex gap-2">
-        <Button type="submit" disabled={pending}>
-          {pending ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : null}
+      <div className="flex gap-2 pt-1">
+        <Button type="submit" disabled={pending} className="gap-2">
+          {pending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
           {isEdit ? "Guardar cambios" : "Agregar producto"}
         </Button>
         {onDone && (

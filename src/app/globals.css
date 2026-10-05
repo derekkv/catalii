@@ -32,6 +32,10 @@
   --color-ring: var(--ring);
   --color-destructive: var(--destructive);
   --color-on-destructive: var(--on-destructive);
+  --color-success: var(--success);
+  --color-on-success: var(--on-success);
+  --color-warning: var(--warning);
+  --color-on-warning: var(--on-warning);
 
   --radius-theme: var(--radius);
   --radius-theme-lg: calc(var(--radius) + 6px);
@@ -169,6 +173,29 @@
 }
 
 /* ── Base ─────────────────────────────────────────────────────── */
+
+/*
+ * Estados semánticos (éxito / advertencia).
+ *
+ * No se derivan del theme a propósito: "éxito" debe leerse verde y
+ * "advertencia" ámbar en cualquier apariencia, o se pierde el significado.
+ * Sólo se ajustan los valores para los themes oscuros, donde los tonos claros
+ * son los que alcanzan el contraste exigido (>= 4.5:1 con su color de texto).
+ */
+:root {
+  --success: #15803d;
+  --on-success: #ffffff;
+  --warning: #b45309;
+  --on-warning: #ffffff;
+}
+[data-theme="midnight"],
+[data-theme="warm"] {
+  --success: #4ade80;
+  --on-success: #052e16;
+  --warning: #fbbf24;
+  --on-warning: #1f1300;
+}
+
 * {
   border-color: var(--border);
 }

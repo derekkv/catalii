@@ -1,8 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
+import { Loader2 } from "lucide-react";
 import { updateOrderStatus } from "./actions";
+import { useToast } from "@/components/ui/toast";
+import { cn } from "@/lib/utils";
 import type { OrderStatus } from "@/types/database";
 
 const OPTIONS: { value: OrderStatus; label: string }[] = [
@@ -12,31 +15,71 @@ const OPTIONS: { value: OrderStatus; label: string }[] = [
   { value: "cancelled", label: "Cancelado" },
 ];
 
+/** Color por estado: permite escanear la lista sin leer cada etiqueta. */
+const TONE: Record<OrderStatus, string> = {
+  pending: "border-accent bg-accent/10 text-foreground",
+  confirmed: "border-primary bg-primary/10 text-foreground",
+  shipped: "border-primary bg-primary text-on-primary",
+  cancelled: "border-destructive bg-destructive/10 text-destructive",
+};
+
 export function OrderStatusSelect({ id, status }: { id: string; status: OrderStatus }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  // Estado optimista: el select refleja el cambio antes del round-trip.
+  const [value, setValue] = useState<OrderStatus>(status);
+  const { toast } = useToast();
+
+  function change(next: OrderStatus) {
+    const previous = value;
+    setValue(next);
+    const fd = new FormData();
+    fd.set("id", id);
+    fd.set("status", next);
+    startTransition(async () => {
+      try {
+        await updateOrderStatus(fd);
+        toast(`Pedido marcado como “${OPTIONS.find((o) => o.value === next)?.label}”.`, {
+          tone: "success",
+          duration: 2500,
+        });
+        router.refresh();
+      } catch {
+        setValue(previous);
+        toast("No se pudo cambiar el estado del pedido.", { tone: "error" });
+      }
+    });
+  }
 
   return (
-    <select
-      aria-label="Cambiar estado del pedido"
-      defaultValue={status}
-      disabled={pending}
-      onChange={(e) => {
-        const fd = new FormData();
-        fd.set("id", id);
-        fd.set("status", e.target.value);
-        startTransition(async () => {
-          await updateOrderStatus(fd);
-          router.refresh();
-        });
-      }}
-      className="h-9 cursor-pointer rounded-[var(--radius-theme-sm)] border border-border bg-card px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
-    >
-      {OPTIONS.map((o) => (
-        <option key={o.value} value={o.value}>
-          {o.label}
-        </option>
-      ))}
-    </select>
+    <span className="relative inline-flex items-center">
+      <label className="sr-only" htmlFor={`status-${id}`}>
+        Estado del pedido
+      </label>
+      <select
+        id={`status-${id}`}
+        value={value}
+        disabled={pending}
+        onChange={(e) => change(e.target.value as OrderStatus)}
+        className={cn(
+          "h-9 cursor-pointer rounded-full border px-3 pr-7 text-sm font-semibold",
+          "appearance-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          "disabled:cursor-wait disabled:opacity-60",
+          TONE[value],
+        )}
+      >
+        {OPTIONS.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+      {pending && (
+        <Loader2
+          className="pointer-events-none absolute right-2 size-3.5 animate-spin"
+          aria-hidden="true"
+        />
+      )}
+    </span>
   );
 }

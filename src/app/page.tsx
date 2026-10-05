@@ -113,7 +113,7 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="flex-1">
+      <main id="contenido" className="flex-1">
         {/* Hero */}
         <section className="px-4 py-16 md:py-24">
           <div className="mx-auto grid max-w-6xl items-center gap-12 md:grid-cols-2">

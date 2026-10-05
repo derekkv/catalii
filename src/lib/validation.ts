@@ -37,6 +37,10 @@ export const catalogSchema = z.object({
   description: z.string().trim().max(500).optional().or(z.literal("")),
   display_name: z.string().trim().max(120).optional().or(z.literal("")),
   whatsapp: z.string().trim().max(25).optional().or(z.literal("")),
+  // Branding del catálogo: ya se renderizaban en /c/[slug] pero no había
+  // ningún campo en el panel para definirlos.
+  logo_url: z.string().trim().url("URL de logo inválida").max(600).optional().or(z.literal("")),
+  banner_url: z.string().trim().url("URL de banner inválida").max(600).optional().or(z.literal("")),
   theme: z.enum(themeIds).optional().or(z.literal("")),
   is_public: z.coerce.boolean().default(false),
 });

@@ -26,6 +26,9 @@ const nextConfig: NextConfig = {
 export default nextConfig;
 
 // Habilita el acceso a bindings de Cloudflare durante `next dev`.
-// (No afecta a producción; en el Worker el contexto ya está disponible.)
+// Solo en desarrollo: durante `next build` abrir la sesión de wrangler es
+// innecesario y rompe el build en entornos sin CLOUDFLARE_API_TOKEN (CI).
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
-initOpenNextCloudflareForDev();
+if (process.env.NODE_ENV === "development") {
+  initOpenNextCloudflareForDev();
+}

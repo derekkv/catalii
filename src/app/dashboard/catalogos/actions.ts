@@ -78,6 +78,8 @@ export async function updateCatalog(_prev: CatalogState, formData: FormData): Pr
     description: formData.get("description") ?? "",
     display_name: formData.get("display_name") ?? name,
     whatsapp: formData.get("whatsapp") ?? "",
+    logo_url: formData.get("logo_url") ?? "",
+    banner_url: formData.get("banner_url") ?? "",
     theme: formData.get("theme") ?? "",
     is_public: formData.get("is_public") ?? false,
   });
@@ -93,6 +95,8 @@ export async function updateCatalog(_prev: CatalogState, formData: FormData): Pr
       description: c.description || null,
       display_name: c.display_name || c.name,
       whatsapp: c.whatsapp || null,
+      logo_url: c.logo_url || null,
+      banner_url: c.banner_url || null,
       theme: c.theme || null,
       is_public: c.is_public,
     })

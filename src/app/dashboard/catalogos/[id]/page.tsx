@@ -5,7 +5,8 @@ import { ArrowLeft } from "lucide-react";
 import { requireBusiness } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/site";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { CatalogConfigForm, DeleteCatalogButton } from "./catalog-editor";
 import { ProductSelector } from "./product-selector";
 import { ShareCard } from "./share-card";
@@ -39,7 +40,8 @@ export default async function CatalogDetailPage({
 
   const products = (productsData as Product[] | null) ?? [];
   const selectedIds = (linkData ?? []).map((r) => r.product_id as string);
-  const publicUrl = `${getSiteUrl()}/c/${cat.slug}`;
+  const base = getSiteUrl();
+  const publicUrl = `${base}/c/${cat.slug}`;
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -50,17 +52,29 @@ export default async function CatalogDetailPage({
         <ArrowLeft className="size-4" aria-hidden="true" /> Volver a catálogos
       </Link>
 
-      <div>
-        <h1 className="font-heading text-2xl font-bold md:text-3xl">{cat.name}</h1>
-        <p className="text-muted-foreground">Configura, elige productos y comparte tu catálogo.</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="font-heading text-2xl font-bold md:text-3xl">{cat.name}</h1>
+          <p className="text-muted-foreground">
+            {selectedIds.length === 0
+              ? "Asigna productos y publícalo para compartirlo."
+              : `${selectedIds.length} ${selectedIds.length === 1 ? "producto asignado" : "productos asignados"}.`}
+          </p>
+        </div>
+        <Badge tone={cat.is_public ? "success" : "muted"}>
+          {cat.is_public ? "Publicado" : "Borrador"}
+        </Badge>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Compartir</CardTitle>
+          <CardDescription>
+            Enlace y QR para mandar por WhatsApp, imprimir o pegar en tu mostrador.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <ShareCard url={publicUrl} isPublic={cat.is_public} />
+          <ShareCard url={publicUrl} isPublic={cat.is_public} name={cat.display_name || cat.name} />
         </CardContent>
       </Card>
 
@@ -69,13 +83,20 @@ export default async function CatalogDetailPage({
           <CardTitle>Configuración y apariencia</CardTitle>
         </CardHeader>
         <CardContent>
-          <CatalogConfigForm catalog={cat} />
+          <CatalogConfigForm
+            catalog={cat}
+            siteUrl={base}
+            productCount={selectedIds.length}
+          />
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
           <CardTitle>Productos en el catálogo</CardTitle>
+          <CardDescription>
+            Elige qué parte de tu inventario se muestra en este catálogo.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <ProductSelector catalogId={cat.id} products={products} selectedIds={selectedIds} />

@@ -1,105 +1,82 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+import { Hammer, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+const STORAGE_KEY = "catalii-dev-notice-dismissed";
+
+/**
+ * Aviso de "en desarrollo".
+ *
+ * Decisiones de UX (importantes):
+ *  - NO bloquea la navegación: es una barra inferior, no un modal modal-encima-de-todo.
+ *  - NUNCA aparece en catálogos públicos (`/c/*`): esas páginas las abren los
+ *    clientes del mayorista y un aviso de "sitio en obras" destruye su confianza.
+ *  - Se recuerda el cierre en localStorage (no reaparece en cada navegación).
+ *  - Se puede desactivar sin tocar código con NEXT_PUBLIC_SHOW_DEV_NOTICE=false.
+ */
 export function DevBanner() {
+  const pathname = usePathname();
   const [visible, setVisible] = useState(false);
-  const [closing, setClosing] = useState(false);
+
+  const disabled =
+    process.env.NEXT_PUBLIC_SHOW_DEV_NOTICE === "false" || pathname?.startsWith("/c/");
 
   useEffect(() => {
-    // Small delay so the animation is visible on mount
-    const t = setTimeout(() => setVisible(true), 300);
+    if (disabled) return;
+    let dismissed = false;
+    try {
+      dismissed = localStorage.getItem(STORAGE_KEY) === "1";
+    } catch {
+      /* almacenamiento no disponible */
+    }
+    if (dismissed) return;
+    const t = setTimeout(() => setVisible(true), 600);
     return () => clearTimeout(t);
-  }, []);
+  }, [disabled]);
 
-  function handleClose() {
-    setClosing(true);
-    setTimeout(() => setVisible(false), 300);
+  function dismiss() {
+    setVisible(false);
+    try {
+      localStorage.setItem(STORAGE_KEY, "1");
+    } catch {
+      /* noop */
+    }
   }
 
-  if (!visible) return null;
+  if (disabled || !visible) return null;
 
   return (
     <div
+      role="status"
       className={cn(
-        "fixed inset-0 z-[9999] flex items-center justify-center p-4",
-        "bg-foreground/30 backdrop-blur-sm",
-        "transition-opacity duration-300",
-        closing ? "opacity-0" : "opacity-100"
+        "fixed inset-x-0 bottom-0 z-50 flex justify-center px-3 pb-3",
+        "pointer-events-none animate-fade-up",
       )}
-      onClick={handleClose}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="dev-banner-title"
     >
-      <div
-        className={cn(
-          "relative max-w-sm w-full bg-card rounded-[var(--radius-theme-lg)] p-6 pt-10 text-center",
-          "shadow-sticker border-2 border-border",
-          "transition-all duration-300",
-          closing
-            ? "scale-90 opacity-0"
-            : "scale-100 opacity-100 animate-fade-up"
-        )}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Kawaii face / construction emoji */}
-        <div className="absolute -top-8 left-1/2 -translate-x-1/2">
-          <span
-            className="inline-block text-5xl animate-float select-none"
-            aria-hidden="true"
-          >
-            🚧
+      <div className="pointer-events-auto flex w-full max-w-xl items-center gap-3 rounded-[var(--radius-theme)] border border-border bg-card px-4 py-3 shadow-soft">
+        <span
+          className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-primary"
+          aria-hidden="true"
+        >
+          <Hammer className="size-4" />
+        </span>
+        <p className="min-w-0 flex-1 text-sm text-card-foreground">
+          <span className="font-semibold">Catalii está en desarrollo.</span>{" "}
+          <span className="text-muted-foreground">
+            Puede que encuentres funciones sin terminar.
           </span>
-        </div>
-
-        {/* Sparkles decoration */}
-        <div className="absolute top-2 right-3 text-lg animate-float-slow select-none" aria-hidden="true">
-          ✨
-        </div>
-        <div className="absolute top-3 left-4 text-sm animate-float select-none" aria-hidden="true">
-          💖
-        </div>
-
-        <h2
-          id="dev-banner-title"
-          className="font-heading text-xl font-bold text-foreground mt-2 mb-2"
-        >
-          Estamos construyendo algo bonito~
-        </h2>
-
-        <p className="text-muted-foreground text-sm leading-relaxed mb-4">
-          Catalii todavía está en desarrollo.
-          <br />
-          Puede que encuentres cositas sin terminar, ¡pero estamos dándole con todo! 💪✨
         </p>
-
-        {/* Progress bar kawaii */}
-        <div className="w-full h-3 bg-muted rounded-full overflow-hidden mb-5 border border-border">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-[var(--fun-pink)] via-[var(--fun-purple)] to-[var(--fun-cyan)] animate-pulse"
-            style={{ width: "65%" }}
-          />
-        </div>
-
         <button
-          onClick={handleClose}
-          className={cn(
-            "inline-flex items-center gap-2 font-semibold",
-            "h-11 px-6 text-sm rounded-[var(--radius-theme-sm)]",
-            "bg-primary text-on-primary hover:opacity-90 shadow-soft",
-            "cursor-pointer transition-colors duration-200",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-            "animate-wiggle-hover"
-          )}
+          type="button"
+          onClick={dismiss}
+          aria-label="Cerrar aviso"
+          className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-[var(--radius-theme-sm)] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
-          ¡Entendido! 🎉
+          <X className="size-4" aria-hidden="true" />
         </button>
-
-        <p className="text-xs text-muted-foreground mt-3 opacity-70">
-          Gracias por tu paciencia 💕
-        </p>
       </div>
     </div>
   );

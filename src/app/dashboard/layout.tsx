@@ -22,39 +22,59 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
-      {/* Sidebar (desktop) */}
+      {/* Sidebar (escritorio) */}
       <aside className="hidden w-60 shrink-0 flex-col border-r border-border bg-card p-4 md:flex">
-        <Link href="/dashboard" className="mb-6 px-2 font-heading text-xl font-bold text-brand-gradient">
+        <Link
+          href="/dashboard"
+          className="mb-6 px-2 font-heading text-xl font-bold text-brand-gradient"
+        >
           Catalii
         </Link>
         <DashboardNav />
-        <div className="mt-auto space-y-3 pt-4">
-          <div className="rounded-[var(--radius-theme-sm)] bg-muted p-3">
+        <div className="mt-auto pt-4">
+          <Link
+            href="/dashboard/facturacion"
+            className="block rounded-[var(--radius-theme-sm)] bg-muted p-3 transition-colors hover:bg-border/40"
+          >
             <p className="truncate text-sm font-semibold">{business.name}</p>
             <Badge tone={business.plan === "free" ? "muted" : "primary"} className="mt-1">
               Plan {plan.name}
             </Badge>
-          </div>
+          </Link>
         </div>
       </aside>
 
       {/* Área principal */}
-      <div className="flex flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex items-center justify-between gap-2 border-b border-border bg-card/95 px-4 py-3 backdrop-blur md:px-8">
-          <Link href="/dashboard" className="font-heading text-lg font-bold text-brand-gradient md:hidden">
+          <Link
+            href="/dashboard"
+            className="font-heading text-lg font-bold text-brand-gradient md:hidden"
+          >
             Catalii
           </Link>
           <div className="ml-auto flex items-center gap-2">
+            {/* En móvil "Plan" sale de la barra inferior y se ancla aquí,
+                para no apretar seis pestañas en el ancho de un teléfono. */}
+            <Link
+              href="/dashboard/facturacion"
+              className="md:hidden"
+              aria-label={`Plan actual: ${plan.name}. Ver planes`}
+            >
+              <Badge tone={business.plan === "free" ? "muted" : "primary"}>{plan.name}</Badge>
+            </Link>
             <ThemeSwitcher />
             <SignOutButton />
           </div>
         </header>
 
-        <main className="flex-1 px-4 py-6 md:px-8 md:py-8">{children}</main>
+        <main id="contenido" className="flex-1 px-4 py-6 md:px-8 md:py-8">
+          {children}
+        </main>
 
         {/* Navegación inferior (móvil) */}
         <div className="sticky bottom-0 z-30 border-t border-border bg-card px-2 py-1.5 md:hidden">
-          <DashboardNav />
+          <DashboardNav variant="bottom" />
         </div>
       </div>
     </div>

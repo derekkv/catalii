@@ -35,6 +35,29 @@ export const Textarea = React.forwardRef<
 ));
 Textarea.displayName = "Textarea";
 
+/**
+ * Select nativo con los tokens del theme.
+ *
+ * Se usa el `<select>` del sistema a propósito: en móvil abre el picker nativo
+ * (mucho mejor que una lista custom) y ya es accesible por teclado.
+ */
+export const Select = React.forwardRef<
+  HTMLSelectElement,
+  React.SelectHTMLAttributes<HTMLSelectElement>
+>(({ className, ...props }, ref) => (
+  <select
+    ref={ref}
+    className={cn(
+      "h-11 w-full cursor-pointer rounded-[var(--radius-theme-sm)] border border-border bg-card px-3 text-sm font-medium text-card-foreground",
+      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+      "disabled:cursor-not-allowed disabled:opacity-50",
+      className,
+    )}
+    {...props}
+  />
+));
+Select.displayName = "Select";
+
 export function Label({
   className,
   ...props

@@ -30,8 +30,11 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files — los reales nunca se suben, las plantillas sí.
+# Sin la excepción, `.env*` también ignoraba `.env.example`, así que en un clon
+# nuevo no existía el archivo que el README pide copiar (`cp .env.example ...`).
 .env*
+!.env.example
 
 # vercel
 .vercel

@@ -3,6 +3,8 @@ import { Fredoka, Nunito } from "next/font/google";
 import "./globals.css";
 import { ThemeScript } from "@/components/theme/theme-script";
 import { ThemeProvider } from "@/components/theme/theme-provider";
+import { ToastProvider } from "@/components/ui/toast";
+import { ConfirmProvider } from "@/components/ui/confirm";
 import { DevBanner } from "@/components/dev-banner";
 import { siteConfig, getSiteUrl } from "@/lib/site";
 
@@ -56,9 +58,20 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ThemeScript />
       </head>
       <body className="min-h-full flex flex-col antialiased">
+        {/* Salto al contenido: primer tabulador para usuarios de teclado/lector. */}
+        <a
+          href="#contenido"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-[var(--radius-theme-sm)] focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-on-primary"
+        >
+          Saltar al contenido
+        </a>
         <ThemeProvider>
-          <DevBanner />
-          {children}
+          <ToastProvider>
+            <ConfirmProvider>
+              {children}
+              <DevBanner />
+            </ConfirmProvider>
+          </ToastProvider>
         </ThemeProvider>
       </body>
     </html>

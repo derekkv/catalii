@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 export default function LoginPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
+    <main id="contenido" className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-md animate-fade-up">
         <Link href="/" className="mb-4 flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
           <ArrowLeft className="size-4" aria-hidden="true" /> Volver al inicio

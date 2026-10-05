@@ -15,15 +15,12 @@
 	// ── ISR / caché incremental (páginas con `revalidate`, p. ej. /c/[slug]) ──
 	// Guarda las páginas renderizadas en R2. Crea el bucket antes de desplegar:
 	//   npx wrangler r2 bucket create catalii-cache
+	// Nota: NO marcar este binding como "remote": true. Si se marca, `next build`
+	// intenta abrir una sesión remota de wrangler y falla sin CLOUDFLARE_API_TOKEN.
 	"r2_buckets": [
 		{
 			"binding": "NEXT_INC_CACHE_R2_BUCKET",
 			"bucket_name": "catalii-cache"
-		},
-		{
-			"bucket_name": "catalii-cache",
-			"binding": "catalii_cache",
-			"remote": true
 		}
 	],
 	// Cola de revalidación en background (Durable Object con SQLite, free-tier).

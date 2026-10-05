@@ -46,36 +46,48 @@ export function PricingClient({
   }
 
   const paddleConfigured = Boolean(token && env);
+  const currentIndex = PLAN_ORDER.indexOf(currentTier);
 
   return (
     <div className="space-y-4">
       {!paddleConfigured && (
-        <div className="rounded-[var(--radius-theme-sm)] border border-amber-400 bg-amber-50 p-3 text-sm text-amber-900">
+        // Tokens del theme en lugar de `amber-*` fijos: en los themes oscuros
+        // la caja clara quedaba ilegible y fuera de paleta.
+        <div className="rounded-[var(--radius-theme-sm)] border border-warning bg-warning/10 p-3 text-sm text-foreground">
           Paddle no está configurado. Define <code>NEXT_PUBLIC_PADDLE_CLIENT_TOKEN</code> y{" "}
           <code>NEXT_PUBLIC_PADDLE_ENV</code> para habilitar los pagos.
         </div>
       )}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {PLAN_ORDER.map((tier) => {
+        {PLAN_ORDER.map((tier, index) => {
           const plan = PLANS[tier];
           const isCurrent = tier === currentTier;
           const isPaid = tier !== "free";
+          const isDowngrade = index < currentIndex;
           return (
             <Card
               key={tier}
               className={
-                plan.highlighted ? "border-primary ring-2 ring-primary/30" : undefined
+                isCurrent
+                  ? "border-primary ring-2 ring-primary/30"
+                  : plan.highlighted
+                    ? "border-primary/60"
+                    : undefined
               }
             >
               <CardContent className="flex h-full flex-col gap-4 p-5">
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <h3 className="font-heading text-lg font-bold">{plan.name}</h3>
-                    {plan.highlighted && (
-                      <Badge tone="primary" className="gap-1">
-                        <Sparkles className="size-3" aria-hidden="true" /> Popular
-                      </Badge>
+                    {isCurrent ? (
+                      <Badge tone="primary">Tu plan</Badge>
+                    ) : (
+                      plan.highlighted && (
+                        <Badge tone="accent" className="gap-1">
+                          <Sparkles className="size-3" aria-hidden="true" /> Popular
+                        </Badge>
+                      )
                     )}
                   </div>
                   <p className="mt-1">
@@ -94,24 +106,31 @@ export function PricingClient({
                 </ul>
 
                 {isCurrent ? (
-                  <Badge tone="success" className="justify-center py-2">
-                    Tu plan actual
-                  </Badge>
+                  <Button variant="outline" disabled>
+                    Plan activo
+                  </Button>
                 ) : isPaid ? (
                   <Button
                     onClick={() => checkout(tier, plan.paddlePriceId)}
                     disabled={!paddle || !plan.paddlePriceId || loadingTier === tier}
-                    variant={plan.highlighted ? "primary" : "outline"}
+                    variant={isDowngrade ? "outline" : "primary"}
+                    className="gap-2"
                   >
-                    {loadingTier === tier ? (
+                    {loadingTier === tier && (
                       <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                    ) : null}
-                    Elegir {plan.name}
+                    )}
+                    {isDowngrade ? "Cambiar a" : "Mejorar a"} {plan.name}
                   </Button>
                 ) : (
                   <Button variant="outline" disabled>
                     Gratis para siempre
                   </Button>
+                )}
+
+                {!plan.paddlePriceId && isPaid && (
+                  <p className="text-xs text-muted-foreground">
+                    Precio no configurado todavía.
+                  </p>
                 )}
               </CardContent>
             </Card>

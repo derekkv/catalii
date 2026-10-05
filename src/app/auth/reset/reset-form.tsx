@@ -74,12 +74,15 @@ export function ResetForm() {
         <Input id="rp-confirm" name="confirm" type={show ? "text" : "password"} required minLength={8} placeholder="••••••••" />
       </div>
       {status === "error" && (
-        <p role="alert" className="text-sm font-semibold text-destructive">
+        <p
+          role="alert"
+          className="rounded-[var(--radius-theme-sm)] bg-destructive/10 p-3 text-sm font-semibold text-destructive"
+        >
           {error}
         </p>
       )}
-      <Button type="submit" size="lg" className="w-full" disabled={status === "saving"}>
-        {status === "saving" ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : null}
+      <Button type="submit" size="lg" className="w-full gap-2" disabled={status === "saving"}>
+        {status === "saving" && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
         Guardar contraseña
       </Button>
     </form>

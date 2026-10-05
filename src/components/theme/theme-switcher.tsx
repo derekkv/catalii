@@ -45,54 +45,56 @@ export function ThemeSwitcher({ className }: { className?: string }) {
       </button>
 
       {open && (
-        <ul
-          role="listbox"
-          aria-label="Themes disponibles"
+        <div
+          role="menu"
+          aria-label="Apariencias disponibles"
           className="absolute right-0 z-50 mt-2 w-64 origin-top-right animate-fade-up rounded-[var(--radius-theme)] border border-border bg-card p-2 shadow-soft"
         >
           {THEMES.map((t) => {
             const active = t.id === theme;
             return (
-              <li key={t.id}>
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={active}
-                  onClick={() => {
-                    setTheme(t.id);
-                    setOpen(false);
-                  }}
-                  className={cn(
-                    "flex w-full cursor-pointer items-center gap-3 rounded-[var(--radius-theme-sm)] px-2 py-2 text-left transition-colors hover:bg-muted",
-                    active && "bg-muted",
-                  )}
+              <button
+                key={t.id}
+                type="button"
+                // `menuitemradio` es el rol correcto para una selección única
+                // dentro de un menú (antes se usaba listbox/option anidados en
+                // <li>, combinación no válida para los lectores de pantalla).
+                role="menuitemradio"
+                aria-checked={active}
+                onClick={() => {
+                  setTheme(t.id);
+                  setOpen(false);
+                }}
+                className={cn(
+                  "flex w-full cursor-pointer items-center gap-3 rounded-[var(--radius-theme-sm)] px-2 py-2 text-left transition-colors hover:bg-muted",
+                  active && "bg-muted",
+                )}
+              >
+                <span
+                  className="flex size-8 shrink-0 items-center justify-center rounded-full border border-border"
+                  style={{ background: t.swatch.background }}
+                  aria-hidden="true"
                 >
                   <span
-                    className="flex size-8 shrink-0 items-center justify-center rounded-full border border-border"
-                    style={{ background: t.swatch.background }}
-                    aria-hidden="true"
-                  >
-                    <span
-                      className="size-4 rounded-full"
-                      style={{
-                        background: `linear-gradient(135deg, ${t.swatch.primary}, ${t.swatch.accent})`,
-                      }}
-                    />
+                    className="size-4 rounded-full"
+                    style={{
+                      background: `linear-gradient(135deg, ${t.swatch.primary}, ${t.swatch.accent})`,
+                    }}
+                  />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold text-card-foreground">
+                    {t.name}
                   </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-semibold text-card-foreground">
-                      {t.name}
-                    </span>
-                    <span className="block truncate text-xs text-muted-foreground">
-                      {t.description}
-                    </span>
+                  <span className="block truncate text-xs text-muted-foreground">
+                    {t.description}
                   </span>
-                  {active && <Check className="size-4 text-primary" aria-hidden="true" />}
-                </button>
-              </li>
+                </span>
+                {active && <Check className="size-4 shrink-0 text-primary" aria-hidden="true" />}
+              </button>
             );
           })}
-        </ul>
+        </div>
       )}
     </div>
   );
