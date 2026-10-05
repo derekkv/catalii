@@ -29,23 +29,16 @@ export default function DashboardError({
     <div className="mx-auto max-w-lg py-10">
       <Card>
         <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
-          <span
-            className="flex size-12 items-center justify-center rounded-full bg-muted text-destructive"
-            aria-hidden="true"
-          >
-            <AlertTriangle className="size-6" />
-          </span>
+          <AlertTriangle className="size-7 text-destructive" aria-hidden="true" />
           <div>
-            <h1 className="font-heading text-xl font-bold">Algo no cargó bien</h1>
-            <p className="mt-1 text-muted-foreground">
+            <h1 className="t-h2">Algo no cargó bien</h1>
+            <p className="t-body mt-2 text-muted-foreground">
               Puede ser una interrupción momentánea de conexión. Vuelve a intentarlo.
             </p>
           </div>
 
           {error.digest && (
-            <p className="font-mono text-xs text-muted-foreground">
-              Referencia: {error.digest}
-            </p>
+            <p className="t-label text-muted-foreground">Referencia {error.digest}</p>
           )}
 
           <div className="flex flex-wrap justify-center gap-2">

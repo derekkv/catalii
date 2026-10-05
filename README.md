@@ -8,7 +8,7 @@ facturación con **Paddle** y base de datos en **Supabase** con RLS.
 ## Stack
 
 - **Next.js 16** (App Router, React 19) + **TypeScript**
-- **Tailwind CSS 4** — sistema de tokens en 3 capas con 6 themes (`data-theme`)
+- **Tailwind CSS 4** — sistema de tokens por theme + escala tipográfica (`data-theme`)
 - **Supabase** — Postgres + Auth (magic link) + RLS multi-tenant
 - **Paddle** — checkout, webhooks firmados y sincronización de suscripciones
 - **zod** para validación, **papaparse** (import CSV), **qrcode** (QR de compartir)
@@ -127,10 +127,37 @@ Coca-Cola 600ml,CC600,12.50,240,Bebidas,Refresco,https://...
 
 ## Themes
 
-6 themes seleccionables (`vibrant`, `coral`, `ocean`, `midnight`, `luxe`,
-`swiss`) definidos como variables CSS en `globals.css` bajo `[data-theme]`.
-El usuario elige el theme de la app (persistido en `localStorage`) y cada
-catálogo puede tener su propio theme (o heredar el del negocio).
+La dirección visual es **papel de imprenta comercial**: tinta sobre papel sin
+estucar, reglas de pelo en lugar de sombras difusas, radios pequeños y cifras
+monoespaciadas. Tipografía: **Fraunces** (display), **Archivo** (interfaz) y
+**JetBrains Mono** (precios, SKU y micro-etiquetas).
+
+5 themes, uno por tipo de mayorista, definidos como variables CSS en
+`globals.css` bajo `[data-theme]`:
+
+| Theme | Para | Rasgo |
+|---|---|---|
+| `press` | Abarrotes, bebidas, distribución | Papel cálido + tinta vermellón (por defecto) |
+| `noche` | Catálogos con mucha foto | Espresso oscuro + vermellón encendido |
+| `mercado` | Frutas, verduras, agro | Verde botánico profundo |
+| `acero` | Ferretería, refacciones | Azul industrial, radio 2 px |
+| `hueso` | Perfumería, joyería, textil | Tinta negra y oro apagado, radio 0 |
+
+Cada theme cambia paleta, radio y temperatura del papel, así que elegirlo es
+una decisión de rubro y no de gusto cromático. El usuario elige el theme de la
+app (persistido en `localStorage`) y cada catálogo puede tener el suyo (o
+heredar el del negocio).
+
+`resolveTheme()` traduce los ids del sistema anterior (`vibrant`, `coral`,
+`ocean`, `midnight`, `luxe`, `swiss`) al equivalente más cercano, para que los
+catálogos ya creados no cambien de aspecto solos.
+
+### Escala tipográfica
+
+La jerarquía vive en utilidades `.t-*` en `globals.css` (`t-display`, `t-h1`,
+`t-h2`, `t-h3`, `t-lead`, `t-body`, `t-small`, `t-label`, `t-eyebrow`, `t-num`,
+`t-price`) en lugar de combinarse a mano en cada archivo. Si hay que ajustar un
+nivel, se ajusta en un sitio.
 
 ## Notas
 

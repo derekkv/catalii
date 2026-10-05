@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation";
 import { Loader2, Trash2, Globe, Lock } from "lucide-react";
 import { updateCatalog, deleteCatalog, type CatalogState } from "../actions";
 import { Button } from "@/components/ui/button";
-import { Input, Label, Textarea } from "@/components/ui/input";
+import { Input, Label, Textarea, FieldError, FieldHint } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm";
-import { THEMES } from "@/lib/themes";
+import { ThemeSwatch, ThemeSwatchInherit } from "@/components/theme/theme-swatch";
+import { THEMES, resolveTheme } from "@/lib/themes";
 import { slugify, cn } from "@/lib/utils";
 import type { Catalog } from "@/types/database";
 
@@ -23,6 +24,9 @@ export function CatalogConfigForm({
   siteUrl: string;
   productCount: number;
 }) {
+  // Cadena vacía = heredar del negocio. Si hay un theme guardado se
+  // normaliza, para que un id antiguo no deje la selección en blanco.
+  const currentTheme = catalog.theme ? resolveTheme(catalog.theme) : "";
   const [slug, setSlug] = useState(catalog.slug);
   const [isPublic, setIsPublic] = useState(catalog.is_public);
   const router = useRouter();
@@ -48,7 +52,7 @@ export function CatalogConfigForm({
         <div>
           <Label htmlFor="name">Nombre interno</Label>
           <Input id="name" name="name" required maxLength={120} defaultValue={catalog.name} />
-          <p className="mt-1 text-xs text-muted-foreground">Solo lo ves tú, en este panel.</p>
+          <FieldHint>Solo lo ves tú, en este panel.</FieldHint>
         </div>
         <div>
           <Label htmlFor="display_name">Nombre visible</Label>
@@ -95,9 +99,9 @@ export function CatalogConfigForm({
           placeholder="+52 55 1234 5678"
           defaultValue={catalog.whatsapp ?? ""}
         />
-        <p className="mt-1 text-xs text-muted-foreground">
+        <FieldHint>
           Aparece como botón de contacto en el catálogo.
-        </p>
+        </FieldHint>
       </div>
 
       <div>
@@ -114,7 +118,7 @@ export function CatalogConfigForm({
       {/* Branding: estos dos campos ya se mostraban en el catálogo público,
           pero no existían en el panel, así que eran inalcanzables. */}
       <fieldset className="grid gap-4 sm:grid-cols-2">
-        <legend className="mb-2 text-sm font-medium">Imágenes de marca</legend>
+        <legend className="t-label mb-2 text-muted-foreground">Imágenes de marca</legend>
         <div>
           <Label htmlFor="logo_url">URL del logo</Label>
           <Input
@@ -124,9 +128,9 @@ export function CatalogConfigForm({
             placeholder="https://…/logo.png"
             defaultValue={catalog.logo_url ?? ""}
           />
-          <p className="mt-1 text-xs text-muted-foreground">
+          <FieldHint>
             Cuadrado. Si lo dejas vacío se usa la inicial del nombre.
-          </p>
+          </FieldHint>
         </div>
         <div>
           <Label htmlFor="banner_url">URL del banner</Label>
@@ -137,25 +141,27 @@ export function CatalogConfigForm({
             placeholder="https://…/banner.jpg"
             defaultValue={catalog.banner_url ?? ""}
           />
-          <p className="mt-1 text-xs text-muted-foreground">
+          <FieldHint>
             Formato 3:1. También se usa como imagen al compartir el enlace.
-          </p>
+          </FieldHint>
         </div>
       </fieldset>
 
       <fieldset>
-        <legend className="mb-2 text-sm font-medium">Apariencia del catálogo</legend>
+        <legend className="t-label mb-2 text-muted-foreground">
+          Apariencia del catálogo
+        </legend>
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-7">
           <label className="flex cursor-pointer flex-col items-center gap-1 rounded-[var(--radius-theme-sm)] border border-border p-2 hover:bg-muted has-[:checked]:border-primary has-[:checked]:ring-2 has-[:checked]:ring-ring">
             <input
               type="radio"
               name="theme"
               value=""
-              defaultChecked={!catalog.theme}
+              defaultChecked={currentTheme === ""}
               className="sr-only"
             />
-            <span className="size-6 rounded-full border border-border bg-muted" aria-hidden="true" />
-            <span className="text-[10px] font-medium">Heredar</span>
+            <ThemeSwatchInherit />
+            <span className="t-label text-[0.5625rem]">Heredar</span>
           </label>
           {THEMES.map((t) => (
             <label
@@ -167,17 +173,11 @@ export function CatalogConfigForm({
                 type="radio"
                 name="theme"
                 value={t.id}
-                defaultChecked={catalog.theme === t.id}
+                defaultChecked={currentTheme === t.id}
                 className="sr-only"
               />
-              <span
-                className="size-6 rounded-full"
-                style={{
-                  background: `linear-gradient(135deg, ${t.swatch.primary}, ${t.swatch.accent})`,
-                }}
-                aria-hidden="true"
-              />
-              <span className="text-[10px] font-medium">{t.name}</span>
+              <ThemeSwatch theme={t} />
+              <span className="t-label text-[0.5625rem]">{t.name}</span>
             </label>
           ))}
         </div>
@@ -224,14 +224,7 @@ export function CatalogConfigForm({
         </span>
       </label>
 
-      {state.error && (
-        <p
-          role="alert"
-          className="rounded-[var(--radius-theme-sm)] bg-destructive/10 p-3 text-sm font-semibold text-destructive"
-        >
-          {state.error}
-        </p>
-      )}
+      {state.error && <FieldError>{state.error}</FieldError>}
 
       <Button type="submit" disabled={pending} className="gap-2">
         {pending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}

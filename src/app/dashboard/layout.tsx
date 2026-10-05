@@ -4,8 +4,8 @@ import { getUser, getBusiness } from "@/lib/auth";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { SignOutButton } from "@/components/dashboard/signout-button";
 import { ThemeSwitcher } from "@/components/theme/theme-switcher";
+import { Wordmark } from "@/components/brand/wordmark";
 import { getPlan } from "@/lib/plans";
-import { Badge } from "@/components/ui/badge";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const user = await getUser();
@@ -22,58 +22,59 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
-      {/* Sidebar (escritorio) */}
-      <aside className="hidden w-60 shrink-0 flex-col border-r border-border bg-card p-4 md:flex">
-        <Link
-          href="/dashboard"
-          className="mb-6 px-2 font-heading text-xl font-bold text-brand-gradient"
-        >
-          Catalii
-        </Link>
-        <DashboardNav />
-        <div className="mt-auto pt-4">
+      {/* ══ Barra lateral (escritorio) ═══════════════════════════════════
+          Fondo de papel, no una ficha blanca: la lateral es el soporte, el
+          contenido es lo que va impreso encima.                          */}
+      <aside className="hidden w-56 shrink-0 flex-col border-r border-border md:flex">
+        <div className="rule-b px-5 py-4">
+          <Link href="/dashboard" aria-label="Catalii, ir al resumen">
+            <Wordmark size="sm" />
+          </Link>
+        </div>
+
+        <div className="py-3">
+          <DashboardNav />
+        </div>
+
+        <div className="mt-auto rule-t p-4">
           <Link
             href="/dashboard/facturacion"
-            className="block rounded-[var(--radius-theme-sm)] bg-muted p-3 transition-colors hover:bg-border/40"
+            className="block rounded-[var(--radius-theme-sm)] transition-colors hover:bg-muted"
           >
-            <p className="truncate text-sm font-semibold">{business.name}</p>
-            <Badge tone={business.plan === "free" ? "muted" : "primary"} className="mt-1">
-              Plan {plan.name}
-            </Badge>
+            <p className="t-label text-muted-foreground">Negocio</p>
+            <p className="mt-1.5 truncate text-sm font-medium">{business.name}</p>
+            <p className="t-label mt-2 text-primary">Plan {plan.name}</p>
           </Link>
         </div>
       </aside>
 
-      {/* Área principal */}
+      {/* ══ Área principal ══════════════════════════════════════════════ */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex items-center justify-between gap-2 border-b border-border bg-card/95 px-4 py-3 backdrop-blur md:px-8">
-          <Link
-            href="/dashboard"
-            className="font-heading text-lg font-bold text-brand-gradient md:hidden"
-          >
-            Catalii
+        <header className="sticky top-0 z-30 flex items-center gap-2 border-b border-border bg-background/92 px-4 py-2.5 backdrop-blur-sm md:px-8">
+          <Link href="/dashboard" className="md:hidden" aria-label="Catalii, ir al resumen">
+            <Wordmark size="sm" />
           </Link>
-          <div className="ml-auto flex items-center gap-2">
-            {/* En móvil "Plan" sale de la barra inferior y se ancla aquí,
-                para no apretar seis pestañas en el ancho de un teléfono. */}
+
+          <div className="ml-auto flex items-center gap-1.5">
+            {/* En móvil "Plan" sale de la barra inferior y se ancla aquí. */}
             <Link
               href="/dashboard/facturacion"
-              className="md:hidden"
+              className="t-label flex h-11 items-center px-2 text-primary md:hidden"
               aria-label={`Plan actual: ${plan.name}. Ver planes`}
             >
-              <Badge tone={business.plan === "free" ? "muted" : "primary"}>{plan.name}</Badge>
+              {plan.name}
             </Link>
             <ThemeSwitcher />
             <SignOutButton />
           </div>
         </header>
 
-        <main id="contenido" className="flex-1 px-4 py-6 md:px-8 md:py-8">
+        <main id="contenido" className="flex-1 px-4 py-7 md:px-8 md:py-10">
           {children}
         </main>
 
         {/* Navegación inferior (móvil) */}
-        <div className="sticky bottom-0 z-30 border-t border-border bg-card px-2 py-1.5 md:hidden">
+        <div className="sticky bottom-0 z-30 border-t border-border bg-background/95 backdrop-blur-sm md:hidden">
           <DashboardNav variant="bottom" />
         </div>
       </div>

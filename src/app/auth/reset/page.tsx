@@ -1,8 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ResetForm } from "./reset-form";
-import { siteConfig } from "@/lib/site";
+import { Wordmark } from "@/components/brand/wordmark";
 
 export const metadata: Metadata = {
   title: "Restablecer contraseña",
@@ -11,19 +10,21 @@ export const metadata: Metadata = {
 
 export default function ResetPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
-      <div className="w-full max-w-md animate-fade-up">
-        <Link href="/" className="mb-6 block text-center font-heading text-3xl font-bold text-brand-gradient">
-          {siteConfig.name}
+    <main
+      id="contenido"
+      className="grain flex min-h-screen flex-col items-center justify-center px-5 py-12"
+    >
+      <div className="w-full max-w-sm">
+        <Link href="/" aria-label="Catalii, ir al inicio">
+          <Wordmark size="lg" className="block" />
         </Link>
-        <Card className="shadow-soft">
-          <CardHeader>
-            <CardTitle className="text-center text-2xl">Nueva contraseña</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResetForm />
-          </CardContent>
-        </Card>
+        <p className="t-eyebrow mt-3">Restablecer acceso</p>
+
+        <h1 className="t-h1 mt-4">Elige una contraseña nueva</h1>
+
+        <div className="mt-8 rule-t pt-7">
+          <ResetForm />
+        </div>
       </div>
     </main>
   );

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { createProduct, updateProduct, type ActionState } from "./actions";
 import { Button } from "@/components/ui/button";
-import { Input, Label, Textarea, Select } from "@/components/ui/input";
+import { Input, Label, Textarea, Select, FieldError, FieldHint } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import type { Product } from "@/types/database";
 
@@ -79,9 +79,9 @@ export function ProductForm({
             placeholder="Bebidas"
             defaultValue={product?.category ?? ""}
           />
-          <p className="mt-1 text-xs text-muted-foreground">
+          <FieldHint>
             Agrupa productos en filtros del catálogo.
-          </p>
+          </FieldHint>
         </div>
       </div>
 
@@ -120,7 +120,7 @@ export function ProductForm({
             inputMode="numeric"
             defaultValue={product?.stock ?? 0}
           />
-          <p className="mt-1 text-xs text-muted-foreground">0 = no lo controlas.</p>
+          <FieldHint>0 = no lo controlas.</FieldHint>
         </div>
       </div>
 
@@ -135,9 +135,9 @@ export function ProductForm({
             inputMode="numeric"
             defaultValue={product?.min_order_qty ?? 1}
           />
-          <p className="mt-1 text-xs text-muted-foreground">
+          <FieldHint>
             Unidades mínimas que debe pedir el cliente.
-          </p>
+          </FieldHint>
         </div>
         <div>
           <Label htmlFor="image_url">URL de imagen</Label>
@@ -148,9 +148,9 @@ export function ProductForm({
             placeholder="https://…/producto.jpg"
             defaultValue={product?.image_url ?? ""}
           />
-          <p className="mt-1 text-xs text-muted-foreground">
+          <FieldHint>
             Las fotos aumentan mucho la conversión.
-          </p>
+          </FieldHint>
         </div>
       </div>
 
@@ -163,9 +163,9 @@ export function ProductForm({
           placeholder="Presentación, caja por 24 piezas, origen…"
           defaultValue={product?.description ?? ""}
         />
-        <p className="mt-1 text-xs text-muted-foreground">
+        <FieldHint>
           Se muestra al abrir el producto en el catálogo.
-        </p>
+        </FieldHint>
       </div>
 
       <label className="flex items-start gap-3 rounded-[var(--radius-theme-sm)] bg-muted p-3 text-sm">
@@ -184,14 +184,7 @@ export function ProductForm({
         </span>
       </label>
 
-      {state.error && (
-        <p
-          role="alert"
-          className="rounded-[var(--radius-theme-sm)] bg-destructive/10 p-3 text-sm font-semibold text-destructive"
-        >
-          {state.error}
-        </p>
-      )}
+      {state.error && <FieldError>{state.error}</FieldError>}
 
       <div className="flex gap-2 pt-1">
         <Button type="submit" disabled={pending} className="gap-2">

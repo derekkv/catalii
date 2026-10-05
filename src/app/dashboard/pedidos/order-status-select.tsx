@@ -17,10 +17,10 @@ const OPTIONS: { value: OrderStatus; label: string }[] = [
 
 /** Color por estado: permite escanear la lista sin leer cada etiqueta. */
 const TONE: Record<OrderStatus, string> = {
-  pending: "border-accent bg-accent/10 text-foreground",
-  confirmed: "border-primary bg-primary/10 text-foreground",
-  shipped: "border-primary bg-primary text-on-primary",
-  cancelled: "border-destructive bg-destructive/10 text-destructive",
+  pending: "border-accent text-accent",
+  confirmed: "border-primary text-primary",
+  shipped: "border-success text-success",
+  cancelled: "border-destructive text-destructive",
 };
 
 export function OrderStatusSelect({ id, status }: { id: string; status: OrderStatus }) {
@@ -62,8 +62,8 @@ export function OrderStatusSelect({ id, status }: { id: string; status: OrderSta
         disabled={pending}
         onChange={(e) => change(e.target.value as OrderStatus)}
         className={cn(
-          "h-9 cursor-pointer rounded-full border px-3 pr-7 text-sm font-semibold",
-          "appearance-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          "t-label h-9 cursor-pointer appearance-none border-l-2 bg-transparent pl-2.5 pr-6",
+          "transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[color-mix(in_srgb,var(--ring)_28%,transparent)]",
           "disabled:cursor-wait disabled:opacity-60",
           TONE[value],
         )}

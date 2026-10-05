@@ -1,12 +1,12 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { BookOpen, ExternalLink, Settings2, Lock } from "lucide-react";
+import { BookOpen, ExternalLink, Settings2 } from "lucide-react";
 import { requireBusiness } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getPlan } from "@/lib/plans";
 import { getSiteUrl } from "@/lib/site";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/dashboard/page-header";
 import { UsageMeter } from "@/components/dashboard/usage-meter";
 import { CatalogCreateForm } from "./catalog-create-form";
 import { CatalogQuickActions } from "./catalog-card-actions";
@@ -42,113 +42,98 @@ export default async function CatalogosPage() {
   const base = getSiteUrl();
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="font-heading text-2xl font-bold md:text-3xl">Catálogos</h1>
-          <p className="text-muted-foreground">
-            Crea catálogos públicos, elige su apariencia y compártelos por WhatsApp.
-          </p>
-        </div>
-        <UsageMeter
-          label="Catálogos"
-          used={catalogs.length}
-          limit={limit}
-          upgradeHref="/dashboard/facturacion"
-        />
-      </div>
+    <div className="mx-auto max-w-4xl space-y-7">
+      <PageHeader
+        eyebrow="Difusión"
+        title="Catálogos"
+        description="Cada catálogo es una página con su propio enlace. Elige qué productos entran y cómo se ve."
+        actions={
+          <UsageMeter
+            label="Catálogos"
+            used={catalogs.length}
+            limit={limit}
+            upgradeHref="/dashboard/facturacion"
+          />
+        }
+      />
 
       {canCreate ? (
-        <Card>
-          <CardContent className="p-5">
-            <CatalogCreateForm />
-          </CardContent>
-        </Card>
+        <CatalogCreateForm />
       ) : (
-        <Card>
-          <CardContent className="p-5 text-sm text-muted-foreground">
-            Alcanzaste el límite de catálogos de tu plan.{" "}
-            <Link
-              href="/dashboard/facturacion"
-              className="font-semibold text-primary hover:underline"
-            >
-              Mejora tu plan
-            </Link>{" "}
-            para crear más.
-          </CardContent>
-        </Card>
+        <p className="border-l-2 border-accent bg-muted px-4 py-3 text-sm">
+          Alcanzaste el límite de catálogos de tu plan.{" "}
+          <Link href="/dashboard/facturacion" className="link-ink font-medium text-primary">
+            Mejora tu plan
+          </Link>{" "}
+          para crear más.
+        </p>
       )}
 
       {catalogs.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center gap-3 p-10 text-center">
-            <BookOpen className="size-10 text-muted-foreground" aria-hidden="true" />
-            <div>
-              <p className="font-semibold">Todavía no tienes catálogos</p>
-              <p className="text-sm text-muted-foreground">
-                Un catálogo es la página que compartes con tus clientes. Crea el primero arriba.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="rule-t rule-b flex flex-col items-center gap-3 py-14 text-center">
+          <BookOpen className="size-8 text-muted-foreground" aria-hidden="true" />
+          <div>
+            <p className="t-h3">Todavía no tienes catálogos</p>
+            <p className="t-small mt-1 max-w-sm text-muted-foreground">
+              Un catálogo es la página que compartes con tus clientes. Crea el primero arriba.
+            </p>
+          </div>
+        </div>
       ) : (
-        <ul className="grid gap-3 sm:grid-cols-2">
+        <ul className="grid-ruled grid sm:grid-cols-2">
           {catalogs.map((c) => {
             const count = productCounts.get(c.id) ?? 0;
             const url = `${base}/c/${c.slug}`;
             return (
-              <li key={c.id}>
-                <Card className="h-full transition-shadow hover:shadow-soft">
-                  <CardContent className="flex h-full flex-col gap-3 p-5">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <h2 className="truncate font-heading font-bold">{c.name}</h2>
-                        <p className="truncate font-mono text-xs text-muted-foreground">
-                          /c/{c.slug}
-                        </p>
-                      </div>
-                      <Badge tone={c.is_public ? "success" : "muted"} className="shrink-0 gap-1">
-                        {c.is_public ? "Público" : <><Lock className="size-3" aria-hidden="true" /> Borrador</>}
-                      </Badge>
-                    </div>
+              <li key={c.id} className="flex flex-col gap-4 p-5">
+                <div>
+                  <div className="flex items-start justify-between gap-3">
+                    <h2 className="t-h3 min-w-0 truncate">{c.name}</h2>
+                    <Badge tone={c.is_public ? "success" : "muted"} className="shrink-0">
+                      {c.is_public ? "Público" : "Borrador"}
+                    </Badge>
+                  </div>
+                  <p className="t-label mt-2 truncate text-muted-foreground">/c/{c.slug}</p>
 
-                    <p className="text-sm text-muted-foreground">
-                      {count === 0 ? (
-                        <span className="font-medium text-accent">
-                          Sin productos — agrégalos antes de compartir
-                        </span>
-                      ) : (
-                        `${count} ${count === 1 ? "producto" : "productos"}`
-                      )}
-                    </p>
+                  <p className="t-small mt-3">
+                    {count === 0 ? (
+                      <span className="font-medium text-accent">
+                        Sin productos — agrégalos antes de compartir
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">
+                        <span className="t-num text-foreground">{count}</span>{" "}
+                        {count === 1 ? "producto" : "productos"}
+                      </span>
+                    )}
+                  </p>
+                </div>
 
-                    <div className="mt-auto flex items-center gap-2">
+                <div className="mt-auto flex items-center gap-1.5">
+                  <Link
+                    href={`/dashboard/catalogos/${c.id}`}
+                    className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-[var(--radius-theme-sm)] border border-input px-3 text-sm font-medium transition-colors hover:bg-muted"
+                  >
+                    <Settings2 className="size-4" aria-hidden="true" /> Gestionar
+                  </Link>
+                  {c.is_public ? (
+                    <>
                       <Link
-                        href={`/dashboard/catalogos/${c.id}`}
-                        className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-[var(--radius-theme-sm)] border border-border px-3 text-sm font-medium transition-colors hover:bg-muted"
+                        href={`/c/${c.slug}`}
+                        target="_blank"
+                        aria-label={`Abrir ${c.name} en una pestaña nueva`}
+                        className="inline-flex size-11 items-center justify-center rounded-[var(--radius-theme-sm)] bg-primary text-on-primary transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_88%,black)]"
                       >
-                        <Settings2 className="size-4" aria-hidden="true" /> Gestionar
+                        <ExternalLink className="size-4" aria-hidden="true" />
                       </Link>
-                      {c.is_public ? (
-                        <>
-                          <Link
-                            href={`/c/${c.slug}`}
-                            target="_blank"
-                            aria-label={`Abrir ${c.name} en una pestaña nueva`}
-                            className="inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-theme-sm)] bg-primary px-3 text-sm font-medium text-on-primary transition-opacity hover:opacity-90"
-                          >
-                            <ExternalLink className="size-4" aria-hidden="true" /> Ver
-                          </Link>
-                          <CatalogQuickActions url={url} name={c.display_name || c.name} />
-                        </>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">
-                          Publícalo para compartirlo
-                        </span>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                      <CatalogQuickActions url={url} name={c.display_name || c.name} />
+                    </>
+                  ) : (
+                    <span className="t-label px-2 text-muted-foreground">
+                      Publícalo para compartir
+                    </span>
+                  )}
+                </div>
               </li>
             );
           })}

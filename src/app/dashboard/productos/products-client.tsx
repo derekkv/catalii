@@ -16,8 +16,6 @@ import {
 import { ProductForm } from "./product-form";
 import { importProductsCsv, deleteProduct, type ActionState } from "./actions";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input, Label, Select } from "@/components/ui/input";
 import { Drawer, Modal } from "@/components/ui/overlay";
 import { useToast } from "@/components/ui/toast";
@@ -185,61 +183,65 @@ export function ProductsClient({
 
       {/* ── Lista ─────────────────────────────────────────────────────────── */}
       {products.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center gap-3 p-10 text-center">
-            <PackageOpen className="size-10 text-muted-foreground" aria-hidden="true" />
-            <div>
-              <p className="font-semibold">Todavía no tienes productos</p>
-              <p className="text-sm text-muted-foreground">
-                Agrégalos uno a uno o importa tu lista de precios en CSV.
-              </p>
-            </div>
-            <div className="flex flex-wrap justify-center gap-2">
-              <Button onClick={() => setFormFor({})} className="gap-2">
-                <Plus className="size-4" aria-hidden="true" /> Agregar el primero
-              </Button>
-              <Button variant="outline" onClick={() => setImportOpen(true)} className="gap-2">
-                <Upload className="size-4" aria-hidden="true" /> Importar CSV
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="rule-t rule-b flex flex-col items-center gap-4 py-14 text-center">
+          <PackageOpen className="size-8 text-muted-foreground" aria-hidden="true" />
+          <div>
+            <p className="t-h3">Todavía no tienes productos</p>
+            <p className="t-small mt-1 text-muted-foreground">
+              Agrégalos uno a uno o importa tu lista de precios en CSV.
+            </p>
+          </div>
+          <div className="flex flex-wrap justify-center gap-2">
+            <Button onClick={() => setFormFor({})} className="gap-2">
+              <Plus className="size-4" aria-hidden="true" /> Agregar el primero
+            </Button>
+            <Button variant="outline" onClick={() => setImportOpen(true)} className="gap-2">
+              <Upload className="size-4" aria-hidden="true" /> Importar CSV
+            </Button>
+          </div>
+        </div>
       ) : filtered.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center gap-3 p-10 text-center">
-            <Search className="size-10 text-muted-foreground" aria-hidden="true" />
-            <p className="text-muted-foreground">Ningún producto coincide con la búsqueda.</p>
-            {filtersActive && (
-              <Button
-                variant="outline"
-                onClick={() =>
-                  applyFilter(() => {
-                    setQuery("");
-                    setCategory("");
-                    setVisibility("all");
-                  })
-                }
-              >
-                Limpiar filtros
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+        <div className="rule-t rule-b flex flex-col items-center gap-3 py-14 text-center">
+          <Search className="size-7 text-muted-foreground" aria-hidden="true" />
+          <p className="t-small text-muted-foreground">
+            Ningún producto coincide con la búsqueda.
+          </p>
+          {filtersActive && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                applyFilter(() => {
+                  setQuery("");
+                  setCategory("");
+                  setVisibility("all");
+                })
+              }
+            >
+              Limpiar filtros
+            </Button>
+          )}
+        </div>
       ) : (
         <>
-          <p className="text-sm text-muted-foreground" aria-live="polite">
+          <p className="t-label text-muted-foreground" aria-live="polite">
             {filtered.length === products.length
               ? `${products.length} productos`
-              : `${filtered.length} de ${products.length} productos`}
+              : `${filtered.length} de ${products.length}`}
           </p>
 
-          <Card>
-            <ul className="divide-y divide-border">
-              {visible.map((p) => (
-                <ProductRow key={p.id} product={p} onEdit={() => setFormFor({ product: p })} />
-              ))}
-            </ul>
-          </Card>
+          {/* Registro de inventario: una línea por producto, con reglas de
+              pelo. Se escanea en columna como una lista de precios impresa. */}
+          <ul className="border-y border-border">
+            {visible.map((p, i) => (
+              <ProductRow
+                key={p.id}
+                product={p}
+                ruled={i > 0}
+                onEdit={() => setFormFor({ product: p })}
+              />
+            ))}
+          </ul>
 
           {shown < filtered.length && (
             <div className="flex justify-center">
@@ -280,7 +282,15 @@ export function ProductsClient({
 
 /* ────────────────────────────────────────────────────────────────────────── */
 
-function ProductRow({ product: p, onEdit }: { product: Product; onEdit: () => void }) {
+function ProductRow({
+  product: p,
+  ruled,
+  onEdit,
+}: {
+  product: Product;
+  ruled: boolean;
+  onEdit: () => void;
+}) {
   const router = useRouter();
   const confirm = useConfirm();
   const { toast } = useToast();
@@ -310,13 +320,19 @@ function ProductRow({ product: p, onEdit }: { product: Product; onEdit: () => vo
   }
 
   return (
-    <li className={cn("flex items-center gap-3 p-3 sm:p-4", deleting && "opacity-50")}>
-      <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-[var(--radius-theme-sm)] bg-muted">
+    <li
+      className={cn(
+        "flex items-center gap-3 py-2.5",
+        ruled && "rule-t",
+        deleting && "opacity-45",
+      )}
+    >
+      <div className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-[2px] bg-muted">
         {p.image_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={p.image_url} alt="" className="size-full object-cover" />
         ) : (
-          <PackageOpen className="size-5 text-muted-foreground" aria-hidden="true" />
+          <PackageOpen className="size-4 text-muted-foreground" aria-hidden="true" />
         )}
       </div>
 
@@ -326,22 +342,28 @@ function ProductRow({ product: p, onEdit }: { product: Product; onEdit: () => vo
         className="min-w-0 flex-1 cursor-pointer text-left"
         aria-label={`Editar ${p.name}`}
       >
-        <p className="truncate font-semibold">{p.name}</p>
-        <p className="truncate text-xs text-muted-foreground">
+        <span className="flex items-baseline gap-2">
+          <span className="truncate text-sm font-medium">{p.name}</span>
+          {!p.active && (
+            <span className="t-label shrink-0 text-muted-foreground">
+              <EyeOff className="inline size-3" aria-hidden="true" /> Oculto
+            </span>
+          )}
+        </span>
+        <span className="t-label mt-1 block truncate text-muted-foreground">
           {p.sku ? `${p.sku} · ` : ""}
-          {formatMoney(p.price_cents, p.currency)}
-          {p.stock > 0 ? ` · ${p.stock} en stock` : ""}
+          {p.stock > 0 ? `${p.stock} en stock` : "stock no controlado"}
           {p.category ? ` · ${p.category}` : ""}
-        </p>
+        </span>
       </button>
 
-      {!p.active && (
-        <Badge tone="muted" className="shrink-0 gap-1">
-          <EyeOff className="size-3" aria-hidden="true" /> Oculto
-        </Badge>
-      )}
+      {/* El precio en su propia columna, alineado a la derecha y en mono:
+          así las cifras forman columna y se comparan de un vistazo. */}
+      <span className="t-price w-24 shrink-0 text-right text-sm">
+        {formatMoney(p.price_cents, p.currency)}
+      </span>
 
-      <div className="flex shrink-0 items-center gap-1">
+      <div className="flex shrink-0 items-center">
         <button
           type="button"
           onClick={onEdit}

@@ -58,7 +58,7 @@ export function DevBanner() {
     >
       <div className="pointer-events-auto flex w-full max-w-xl items-center gap-3 rounded-[var(--radius-theme)] border border-border bg-card px-4 py-3 shadow-soft">
         <span
-          className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-primary"
+          className="flex size-9 shrink-0 items-center justify-center rounded-[2px] bg-muted text-primary"
           aria-hidden="true"
         >
           <Hammer className="size-4" />

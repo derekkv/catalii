@@ -1,17 +1,33 @@
 @import "tailwindcss";
 
 /*
- * ─────────────────────────────────────────────────────────────
- * Catalii — Sistema de diseño con THEMES configurables
- * ─────────────────────────────────────────────────────────────
- * Arquitectura de tokens en 3 capas:
- *   1. Primitivos  → valores crudos por theme en [data-theme="..."]
- *   2. Semánticos  → --primary, --background, --card, ... (por theme)
- *   3. Utilidades  → @theme inline mapea a bg-primary / text-foreground / etc.
+ * ═══════════════════════════════════════════════════════════════════════════
+ * Catalii — Sistema de diseño
+ * ═══════════════════════════════════════════════════════════════════════════
  *
- * Cada theme define la paleta completa. `midnight` es el theme oscuro.
- * Se aplica poniendo data-theme="<id>" en <html> (app) o en el wrapper del
- * catálogo público (personalizable por mayorista).
+ * DIRECCIÓN: papel de imprenta comercial.
+ *
+ * La referencia no es un dashboard de SaaS, es una lista de precios impresa:
+ * tinta sobre papel sin estucar, reglas de pelo en lugar de sombras difusas,
+ * cifras monoespaciadas que se pueden leer en columna, micro-etiquetas en
+ * versalitas y un solo color de tinta de acento por theme.
+ *
+ * Decisiones deliberadas, por si parecen "errores":
+ *  · Los radios son pequeños (0–6 px). Las esquinas muy redondeadas y las
+ *    sombras blandas son lo que vuelve intercambiables casi todas las UI.
+ *  · El negro nunca es #000 y el blanco nunca es #FFF en el fondo: son tinta
+ *    cálida y papel. El blanco puro se reserva para las fichas, que así
+ *    "flotan" sobre el papel sin necesitar sombra.
+ *  · Hay dos tokens de borde: `--rule` (divisor, decorativo) e `--input`
+ *    (contorno de control, obligado a cumplir 3:1 de contraste).
+ *
+ * ARQUITECTURA DE TOKENS
+ *  1. Semánticos por theme → [data-theme="…"]
+ *  2. Puente a Tailwind     → @theme inline (bg-primary, text-muted-foreground…)
+ *  3. Escala tipográfica    → utilidades .t-* (una sola fuente de verdad)
+ *
+ * Todos los pares color/texto están verificados a >= 4.5:1 en texto normal y
+ * >= 3:1 en contornos de control, en claro y en oscuro.
  */
 
 @theme inline {
@@ -27,9 +43,12 @@
   --color-card-foreground: var(--card-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
-  --color-border: var(--border);
-  --color-input: var(--border);
+
+  /* `border` = regla de pelo (divisores). `input` = contorno de control. */
+  --color-border: var(--rule);
+  --color-input: var(--input);
   --color-ring: var(--ring);
+
   --color-destructive: var(--destructive);
   --color-on-destructive: var(--on-destructive);
   --color-success: var(--success);
@@ -38,191 +57,248 @@
   --color-on-warning: var(--on-warning);
 
   --radius-theme: var(--radius);
-  --radius-theme-lg: calc(var(--radius) + 6px);
-  --radius-theme-sm: calc(var(--radius) * 0.6);
+  --radius-theme-sm: max(2px, calc(var(--radius) - 1px));
+  --radius-theme-lg: calc(var(--radius) * 2);
 
-  --font-sans: var(--font-body, ui-sans-serif, system-ui, sans-serif);
-  --font-heading: var(--font-display, var(--font-body, ui-sans-serif, system-ui, sans-serif));
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-display), Georgia, "Times New Roman", serif;
+  --font-mono: var(--font-mono), ui-monospace, "SFMono-Regular", monospace;
 }
 
-/* ── Default (= Vibrante) ─────────────────────────────────────── */
-:root,
-[data-theme="vibrant"] {
-  --primary: #059669;
-  --on-primary: #ffffff;
-  --secondary: #10b981;
-  --on-secondary: #052e21;
-  --accent: #ea580c;
-  --on-accent: #ffffff;
-  --background: #ecfdf5;
-  --foreground: #064e3b;
-  --card: #ffffff;
-  --card-foreground: #064e3b;
-  --muted: #e6f5ef;
-  --muted-foreground: #3f6d5c;
-  --border: #a7f3d0;
-  --ring: #059669;
-  --destructive: #dc2626;
-  --on-destructive: #ffffff;
-  --radius: 14px;
-}
-
-/* ── Coral (social, cálido) ───────────────────────────────────── */
-[data-theme="coral"] {
-  --primary: #e11d48;
-  --on-primary: #ffffff;
-  --secondary: #fb7185;
-  --on-secondary: #4c0519;
-  --accent: #8b5cf6;
-  --on-accent: #ffffff;
-  --background: #fff1f2;
-  --foreground: #4c0519;
-  --card: #ffffff;
-  --card-foreground: #4c0519;
-  --muted: #ffe4e6;
-  --muted-foreground: #9f1239;
-  --border: #fecdd3;
-  --ring: #e11d48;
-  --destructive: #dc2626;
-  --on-destructive: #ffffff;
-  --radius: 18px;
-}
-
-/* ── Océano (B2B fresco) ──────────────────────────────────────── */
-[data-theme="ocean"] {
-  --primary: #0284c7;
-  --on-primary: #ffffff;
-  --secondary: #38bdf8;
-  --on-secondary: #082f49;
-  --accent: #f59e0b;
-  --on-accent: #0f172a;
-  --background: #f0f9ff;
-  --foreground: #0c4a6e;
-  --card: #ffffff;
-  --card-foreground: #0c4a6e;
-  --muted: #e0f2fe;
-  --muted-foreground: #386283;
-  --border: #bae6fd;
-  --ring: #0284c7;
-  --destructive: #dc2626;
-  --on-destructive: #ffffff;
-  --radius: 12px;
-}
-
-/* ── Medianoche (oscuro, premium) ─────────────────────────────── */
-[data-theme="midnight"] {
-  --primary: #f59e0b;
-  --on-primary: #0f172a;
-  --secondary: #fbbf24;
-  --on-secondary: #0f172a;
-  --accent: #8b5cf6;
-  --on-accent: #ffffff;
-  --background: #0f172a;
-  --foreground: #f8fafc;
-  --card: #1e2537;
-  --card-foreground: #f8fafc;
-  --muted: #272f42;
-  --muted-foreground: #a5b0c2;
-  --border: #334155;
-  --ring: #f59e0b;
-  --destructive: #f87171;
-  --on-destructive: #0f172a;
-  --radius: 12px;
-}
-
-/* ── Luxe (lujo sobrio) ───────────────────────────────────────── */
-[data-theme="luxe"] {
-  --primary: #1c1917;
-  --on-primary: #ffffff;
-  --secondary: #44403c;
-  --on-secondary: #ffffff;
-  --accent: #a16207;
-  --on-accent: #ffffff;
-  --background: #fafaf9;
-  --foreground: #0c0a09;
-  --card: #ffffff;
-  --card-foreground: #0c0a09;
-  --muted: #f5f5f4;
-  --muted-foreground: #57534e;
-  --border: #e7e5e4;
-  --ring: #1c1917;
-  --destructive: #b91c1c;
-  --on-destructive: #ffffff;
-  --radius: 4px;
-}
-
-/* ── Swiss (minimal, alto contraste) ──────────────────────────── */
-[data-theme="swiss"] {
-  --primary: #111827;
-  --on-primary: #ffffff;
-  --secondary: #374151;
-  --on-secondary: #ffffff;
-  --accent: #2563eb;
-  --on-accent: #ffffff;
-  --background: #ffffff;
-  --foreground: #111827;
-  --card: #ffffff;
-  --card-foreground: #111827;
-  --muted: #f3f4f6;
-  --muted-foreground: #4b5563;
-  --border: #e5e7eb;
-  --ring: #2563eb;
-  --destructive: #dc2626;
-  --on-destructive: #ffffff;
-  --radius: 0px;
-}
-
-/* ── Base ─────────────────────────────────────────────────────── */
-
-/*
- * Estados semánticos (éxito / advertencia).
- *
- * No se derivan del theme a propósito: "éxito" debe leerse verde y
- * "advertencia" ámbar en cualquier apariencia, o se pierde el significado.
- * Sólo se ajustan los valores para los themes oscuros, donde los tonos claros
- * son los que alcanzan el contraste exigido (>= 4.5:1 con su color de texto).
+/* ═══════════════════════════════════════════════════════════════════════════
+ * THEMES
+ * ═══════════════════════════════════════════════════════════════════════════
+ * Cinco themes, uno por tipo de mayorista, no cinco paletas bonitas.
+ * Cada uno cambia color, radio y temperatura del papel.
  */
-:root {
-  --success: #15803d;
+
+/* ── Imprenta (por defecto) · papel cálido + tinta vermellón ──────────────
+ * Abarrotes, bebidas, distribución general. El acento es un rojo de tinta
+ * de imprenta, no un naranja de bootcamp.                                 */
+:root,
+[data-theme="press"] {
+  --primary: #b43b1f;
+  --on-primary: #fdfbf7;
+  --secondary: #1f1b16;
+  --on-secondary: #fbf8f3;
+  --accent: #1f1b16;
+  --on-accent: #fbf8f3;
+
+  --background: #fbf8f3;
+  --foreground: #1a1714;
+  --card: #ffffff;
+  --card-foreground: #1a1714;
+  --muted: #f1ebe1;
+  --muted-foreground: #6b6054;
+
+  --rule: #e3dacb;
+  --input: #9a8a75;
+  --ring: #b43b1f;
+
+  --destructive: #a82414;
+  --on-destructive: #fdfbf7;
+  --success: #1f6b43;
   --on-success: #ffffff;
-  --warning: #b45309;
+  --warning: #8a5a10;
   --on-warning: #ffffff;
+
+  --radius: 4px;
+  --grain: 0.035;
 }
-[data-theme="midnight"],
-[data-theme="warm"] {
+
+/* ── Noche · espresso + vermellón encendido (oscuro) ─────────────────────── */
+[data-theme="noche"] {
+  --primary: #e4572e;
+  --on-primary: #1a1208;
+  --secondary: #f5ede1;
+  --on-secondary: #17120e;
+  --accent: #e8b84b;
+  --on-accent: #17120e;
+
+  --background: #17120e;
+  --foreground: #f5ede1;
+  --card: #201a14;
+  --card-foreground: #f5ede1;
+  --muted: #2a2219;
+  --muted-foreground: #b3a492;
+
+  --rule: #342a20;
+  --input: #574838;
+  --ring: #e4572e;
+
+  --destructive: #f4785c;
+  --on-destructive: #1a1208;
   --success: #4ade80;
   --on-success: #052e16;
   --warning: #fbbf24;
   --on-warning: #1f1300;
+
+  --radius: 4px;
+  --grain: 0.055;
 }
 
-* {
-  border-color: var(--border);
+/* ── Mercado · papel cálido + verde botánico profundo ─────────────────────
+ * Frutas, verduras, orgánicos, agro.                                      */
+[data-theme="mercado"] {
+  --primary: #1f5c38;
+  --on-primary: #f7faf5;
+  --secondary: #24201a;
+  --on-secondary: #f9f7f1;
+  --accent: #a85a16;
+  --on-accent: #fffaf4;
+
+  --background: #f8f7f1;
+  --foreground: #1b2019;
+  --card: #ffffff;
+  --card-foreground: #1b2019;
+  --muted: #eceee3;
+  --muted-foreground: #5c6355;
+
+  --rule: #dde0d2;
+  --input: #8c9381;
+  --ring: #1f5c38;
+
+  --destructive: #a82414;
+  --on-destructive: #fdfbf7;
+  --success: #1f6b43;
+  --on-success: #ffffff;
+  --warning: #8a5a10;
+  --on-warning: #ffffff;
+
+  --radius: 6px;
+  --grain: 0.03;
 }
 
+/* ── Acero · papel frío + tinta azul industrial ───────────────────────────
+ * Ferretería, refacciones, insumos técnicos. Radio 2 px: se lee más
+ * "catálogo técnico" que "app".                                           */
+[data-theme="acero"] {
+  --primary: #1b3a5c;
+  --on-primary: #f4f8fb;
+  --secondary: #16202b;
+  --on-secondary: #f4f8fb;
+  --accent: #b2561b;
+  --on-accent: #fffaf5;
+
+  --background: #f5f7f8;
+  --foreground: #161d24;
+  --card: #ffffff;
+  --card-foreground: #161d24;
+  --muted: #e8edf0;
+  --muted-foreground: #556370;
+
+  --rule: #d8e0e5;
+  --input: #83909b;
+  --ring: #1b3a5c;
+
+  --destructive: #a82414;
+  --on-destructive: #fdfbf7;
+  --success: #1f6b43;
+  --on-success: #ffffff;
+  --warning: #8a5a10;
+  --on-warning: #ffffff;
+
+  --radius: 2px;
+  --grain: 0.02;
+}
+
+/* ── Hueso · papel de algodón + tinta negra y oro apagado ─────────────────
+ * Perfumería, joyería, textil premium. Radio 0: todo a escuadra.          */
+[data-theme="hueso"] {
+  --primary: #19120d;
+  --on-primary: #faf7f2;
+  --secondary: #3c332b;
+  --on-secondary: #faf7f2;
+  --accent: #8a6a1f;
+  --on-accent: #fffdf8;
+
+  --background: #faf8f5;
+  --foreground: #14100c;
+  --card: #ffffff;
+  --card-foreground: #14100c;
+  --muted: #f0ece6;
+  --muted-foreground: #645c51;
+
+  --rule: #e4ded5;
+  --input: #978e81;
+  --ring: #8a6a1f;
+
+  --destructive: #a82414;
+  --on-destructive: #fdfbf7;
+  --success: #1f6b43;
+  --on-success: #ffffff;
+  --warning: #8a5a10;
+  --on-warning: #ffffff;
+
+  --radius: 0px;
+  --grain: 0.025;
+}
+
+/* Esquema nativo (scrollbars, selects, autofill del navegador). */
 html {
-  scroll-behavior: smooth;
   color-scheme: light;
 }
-html[data-theme="midnight"] {
+html[data-theme="noche"] {
   color-scheme: dark;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-body, ui-sans-serif, system-ui, sans-serif);
-  -webkit-font-smoothing: antialiased;
+/* ═══════════════════════════════════════════════════════════════════════════
+ * BASE
+ * ═══════════════════════════════════════════════════════════════════════════
+ * Va dentro de `@layer base` a propósito. Sin la capa, estas reglas de
+ * elemento quedan sin capa y en la cascada ganan a `@layer utilities`: un
+ * `h3 class="t-h3"` seguiría cogiendo la serif del selector de elemento en
+ * lugar de la grotesca de la utilidad.
+ */
+
+@layer base {
+  * {
+    border-color: var(--rule);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    /* Reserva el canal de scroll: evita el salto lateral al abrir un diálogo. */
+    scrollbar-gutter: stable;
+  }
+
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+    font-synthesis-weight: none;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Sólo h1 y h2 llevan la serif por defecto. A partir de h3 el tamaño es de
+     interfaz y la grotesca es más legible; de eso se encarga `.t-h3`. */
+  h1,
+  h2 {
+    font-family: var(--font-display), Georgia, serif;
+    font-optical-sizing: auto;
+    font-variation-settings: "SOFT" 0, "WONK" 1;
+  }
+
+  /* Las cifras SIEMPRE tabulares: en una lista de precios las columnas deben
+     alinearse, y las cifras proporcionales las descuadran. */
+  table {
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::selection {
+    background: var(--primary);
+    color: var(--on-primary);
+  }
+
+  /* Foco visible y grueso: 3 px cumple el criterio de apariencia del foco. */
+  :where(a, button, input, select, textarea, [tabindex], summary):focus-visible {
+    outline: 3px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: var(--radius-theme-sm);
+  }
 }
 
-/* Enfoque visible para accesibilidad de teclado */
-:where(a, button, input, select, textarea, [tabindex]):focus-visible {
-  outline: 2px solid var(--ring);
-  outline-offset: 2px;
-  border-radius: var(--radius-theme-sm);
-}
-
-/* Respeta la preferencia de movimiento reducido */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -234,213 +310,253 @@ body {
   }
 }
 
-/* Utilidades de marca reutilizables */
+/* ═══════════════════════════════════════════════════════════════════════════
+ * ESCALA TIPOGRÁFICA
+ * ═══════════════════════════════════════════════════════════════════════════
+ * Utilidades .t-* como única fuente de verdad. Antes la jerarquía se
+ * improvisaba en cada archivo con combinaciones de text-2xl/font-bold, que es
+ * justo lo que aplana el diseño: tres tamaños y todo en negrita.
+ */
+
 @layer utilities {
-  .bg-brand-gradient {
-    background-image: linear-gradient(135deg, var(--primary), var(--accent));
+  /* Titular de portada. Pesa poco (500) porque el tamaño ya da la fuerza;
+     el bold a 5rem en una serif de contraste alto se empasta. */
+  .t-display {
+    font-family: var(--font-display), Georgia, serif;
+    font-optical-sizing: auto;
+    font-variation-settings: "SOFT" 0, "WONK" 1;
+    font-size: clamp(2.5rem, 6.4vw, 5rem);
+    font-weight: 500;
+    line-height: 0.95;
+    letter-spacing: -0.028em;
+    text-wrap: balance;
   }
-  .text-brand-gradient {
-    background-image: linear-gradient(135deg, var(--primary), var(--accent));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+
+  .t-h1 {
+    font-family: var(--font-display), Georgia, serif;
+    font-optical-sizing: auto;
+    font-variation-settings: "SOFT" 0, "WONK" 1;
+    font-size: clamp(1.75rem, 3.2vw, 2.5rem);
+    font-weight: 500;
+    line-height: 1.05;
+    letter-spacing: -0.022em;
+    text-wrap: balance;
   }
+
+  .t-h2 {
+    font-family: var(--font-display), Georgia, serif;
+    font-optical-sizing: auto;
+    font-variation-settings: "SOFT" 0, "WONK" 1;
+    font-size: clamp(1.3125rem, 2vw, 1.625rem);
+    font-weight: 500;
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+
+  /* H3 pasa a la grotesca: a este tamaño la serif deja de aportar y la
+     grotesca mantiene mejor la legibilidad en interfaz densa. */
+  .t-h3 {
+    font-family: var(--font-body), ui-sans-serif, sans-serif;
+    font-size: 1rem;
+    font-weight: 650;
+    line-height: 1.3;
+    letter-spacing: -0.008em;
+  }
+
+  .t-lead {
+    font-size: clamp(1.0625rem, 1.5vw, 1.1875rem);
+    font-weight: 400;
+    line-height: 1.55;
+    letter-spacing: -0.005em;
+    text-wrap: pretty;
+  }
+
+  .t-body {
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    text-wrap: pretty;
+  }
+
+  .t-small {
+    font-size: 0.8125rem;
+    line-height: 1.5;
+  }
+
+  /* Micro-etiqueta en versalitas monoespaciadas. Es el recurso que más
+     "imprenta" aporta: encabeza secciones, numera pasos y rotula datos. */
+  .t-label {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  /* Ceja de sección: etiqueta precedida de una regla corta. */
+  .t-eyebrow {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    color: var(--muted-foreground);
+  }
+  .t-eyebrow::before {
+    content: "";
+    width: 1.75rem;
+    height: 1px;
+    background: currentColor;
+    flex: none;
+  }
+
+  /* Dato numérico: precios, totales, SKU, contadores. */
+  .t-num {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+
+  .t-price {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * UTILIDADES EDITORIALES
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+@layer utilities {
+  /* Regla de pelo. Reemplaza a las sombras como recurso de separación. */
+  .rule-t {
+    border-top: 1px solid var(--rule);
+  }
+  .rule-b {
+    border-bottom: 1px solid var(--rule);
+  }
+
+  /* Rejilla con reglas interiores, como una tabla de precios impresa:
+     cada celda dibuja su borde y el contenedor recorta los sobrantes. */
+  .grid-ruled {
+    border-top: 1px solid var(--rule);
+    border-left: 1px solid var(--rule);
+  }
+  .grid-ruled > * {
+    border-right: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  /* Sombra de imprenta: contacto corto y definido, nada de halos difusos. */
   .shadow-soft {
     box-shadow:
-      0 1px 2px rgb(0 0 0 / 0.04),
-      0 8px 24px -12px rgb(0 0 0 / 0.18);
+      0 1px 0 0 color-mix(in srgb, var(--foreground) 8%, transparent),
+      0 1px 2px -1px color-mix(in srgb, var(--foreground) 14%, transparent);
   }
+  .shadow-lift {
+    box-shadow:
+      0 1px 0 0 color-mix(in srgb, var(--foreground) 10%, transparent),
+      0 8px 24px -16px color-mix(in srgb, var(--foreground) 45%, transparent);
+  }
+
+  /* Grano de papel. Densidad por theme vía --grain; se desactiva al imprimir
+     y no intercepta eventos. */
+  .grain::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: var(--grain, 0.03);
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  [data-theme="noche"] .grain::after,
+  .grain[data-theme="noche"]::after {
+    mix-blend-mode: screen;
+  }
+
+  /* Enlace de texto con subrayado a distancia de lectura. */
+  .link-ink {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.22em;
+    text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+    transition: text-decoration-color 150ms ease;
+  }
+  .link-ink:hover {
+    text-decoration-color: currentColor;
+  }
+
+  /* Capitular para párrafos de apertura. */
+  .dropcap::first-letter {
+    font-family: var(--font-display), Georgia, serif;
+    font-weight: 600;
+    font-size: 3.1em;
+    line-height: 0.82;
+    float: left;
+    margin: 0.06em 0.09em 0 0;
+    color: var(--primary);
+  }
+
+  /* Revelado al hacer scroll (el JS añade .is-visible). */
+  .reveal {
+    opacity: 0;
+    transform: translateY(14px);
+    transition:
+      opacity 400ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 400ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+  }
+
   .animate-fade-up {
-    animation: fade-up 0.5s ease-out both;
+    animation: fade-up 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 }
 
 @keyframes fade-up {
   from {
     opacity: 0;
-    transform: translateY(16px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-
-/* ─────────────────────────────────────────────────────────────
- * Catalii — Capa "divertida": colores de confeti + utilidades
- * juguetonas (blobs, sticker shadows, animaciones alegres).
- * Los colores fun son constantes (no dependen del theme) para
- * mantener el carácter alegre en cualquier apariencia.
- * ───────────────────────────────────────────────────────────── */
-:root {
-  --fun-pink: #ff5da2;
-  --fun-yellow: #ffc83d;
-  --fun-cyan: #22d3ee;
-  --fun-purple: #8b5cf6;
-  --fun-lime: #a3e635;
-  --fun-orange: #fb7a3c;
-  --fun-blue: #3b82f6;
-}
-
-@layer utilities {
-  /* Sombra "sticker": offset duro (la profundidad que da carácter) +
-     sombra ambiental suave para un acabado más premium. Sin borde. */
-  .shadow-sticker {
-    box-shadow:
-      5px 5px 0 0 color-mix(in srgb, var(--foreground) 85%, transparent),
-      0 18px 32px -20px rgb(0 0 0 / 0.4);
-  }
-  .shadow-sticker-sm {
-    box-shadow:
-      3px 3px 0 0 color-mix(in srgb, var(--foreground) 85%, transparent),
-      0 10px 20px -14px rgb(0 0 0 / 0.32);
-  }
-  .shadow-clay {
-    box-shadow:
-      0 14px 30px -12px rgb(0 0 0 / 0.22),
-      inset 0 -4px 10px -4px rgb(0 0 0 / 0.1);
-  }
-
-  /* Patrón de puntos decorativo */
-  .bg-dots {
-    background-image: radial-gradient(color-mix(in srgb, var(--foreground) 18%, transparent) 1.5px, transparent 1.5px);
-    background-size: 22px 22px;
-  }
-
-  /* Animaciones alegres */
-  .animate-float {
-    animation: fun-float 6s ease-in-out infinite;
-  }
-  .animate-float-slow {
-    animation: fun-float 9s ease-in-out infinite;
-  }
-  .animate-wiggle-hover:hover {
-    animation: fun-wiggle 0.5s ease-in-out;
-  }
-  .animate-bob {
-    animation: fun-bob 3.2s ease-in-out infinite;
-  }
-  .animate-spin-slow {
-    animation: fun-spin 14s linear infinite;
-  }
-  .animate-blob {
-    animation: fun-blob 12s ease-in-out infinite;
-  }
-
-  /* Marquee (cinta que se desplaza) */
-  .marquee {
-    display: flex;
-    width: max-content;
-    animation: fun-marquee 26s linear infinite;
-  }
-
-  /* Blob: forma orgánica redondeada */
-  .blob {
-    border-radius: 42% 58% 63% 37% / 41% 44% 56% 59%;
-  }
-}
-
-@keyframes fun-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-16px); }
-}
-@keyframes fun-bob {
-  0%, 100% { transform: translateY(0) rotate(-2deg); }
-  50% { transform: translateY(-8px) rotate(2deg); }
-}
-@keyframes fun-wiggle {
-  0%, 100% { transform: rotate(0deg); }
-  25% { transform: rotate(-6deg); }
-  75% { transform: rotate(6deg); }
-}
-@keyframes fun-spin {
-  to { transform: rotate(360deg); }
-}
-@keyframes fun-blob {
-  0%, 100% { border-radius: 42% 58% 63% 37% / 41% 44% 56% 59%; }
-  50% { border-radius: 60% 40% 34% 66% / 57% 63% 37% 43%; }
-}
-@keyframes fun-marquee {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
-}
-
-
-/* ─────────────────────────────────────────────────────────────
- * Catalii — Theme "warm": editorial cálido-oscuro (identidad landing).
- * Marrón espresso + naranja de marca + crema. Sin neón.
- * Se aplica con data-theme="warm" (no está en el selector de la app).
- * ───────────────────────────────────────────────────────────── */
-[data-theme="warm"] {
-  --primary: #fb7a2b;
-  --on-primary: #231a12;
-  --secondary: #e8b84b;
-  --on-secondary: #231a12;
-  --accent: #fb7a2b;
-  --on-accent: #231a12;
-  --background: #1a1613;
-  --foreground: #f6ece0;
-  --card: #251f18;
-  --card-foreground: #f6ece0;
-  --muted: #2e2820;
-  --muted-foreground: #b8ab99;
-  --border: #3a3129;
-  --ring: #fb7a2b;
-  --destructive: #f2704f;
-  --on-destructive: #231a12;
-  --radius: 16px;
-}
-[data-theme="warm"] {
-  color-scheme: dark;
-}
-
-@layer utilities {
-  /* Serif editorial para titulares de marca */
-  .font-fraunces {
-    font-family: var(--font-fraunces), Georgia, "Times New Roman", serif;
-    font-optical-sizing: auto;
-  }
-
-  /* Sombra de profundidad cálida (sin glow) */
-  .shadow-warm {
-    box-shadow:
-      0 2px 3px rgb(0 0 0 / 0.25),
-      0 26px 50px -28px rgb(0 0 0 / 0.6);
-  }
-  .shadow-warm-sm {
-    box-shadow:
-      0 1px 2px rgb(0 0 0 / 0.25),
-      0 14px 30px -18px rgb(0 0 0 / 0.5);
-  }
-
-  /* Textura de grano (film grain) para acabado artesanal */
-  .grain-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 1;
-    pointer-events: none;
-    opacity: 0.05;
-    mix-blend-mode: soft-light;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  }
-
-  /* Patrón de puntos (halftone) para acentos con textura */
-  .dots-accent {
-    background-image: radial-gradient(currentColor 1.4px, transparent 1.4px);
-    background-size: 14px 14px;
-  }
-
-  /* Scroll reveal (JS agrega .is-visible) */
-  .reveal {
-    opacity: 0;
-    transform: translateY(22px);
-    transition:
-      opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
-      transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
-  }
-  .reveal.is-visible {
-    opacity: 1;
     transform: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * IMPRESIÓN
+ * ═══════════════════════════════════════════════════════════════════════════
+ * Un catálogo mayorista se imprime de verdad (mostrador, reparto). Merece una
+ * hoja de estilo propia en lugar de salir con los fondos oscuros del theme.
+ */
+@media print {
+  .grain::after {
+    display: none;
+  }
+  body {
+    background: #fff;
+    color: #000;
+  }
+  nav,
+  footer,
+  [data-print="hide"] {
+    display: none !important;
+  }
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.75em;
+    word-break: break-all;
   }
 }

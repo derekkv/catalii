@@ -14,7 +14,7 @@ export default function CatalogLoading() {
 
       <header className="border-b border-border px-4 py-3">
         <div className="mx-auto flex max-w-3xl items-center gap-3">
-          <Skeleton className="size-10 rounded-full" />
+          <Skeleton className="size-10" />
           <div className="flex-1 space-y-1.5">
             <Skeleton className="h-4 w-40" />
             <Skeleton className="h-3 w-24" />
@@ -28,7 +28,7 @@ export default function CatalogLoading() {
         </div>
         <div className="flex gap-2 pb-3">
           {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-8 w-20 rounded-full" />
+            <Skeleton key={i} className="h-8 w-20" />
           ))}
         </div>
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">

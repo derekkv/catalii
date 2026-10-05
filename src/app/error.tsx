@@ -18,27 +18,22 @@ export default function RootError({
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-4 px-4 text-center">
-      <span
-        className="flex size-12 items-center justify-center rounded-full bg-muted text-destructive"
-        aria-hidden="true"
-      >
-        <AlertTriangle className="size-6" />
-      </span>
-      <h1 className="font-heading text-2xl font-bold">No pudimos cargar esta página</h1>
-      <p className="max-w-sm text-muted-foreground">
+      <AlertTriangle className="size-7 text-destructive" aria-hidden="true" />
+      <h1 className="t-h1">No pudimos cargar esta página</h1>
+      <p className="t-body max-w-sm text-muted-foreground">
         Puede ser un problema temporal de conexión. Intenta de nuevo en unos segundos.
       </p>
       <div className="flex flex-wrap justify-center gap-2">
         <button
           type="button"
           onClick={reset}
-          className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-[var(--radius-theme-sm)] bg-primary px-5 text-sm font-semibold text-on-primary transition-opacity hover:opacity-90"
+          className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-[var(--radius-theme-sm)] bg-primary px-5 text-sm font-medium text-on-primary transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_88%,black)]"
         >
           <RotateCw className="size-4" aria-hidden="true" /> Reintentar
         </button>
         <Link
           href="/"
-          className="inline-flex h-11 items-center rounded-[var(--radius-theme-sm)] border border-border bg-card px-5 text-sm font-semibold text-card-foreground transition-colors hover:bg-muted"
+          className="inline-flex h-11 items-center rounded-[var(--radius-theme-sm)] border border-input px-5 text-sm font-medium transition-colors hover:bg-muted"
         >
           Ir al inicio
         </Link>

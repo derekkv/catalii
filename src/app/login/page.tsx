@@ -2,8 +2,8 @@ import { Suspense } from "react";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowLeft } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AuthForm } from "./auth-form";
+import { Wordmark } from "@/components/brand/wordmark";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -13,26 +13,29 @@ export const metadata: Metadata = {
 
 export default function LoginPage() {
   return (
-    <main id="contenido" className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
-      <div className="w-full max-w-md animate-fade-up">
-        <Link href="/" className="mb-4 flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-          <ArrowLeft className="size-4" aria-hidden="true" /> Volver al inicio
+    <main
+      id="contenido"
+      className="grain flex min-h-screen flex-col items-center justify-center px-5 py-12"
+    >
+      <div className="w-full max-w-sm">
+        <Link
+          href="/"
+          className="t-label link-ink mb-8 inline-flex items-center gap-2 text-muted-foreground"
+        >
+          <ArrowLeft className="size-3.5" aria-hidden="true" /> Volver al inicio
         </Link>
-        <p className="mb-6 text-center font-heading text-3xl font-bold text-brand-gradient">{siteConfig.name}</p>
 
-        <Card className="shadow-soft">
-          <CardHeader>
-            <CardTitle className="text-center text-2xl">Tu cuenta</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Suspense fallback={<div className="h-72" aria-hidden="true" />}>
-              <AuthForm />
-            </Suspense>
-          </CardContent>
-        </Card>
+        <Wordmark size="lg" className="block" />
+        <p className="t-label mt-2.5 text-muted-foreground">{siteConfig.tagline}</p>
 
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          Tus datos están protegidos. Nunca compartimos tu información.
+        <div className="mt-9 rule-t pt-8">
+          <Suspense fallback={<div className="h-80" aria-hidden="true" />}>
+            <AuthForm />
+          </Suspense>
+        </div>
+
+        <p className="t-small mt-9 rule-t pt-5 text-muted-foreground">
+          Tus datos están protegidos. Nunca compartimos tu información ni la de tus clientes.
         </p>
       </div>
     </main>

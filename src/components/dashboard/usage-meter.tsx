@@ -4,9 +4,12 @@ import { cn } from "@/lib/utils";
 /**
  * Medidor de consumo del plan.
  *
- * El gating por plan existía en el servidor pero el usuario no lo veía hasta
- * recibir un error al guardar. Mostrar el consumo (y avisar al acercarse)
- * convierte un error en una oportunidad de upgrade.
+ * El límite por plan se aplicaba en el servidor pero el usuario no lo veía
+ * hasta recibir un error al guardar. Mostrarlo convierte un error en una
+ * oportunidad de mejora de plan.
+ *
+ * Forma: cifra monoespaciada y una regla que se rellena. Nada de barras
+ * redondeadas con degradado.
  */
 export function UsageMeter({
   label,
@@ -25,21 +28,21 @@ export function UsageMeter({
   const full = !unlimited && used >= limit;
 
   return (
-    <div className="min-w-44 rounded-[var(--radius-theme-sm)] border border-border bg-card p-3">
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="text-xs font-medium text-muted-foreground">{label}</span>
-        <span className="text-sm font-bold tabular-nums">
+    <div className="w-full min-w-36 max-w-56">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="t-label text-muted-foreground">{label}</span>
+        <span className="t-num text-sm">
           {used}
           {!unlimited && <span className="text-muted-foreground"> / {limit}</span>}
         </span>
       </div>
 
       {unlimited ? (
-        <p className="mt-1 text-xs text-muted-foreground">Sin límite en tu plan</p>
+        <p className="t-small mt-1.5 text-muted-foreground">Sin límite</p>
       ) : (
         <>
           <div
-            className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted"
+            className="mt-2 h-px w-full bg-border"
             role="progressbar"
             aria-valuenow={pct}
             aria-valuemin={0}
@@ -48,19 +51,18 @@ export function UsageMeter({
           >
             <div
               className={cn(
-                "h-full rounded-full transition-[width]",
+                "h-px transition-[width] duration-500",
                 full ? "bg-destructive" : near ? "bg-accent" : "bg-primary",
               )}
               style={{ width: `${pct}%` }}
             />
           </div>
-          {near && upgradeHref && (
-            <Link
-              href={upgradeHref}
-              className="mt-1.5 inline-block text-xs font-semibold text-primary hover:underline"
-            >
-              {full ? "Límite alcanzado — mejorar plan" : "Casi lleno — ver planes"}
+          {near && upgradeHref ? (
+            <Link href={upgradeHref} className="t-label link-ink mt-2 inline-block text-primary">
+              {full ? "Límite alcanzado" : "Casi lleno"}
             </Link>
+          ) : (
+            <p className="t-small mt-1.5 text-muted-foreground">{pct}% usado</p>
           )}
         </>
       )}

@@ -1,13 +1,14 @@
 /**
- * Registro central de THEMES seleccionables.
+ * Registro central de THEMES.
  *
- * Cada theme se aplica vía el atributo `data-theme` en un contenedor (o en <html>).
- * Los valores de color viven en `globals.css` bajo `[data-theme="<id>"]`.
- * Aquí sólo describimos metadatos para poder listarlos en la UI (selector de
- * theme del panel y personalización del catálogo público).
+ * Cada theme se aplica con el atributo `data-theme` en un contenedor (o en
+ * <html>). Los valores viven en `globals.css` bajo `[data-theme="<id>"]`.
+ * Aquí sólo están los metadatos para poder listarlos en la UI.
  *
- * Basado en el sistema de diseño de ui-ux-pro-max: paletas verificadas con
- * contraste accesible (>= 4.5:1 en texto normal).
+ * Criterio: cinco themes, uno por tipo de mayorista, en vez de un muestrario
+ * de paletas. Cada uno cambia color, radio y temperatura del papel, así que
+ * elegir theme es una decisión de negocio ("vendo abarrotes", "vendo
+ * refacciones") y no de gusto cromático.
  */
 
 export type ThemeMode = "light" | "dark";
@@ -17,11 +18,10 @@ export interface ThemeMeta {
   id: string;
   /** Nombre visible para el usuario. */
   name: string;
-  /** Descripción corta del carácter del theme. */
+  /** Para quién es este theme, en términos del negocio del mayorista. */
   description: string;
-  /** Modo base (light/dark) para elegir icono/preview por defecto. */
   mode: ThemeMode;
-  /** Colores representativos para el swatch del selector (solo preview). */
+  /** Colores representativos para el swatch del selector (sólo preview). */
   swatch: {
     primary: string;
     accent: string;
@@ -32,56 +32,68 @@ export interface ThemeMeta {
 
 export const THEMES: ThemeMeta[] = [
   {
-    id: "vibrant",
-    name: "Vibrante",
-    description: "Enérgico y divertido. Verde + naranja. Ideal para retail dinámico.",
+    id: "press",
+    name: "Imprenta",
+    description: "Papel cálido y tinta vermellón. Abarrotes, bebidas, distribución general.",
     mode: "light",
-    swatch: { primary: "#059669", accent: "#EA580C", background: "#ECFDF5", card: "#FFFFFF" },
+    swatch: { primary: "#B43B1F", accent: "#1F1B16", background: "#FBF8F3", card: "#FFFFFF" },
   },
   {
-    id: "coral",
-    name: "Coral",
-    description: "Cálido y social. Rosa vibrante para marcas jóvenes y cercanas.",
-    mode: "light",
-    swatch: { primary: "#E11D48", accent: "#8B5CF6", background: "#FFF1F2", card: "#FFFFFF" },
-  },
-  {
-    id: "ocean",
-    name: "Océano",
-    description: "Fresco y confiable. Azul profesional para insumos y B2B serio.",
-    mode: "light",
-    swatch: { primary: "#0284C7", accent: "#F59E0B", background: "#F0F9FF", card: "#FFFFFF" },
-  },
-  {
-    id: "midnight",
-    name: "Medianoche",
-    description: "Oscuro y premium. Navy + dorado. Look tech/fintech elegante.",
+    id: "noche",
+    name: "Noche",
+    description: "Espresso oscuro con vermellón encendido. Destaca las fotos de producto.",
     mode: "dark",
-    swatch: { primary: "#F59E0B", accent: "#8B5CF6", background: "#0F172A", card: "#1E2537" },
+    swatch: { primary: "#E4572E", accent: "#E8B84B", background: "#17120E", card: "#201A14" },
   },
   {
-    id: "luxe",
-    name: "Luxe",
-    description: "Sobrio y de lujo. Grafito + dorado para productos premium.",
+    id: "mercado",
+    name: "Mercado",
+    description: "Verde botánico profundo. Frutas, verduras, orgánicos y agro.",
     mode: "light",
-    swatch: { primary: "#1C1917", accent: "#A16207", background: "#FAFAF9", card: "#FFFFFF" },
+    swatch: { primary: "#1F5C38", accent: "#A85A16", background: "#F8F7F1", card: "#FFFFFF" },
   },
   {
-    id: "swiss",
-    name: "Swiss",
-    description: "Minimal y neutro. Alto contraste, sin distracciones.",
+    id: "acero",
+    name: "Acero",
+    description: "Azul industrial a escuadra. Ferretería, refacciones, insumos técnicos.",
     mode: "light",
-    swatch: { primary: "#111827", accent: "#2563EB", background: "#FFFFFF", card: "#FFFFFF" },
+    swatch: { primary: "#1B3A5C", accent: "#B2561B", background: "#F5F7F8", card: "#FFFFFF" },
+  },
+  {
+    id: "hueso",
+    name: "Hueso",
+    description: "Tinta negra y oro apagado, sin curvas. Perfumería, joyería, textil premium.",
+    mode: "light",
+    swatch: { primary: "#19120D", accent: "#8A6A1F", background: "#FAF8F5", card: "#FFFFFF" },
   },
 ];
 
-export const DEFAULT_THEME = "midnight";
+export const DEFAULT_THEME = "press";
 
 const THEME_IDS = new Set(THEMES.map((t) => t.id));
 
-/** Valida un id de theme recibido desde BD/entrada; cae al default si es inválido. */
+/**
+ * Themes de la versión anterior del sistema de diseño.
+ *
+ * Los negocios y catálogos existentes tienen estos ids guardados en la BD. Sin
+ * el mapeo, todos caerían al theme por defecto y un mayorista vería cambiar su
+ * catálogo sin tocar nada. Se traducen al equivalente más cercano.
+ */
+const LEGACY_THEMES: Record<string, string> = {
+  vibrant: "mercado",
+  coral: "press",
+  ocean: "acero",
+  midnight: "noche",
+  luxe: "hueso",
+  swiss: "acero",
+  warm: "noche",
+};
+
+/** Valida un id recibido de la BD/entrada; traduce los antiguos y cae al default. */
 export function resolveTheme(id: string | null | undefined): string {
-  return id && THEME_IDS.has(id) ? id : DEFAULT_THEME;
+  if (!id) return DEFAULT_THEME;
+  if (THEME_IDS.has(id)) return id;
+  return LEGACY_THEMES[id] ?? DEFAULT_THEME;
 }
 
 export function getThemeMeta(id: string | null | undefined): ThemeMeta {

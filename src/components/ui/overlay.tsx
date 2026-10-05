@@ -140,7 +140,7 @@ export function Drawer({
       >
         <header className="flex items-start justify-between gap-3 border-b border-border p-4">
           <div className="min-w-0">
-            <h2 id={titleId} className="font-heading text-lg font-bold">
+            <h2 id={titleId} className="t-h2">
               {title}
             </h2>
             {description && (
@@ -214,7 +214,7 @@ export function Modal({
       >
         <header className="flex items-start justify-between gap-3 p-5 pb-3">
           <div className="min-w-0">
-            <h2 id={titleId} className="font-heading text-lg font-bold">
+            <h2 id={titleId} className="t-h2">
               {title}
             </h2>
             {description && (

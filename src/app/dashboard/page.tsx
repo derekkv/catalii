@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import { ArrowRight, Plus, ExternalLink } from "lucide-react";
 import { requireBusiness } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/dashboard/page-header";
 import { StatTiles } from "@/components/dashboard/stat-tiles";
 import { SetupChecklist } from "@/components/dashboard/setup-checklist";
 import { formatMoney } from "@/lib/utils";
@@ -44,8 +44,6 @@ export default async function DashboardPage() {
       .select("*")
       .eq("business_id", business.id)
       .order("created_at", { ascending: false }),
-    // Se traen los pedidos del mes para calcular métricas reales (valor,
-    // pendientes) en lugar de sólo un contador histórico.
     supabase
       .from("order")
       .select("*")
@@ -63,7 +61,7 @@ export default async function DashboardPage() {
   const revenueCents = billable.reduce((s, o) => s + o.total_cents, 0);
   const currency = orders[0]?.currency ?? "USD";
   const pending = orders.filter((o) => o.status === "pending").length;
-  const recent = orders.slice(0, 5);
+  const recent = orders.slice(0, 6);
 
   const steps = [
     {
@@ -89,7 +87,7 @@ export default async function DashboardPage() {
     },
     {
       title: "Compártelo y recibe tu primer pedido",
-      description: "Envía el enlace o el QR por WhatsApp a tus clientes.",
+      description: "Manda el enlace o el QR por WhatsApp a tus clientes.",
       href: published[0] ? `/dashboard/catalogos/${published[0].id}` : "/dashboard/catalogos",
       cta: "Compartir",
       done: orders.length > 0,
@@ -97,25 +95,28 @@ export default async function DashboardPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="font-heading text-2xl font-bold md:text-3xl">
-            Hola, {business.name} 👋
-          </h1>
-          <p className="text-muted-foreground">
-            {pending > 0
-              ? `Tienes ${pending} ${pending === 1 ? "pedido" : "pedidos"} por atender.`
-              : "Todo al día. Este es el pulso de tu negocio."}
-          </p>
-        </div>
-        <Link
-          href="/dashboard/productos"
-          className="inline-flex h-11 items-center gap-2 rounded-[var(--radius-theme-sm)] bg-primary px-5 text-sm font-semibold text-on-primary shadow-soft transition-opacity hover:opacity-90"
-        >
-          <Plus className="size-4" aria-hidden="true" /> Agregar producto
-        </Link>
-      </div>
+    <div className="mx-auto max-w-5xl space-y-8">
+      <PageHeader
+        eyebrow={business.name}
+        title={
+          pending > 0
+            ? `${pending} ${pending === 1 ? "pedido" : "pedidos"} por atender`
+            : "Todo al día"
+        }
+        description={
+          pending > 0
+            ? "Responde pronto: en mayoreo el primero que contesta se lleva el pedido."
+            : "Sin pendientes. Este es el pulso de tu negocio."
+        }
+        actions={
+          <Link
+            href="/dashboard/productos"
+            className="inline-flex h-11 items-center gap-2 rounded-[var(--radius-theme-sm)] bg-primary px-4 text-sm font-medium text-on-primary transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_88%,black)]"
+          >
+            <Plus className="size-4" aria-hidden="true" /> Agregar producto
+          </Link>
+        }
+      />
 
       <SetupChecklist steps={steps} />
 
@@ -124,7 +125,7 @@ export default async function DashboardPage() {
           {
             label: "Por atender",
             value: String(pending),
-            hint: pending > 0 ? "Responde pronto" : "Sin pendientes",
+            hint: pending > 0 ? "Esperando respuesta" : "Sin pendientes",
             href: "/dashboard/pedidos",
             tone: pending > 0 ? "accent" : undefined,
           },
@@ -151,93 +152,80 @@ export default async function DashboardPage() {
         ]}
       />
 
-      {/* Catálogos publicados a mano: lo que el mayorista comparte todos los días. */}
+      {/* Catálogos publicados: lo que el mayorista comparte cada día. */}
       {published.length > 0 && (
         <section>
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-heading text-lg font-bold">Tus catálogos públicos</h2>
-            <Link
-              href="/dashboard/catalogos"
-              className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-            >
-              Gestionar <ArrowRight className="size-4" aria-hidden="true" />
+          <div className="mb-4 flex items-baseline justify-between gap-3">
+            <h2 className="t-h2">Tus catálogos públicos</h2>
+            <Link href="/dashboard/catalogos" className="t-label link-ink text-primary">
+              Gestionar
             </Link>
           </div>
-          <ul className="grid gap-3 sm:grid-cols-2">
+
+          <ul className="grid-ruled grid sm:grid-cols-2">
             {published.slice(0, 4).map((c) => (
-              <li key={c.id}>
-                <Card className="h-full">
-                  <CardContent className="flex h-full items-center gap-3 p-4">
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-semibold">{c.display_name || c.name}</p>
-                      <p className="truncate font-mono text-xs text-muted-foreground">
-                        /c/{c.slug}
-                      </p>
-                    </div>
-                    <Link
-                      href={`/c/${c.slug}`}
-                      target="_blank"
-                      aria-label={`Abrir catálogo ${c.name} en una pestaña nueva`}
-                      className="flex size-11 shrink-0 items-center justify-center rounded-[var(--radius-theme-sm)] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                    >
-                      <ExternalLink className="size-4" aria-hidden="true" />
-                    </Link>
-                  </CardContent>
-                </Card>
+              <li key={c.id} className="flex items-center gap-3 p-4">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{c.display_name || c.name}</p>
+                  <p className="t-label mt-1 truncate text-muted-foreground">/c/{c.slug}</p>
+                </div>
+                <Link
+                  href={`/c/${c.slug}`}
+                  target="_blank"
+                  aria-label={`Abrir catálogo ${c.name} en una pestaña nueva`}
+                  className="flex size-11 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <ExternalLink className="size-4" aria-hidden="true" />
+                </Link>
               </li>
             ))}
           </ul>
         </section>
       )}
 
-      {/* Pedidos recientes */}
+      {/* Pedidos recientes, en forma de registro: una línea por pedido. */}
       <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-heading text-lg font-bold">Pedidos recientes</h2>
+        <div className="mb-4 flex items-baseline justify-between gap-3">
+          <h2 className="t-h2">Últimos pedidos</h2>
           <Link
             href="/dashboard/pedidos"
-            className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+            className="t-label link-ink inline-flex items-center gap-1.5 text-primary"
           >
-            Ver todos <ArrowRight className="size-4" aria-hidden="true" />
+            Ver todos <ArrowRight className="size-3.5" aria-hidden="true" />
           </Link>
         </div>
 
         {recent.length === 0 ? (
-          <Card>
-            <CardContent className="p-8 text-center text-muted-foreground">
-              Aún no tienes pedidos. Publica un catálogo y compártelo por WhatsApp.
-            </CardContent>
-          </Card>
+          <p className="rule-t rule-b py-10 text-center text-sm text-muted-foreground">
+            Aún no tienes pedidos. Publica un catálogo y compártelo por WhatsApp.
+          </p>
         ) : (
-          <Card>
-            <ul className="divide-y divide-border">
-              {recent.map((o) => (
-                <li key={o.id}>
-                  <Link
-                    href="/dashboard/pedidos"
-                    className="flex items-center justify-between gap-3 p-4 transition-colors hover:bg-muted"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold">{o.customer_name}</p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        #{o.id.slice(0, 8)} ·{" "}
-                        {new Date(o.created_at).toLocaleDateString("es-MX", {
-                          day: "numeric",
-                          month: "short",
-                        })}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="font-semibold tabular-nums">
-                        {formatMoney(o.total_cents, o.currency)}
-                      </span>
-                      <Badge tone={statusTone[o.status]}>{statusLabel[o.status]}</Badge>
-                    </div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </Card>
+          <ul className="border-y border-border">
+            {recent.map((o, i) => (
+              <li key={o.id} className={i > 0 ? "rule-t" : undefined}>
+                <Link
+                  href="/dashboard/pedidos"
+                  className="flex items-center gap-4 px-1 py-3 transition-colors hover:bg-muted"
+                >
+                  <span className="t-num w-16 shrink-0 text-xs text-muted-foreground">
+                    {new Date(o.created_at).toLocaleDateString("es-MX", {
+                      day: "2-digit",
+                      month: "short",
+                    })}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                    {o.customer_name}
+                  </span>
+                  <Badge tone={statusTone[o.status]} className="hidden sm:inline-flex">
+                    {statusLabel[o.status]}
+                  </Badge>
+                  <span className="t-price w-24 shrink-0 text-right text-sm">
+                    {formatMoney(o.total_cents, o.currency)}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
         )}
       </section>
     </div>

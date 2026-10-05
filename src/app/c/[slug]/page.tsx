@@ -6,6 +6,7 @@ import { resolveTheme } from "@/lib/themes";
 import { getSiteUrl, siteConfig } from "@/lib/site";
 import { Storefront, type PublicProduct } from "./storefront";
 import { ShareButton } from "./catalog-actions";
+import { Monogram } from "@/components/brand/wordmark";
 import type { Catalog } from "@/types/database";
 
 export const revalidate = 60; // ISR: regenera catálogos públicos cada 60s
@@ -106,39 +107,41 @@ export default async function PublicCatalogPage({
   return (
     <div
       data-theme={theme}
-      className="min-h-screen bg-background text-foreground"
+      className="grain min-h-screen bg-background text-foreground"
       // Altura del header fijo: única fuente de verdad para el offset de la
       // barra de filtros (antes era un `top-[57px]` mágico y desalineado).
-      style={{ "--catalog-header-h": "65px" } as React.CSSProperties}
+      style={{ "--catalog-header-h": "68px" } as React.CSSProperties}
     >
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <header className="sticky top-0 z-30 h-[var(--catalog-header-h)] border-b border-border bg-background/95 backdrop-blur">
+      {/* ══ Cabecera del catálogo ═══════════════════════════════════════
+          Maquetada como la cabecera de una lista de precios impresa: marca a
+          la izquierda, rótulo en versalitas, acciones a la derecha.      */}
+      <header className="sticky top-0 z-30 h-[var(--catalog-header-h)] border-b border-border bg-background/94 backdrop-blur-sm">
         <div className="mx-auto flex h-full max-w-3xl items-center gap-3 px-4">
           {catalog.logo_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={catalog.logo_url}
               alt=""
-              className="size-10 shrink-0 rounded-full object-cover"
+              className="size-10 shrink-0 rounded-[var(--radius-theme-sm)] object-cover"
             />
           ) : (
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-gradient font-heading text-lg font-bold text-on-primary">
-              {displayName.charAt(0).toUpperCase()}
-            </span>
+            <Monogram letter={displayName} className="size-10 shrink-0 text-lg" />
           )}
+
           <div className="min-w-0 flex-1">
-            <h1 className="truncate font-heading text-lg font-bold">{displayName}</h1>
-            {catalog.description && (
-              <p className="truncate text-xs text-muted-foreground">{catalog.description}</p>
-            )}
+            <h1 className="t-h3 truncate">{displayName}</h1>
+            <p className="t-label mt-1 truncate text-muted-foreground">
+              {catalog.description || "Lista de precios · Mayoreo"}
+            </p>
           </div>
 
-          {/* Contacto directo: muchos compradores mayoristas prefieren preguntar
-              antes de armar el pedido (disponibilidad, crédito, flete). */}
+          {/* Contacto directo: muchos compradores mayoristas prefieren
+              preguntar antes de armar el pedido (crédito, flete, existencias). */}
           {catalog.whatsapp && (
             <a
               href={`https://wa.me/${catalog.whatsapp.replace(/[^0-9]/g, "")}`}
@@ -146,7 +149,7 @@ export default async function PublicCatalogPage({
               rel="noopener noreferrer"
               aria-label={`Escribir a ${displayName} por WhatsApp`}
               title="Escribir por WhatsApp"
-              className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-[var(--radius-theme-sm)] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               <MessageCircle className="size-5" aria-hidden="true" />
             </a>
@@ -161,23 +164,25 @@ export default async function PublicCatalogPage({
           <img
             src={catalog.banner_url}
             alt=""
-            className="mt-4 aspect-[3/1] w-full rounded-[var(--radius-theme)] object-cover"
+            className="mt-4 aspect-[3/1] w-full border border-border object-cover"
           />
         )}
 
         {products.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-24 text-center">
-            <PackageOpen className="size-12 text-muted-foreground" aria-hidden="true" />
-            <h2 className="font-heading text-xl font-bold">Catálogo en preparación</h2>
-            <p className="max-w-sm text-muted-foreground">
-              {displayName} todavía no publicó productos aquí. Vuelve en un rato.
-            </p>
+          <div className="flex flex-col items-center gap-4 py-24 text-center">
+            <PackageOpen className="size-9 text-muted-foreground" aria-hidden="true" />
+            <div>
+              <h2 className="t-h2">Catálogo en preparación</h2>
+              <p className="t-body mt-2 max-w-sm text-muted-foreground">
+                {displayName} todavía no publicó productos aquí. Vuelve en un rato.
+              </p>
+            </div>
             {catalog.whatsapp && (
               <a
                 href={`https://wa.me/${catalog.whatsapp.replace(/[^0-9]/g, "")}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex h-11 items-center gap-2 rounded-[var(--radius-theme-sm)] bg-primary px-5 text-sm font-semibold text-on-primary hover:opacity-90"
+                className="inline-flex h-11 items-center gap-2 rounded-[var(--radius-theme-sm)] bg-primary px-5 text-sm font-medium text-on-primary transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_88%,black)]"
               >
                 <MessageCircle className="size-4" aria-hidden="true" /> Escribir por WhatsApp
               </a>
@@ -193,9 +198,9 @@ export default async function PublicCatalogPage({
         )}
       </main>
 
-      <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground">
-        <a href={getSiteUrl()} className="hover:underline">
-          Hecho con {siteConfig.name}
+      <footer className="border-t border-border py-7 text-center">
+        <a href={getSiteUrl()} className="t-label link-ink text-muted-foreground">
+          Catálogo hecho con {siteConfig.name}
         </a>
       </footer>
     </div>

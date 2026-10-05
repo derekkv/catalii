@@ -1,112 +1,194 @@
 import Link from "next/link";
-import {
-  Rocket,
-  Smartphone,
-  ShoppingBag,
-  Palette,
-  MessageCircle,
-  BarChart3,
-  Check,
-  ArrowRight,
-  QrCode,
-  Upload,
-  Bell,
-  Plus,
-  Search,
-} from "lucide-react";
+import { ArrowRight, Check, Minus, Plus } from "lucide-react";
 import { ThemeSwitcher } from "@/components/theme/theme-switcher";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Wordmark, Monogram } from "@/components/brand/wordmark";
+import { Reveal } from "@/components/reveal";
 import { PLAN_ORDER, PLANS } from "@/lib/plans";
 import { siteConfig } from "@/lib/site";
+import { THEMES } from "@/lib/themes";
 
-const features = [
-  { icon: Rocket, title: "Listo en 10 minutos", desc: "Sube tu Excel o CSV y tu catálogo queda publicado al instante." },
-  { icon: Smartphone, title: "Hecho para el celular", desc: "Optimizado para móvil, donde compran tus clientes." },
-  { icon: ShoppingBag, title: "Pedidos sin fricción", desc: "Tus clientes arman su pedido sin crear ninguna cuenta." },
-  { icon: Palette, title: "Themes a tu marca", desc: "Elige entre 6 diseños y colores que combinen contigo." },
-  { icon: MessageCircle, title: "WhatsApp nativo", desc: "Comparte por link o QR y recibe pedidos al instante." },
-  { icon: BarChart3, title: "Todo en un panel", desc: "Productos, stock y pedidos ordenados en un solo lugar." },
+/*
+ * Landing.
+ *
+ * Maquetada como una pieza impresa, no como una secuencia de tarjetas:
+ *  · Cabecera tipo masthead con reglas superior e inferior.
+ *  · Retícula asimétrica 7/5 en el hero; el bloque de producto sangra a la
+ *    derecha en lugar de quedar centrado y enmarcado.
+ *  · Separación por reglas de pelo. Ninguna sombra difusa, ningún degradado.
+ *  · Numeración y rótulos en versalitas monoespaciadas.
+ *  · Un bloque de cita a sangría para romper el ritmo a un tercio de la
+ *    página, que es donde se pierde la atención.
+ */
+
+const STEPS = [
+  {
+    n: "01",
+    title: "Sube la lista que ya tienes",
+    body: "Importa tu CSV o Excel exportado. Reconoce encabezados en español, así que no tienes que renombrar columnas.",
+  },
+  {
+    n: "02",
+    title: "Arma el catálogo",
+    body: "Elige qué productos entran, pon tu logo, escoge la apariencia y publícalo. Puedes tener varios catálogos distintos.",
+  },
+  {
+    n: "03",
+    title: "Manda el enlace",
+    body: "Por WhatsApp o con un QR impreso en el mostrador. El pedido te llega al panel, ordenado y con los precios de hoy.",
+  },
 ];
 
-const steps = [
-  { icon: Upload, n: "1", title: "Sube tus productos", desc: "Importa tu lista desde Excel/CSV o cárgalos a mano." },
-  { icon: Palette, n: "2", title: "Personaliza y publica", desc: "Elige tu theme, arma el catálogo y publícalo." },
-  { icon: QrCode, n: "3", title: "Comparte y vende", desc: "Envía el link o QR por WhatsApp y recibe pedidos." },
+const FEATURES = [
+  {
+    label: "Comprador",
+    title: "Pedidos sin crear cuenta",
+    body: "Tu cliente no se registra ni descarga nada: abre el enlace, arma el pedido y lo envía.",
+  },
+  {
+    label: "Precios",
+    title: "Una sola fuente de verdad",
+    body: "Cambias el precio una vez y todos tus catálogos quedan actualizados. Nadie pide sobre una lista vieja.",
+  },
+  {
+    label: "Móvil",
+    title: "Pensado para el chat",
+    body: "Se abre dentro de WhatsApp, en un teléfono de gama media y con datos móviles. Ahí es donde te compran.",
+  },
+  {
+    label: "Mayoreo",
+    title: "Mínimos y presentaciones",
+    body: "Caja de 24, bulto de 50, mínimo de 10 piezas: el catálogo respeta tus reglas de venta al por mayor.",
+  },
+  {
+    label: "Difusión",
+    title: "Enlace, QR e imprimible",
+    body: "El mismo catálogo sirve para el chat, para pegar el QR en el mostrador y para imprimirlo en una hoja.",
+  },
+  {
+    label: "Marca",
+    title: "Tu nombre arriba, no el nuestro",
+    body: "Logo, banner y una apariencia distinta según lo que vendas. Cinco, elegidas por rubro.",
+  },
 ];
 
-const stats = [
-  { n: "10 min", l: "para publicar" },
-  { n: "6", l: "themes" },
-  { n: "0", l: "apps que instalar" },
+const STATS = [
+  { n: "10 min", l: "de Excel a catálogo publicado" },
+  { n: "0", l: "apps que instalar, tú o tu cliente" },
+  { n: "5", l: "apariencias según tu rubro" },
   { n: "24/7", l: "recibiendo pedidos" },
 ];
 
-const primaryBtn =
-  "inline-flex items-center justify-center gap-2 rounded-[var(--radius-theme-sm)] bg-primary px-6 font-semibold text-on-primary shadow-soft transition-opacity hover:opacity-90";
-const outlineBtn =
-  "inline-flex items-center justify-center gap-2 rounded-[var(--radius-theme-sm)] border border-border bg-card px-6 font-semibold text-card-foreground transition-colors hover:bg-muted";
+/** Previsualización: una lista de precios impresa, no una rejilla de colores. */
+function PriceListPreview() {
+  const rows = [
+    { name: "Coca-Cola 600 ml", sku: "CC-600", price: "12.50", unit: "caja 24", qty: 24 },
+    { name: "Galleta María 170 g", sku: "GM-170", price: "18.00", unit: "bulto 12", qty: 0 },
+    { name: "Aceite vegetal 1 L", sku: "AV-1000", price: "34.90", unit: "caja 12", qty: 12 },
+    { name: "Atún en agua 140 g", sku: "AT-140", price: "21.00", unit: "bulto 48", qty: 0 },
+  ];
 
-/** Vista previa del producto usando el mismo estilo de tarjetas del panel. */
-function ProductPreview() {
-  const tiles = ["#F59E0B", "#8B5CF6", "#0EA5E9", "#10B981"];
   return (
-    <div className="relative mx-auto w-full max-w-[360px]">
-      <Card className="shadow-soft">
-        <CardContent className="p-4">
-          <div className="mb-3 flex items-center gap-2">
-            <span className="flex size-8 items-center justify-center rounded-full bg-brand-gradient text-xs font-bold text-on-primary">C</span>
-            <span className="text-sm font-bold">Distribuidora El Sol</span>
-          </div>
-          <div className="mb-3 flex items-center gap-2 rounded-[var(--radius-theme-sm)] bg-muted px-3 py-2 text-sm text-muted-foreground">
-            <Search className="size-4" aria-hidden="true" /> Buscar producto…
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            {tiles.map((c, i) => (
-              <div key={i} className="rounded-[var(--radius-theme-sm)] border border-border p-2">
-                <div className="mb-2 aspect-square rounded-[var(--radius-theme-sm)]" style={{ background: c }} />
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold">${(i + 1) * 45}</span>
-                  <span className="flex size-6 items-center justify-center rounded-full bg-primary text-on-primary">
-                    <Plus className="size-3.5" aria-hidden="true" />
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+    <div className="border border-border bg-card">
+      {/* Encabezado del documento */}
+      <div className="flex items-center gap-3 rule-b p-4">
+        <Monogram letter="D" className="size-9 text-base" />
+        <div className="min-w-0 flex-1">
+          <p className="t-h3 truncate">Distribuidora El Sol</p>
+          <p className="t-label mt-1 text-muted-foreground">Lista vigente · Mayoreo</p>
+        </div>
+      </div>
 
-      <Card className="absolute -left-5 top-24 w-52 shadow-soft md:-left-10">
-        <CardContent className="flex items-center gap-2 p-3">
-          <span className="flex size-8 items-center justify-center rounded-full bg-accent text-on-accent">
-            <Bell className="size-4" aria-hidden="true" />
-          </span>
-          <div className="min-w-0">
-            <p className="text-xs font-bold">¡Nuevo pedido!</p>
-            <p className="truncate text-xs text-muted-foreground">Tienda López · $1,240</p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Renglones */}
+      <ul>
+        {rows.map((r, i) => (
+          <li
+            key={r.sku}
+            className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? "rule-t" : ""}`}
+          >
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[0.8125rem] font-medium">{r.name}</p>
+              <p className="t-label mt-1 truncate text-muted-foreground">
+                {r.sku} · {r.unit}
+              </p>
+            </div>
+            <span className="t-price text-[0.9375rem]">${r.price}</span>
+            {/* Los renglones sin cantidad muestran el botón de añadir, no un
+                cero: un 0 dentro del selector se lee como un fallo. */}
+            {r.qty > 0 ? (
+              <span className="flex items-center" aria-hidden="true">
+                <span className="flex size-7 items-center justify-center border border-input text-muted-foreground">
+                  <Minus className="size-3" />
+                </span>
+                <span className="t-num flex h-7 w-9 items-center justify-center border-y border-input text-xs">
+                  {r.qty}
+                </span>
+                <span className="flex size-7 items-center justify-center border border-input text-muted-foreground">
+                  <Plus className="size-3" />
+                </span>
+              </span>
+            ) : (
+              <span
+                className="flex h-7 items-center gap-1 bg-primary px-2.5 text-on-primary"
+                aria-hidden="true"
+              >
+                <Plus className="size-3" />
+                <span className="t-label">Añadir</span>
+              </span>
+            )}
+          </li>
+        ))}
+      </ul>
+
+      {/* Pie: total y aviso */}
+      <div className="flex items-baseline justify-between gap-3 rule-t bg-muted px-4 py-3">
+        <span className="t-label text-muted-foreground">Total del pedido</span>
+        <span className="t-price text-lg">$718.80</span>
+      </div>
+      <p className="t-label rule-t px-4 py-3 text-center text-muted-foreground">
+        El pedido llega a tu panel y al WhatsApp
+      </p>
     </div>
   );
 }
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col overflow-x-hidden bg-background text-foreground">
-      {/* Nav — mismo lenguaje que el header del panel */}
-      <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 md:px-6">
-          <Link href="/" className="font-heading text-2xl font-bold text-brand-gradient">
-            {siteConfig.name}
+    <div className="grain flex min-h-screen flex-col overflow-x-hidden">
+      {/* ══ Masthead ══════════════════════════════════════════════════════ */}
+      <header className="sticky top-0 z-40 border-b border-border bg-background/92 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-6xl items-center gap-4 px-5 py-3.5 lg:px-8">
+          <Link href="/" aria-label={siteConfig.name}>
+            <Wordmark />
           </Link>
-          <div className="flex items-center gap-2">
+
+          <nav aria-label="Secciones" className="ml-6 hidden gap-6 md:flex">
+            {[
+              { href: "#como", label: "Cómo funciona" },
+              { href: "#porque", label: "Por qué" },
+              { href: "#planes", label: "Precios" },
+            ].map((l) => (
+              <a
+                key={l.href}
+                href={l.href}
+                className="t-label text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {l.label}
+              </a>
+            ))}
+          </nav>
+
+          <div className="ml-auto flex items-center gap-2">
             <ThemeSwitcher />
-            <Link href="/login" className="hidden h-10 items-center rounded-[var(--radius-theme-sm)] px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:inline-flex">
+            <Link
+              href="/login"
+              className="t-label hidden h-11 items-center px-3 text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
+            >
               Entrar
             </Link>
-            <Link href="/login?tab=signup" className={`${primaryBtn} h-10 text-sm`}>
+            <Link
+              href="/login?tab=signup"
+              className="inline-flex h-11 items-center rounded-[var(--radius-theme-sm)] bg-primary px-4 text-sm font-medium text-on-primary transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_88%,black)]"
+            >
               Crear cuenta
             </Link>
           </div>
@@ -114,149 +196,259 @@ export default function Home() {
       </header>
 
       <main id="contenido" className="flex-1">
-        {/* Hero */}
-        <section className="px-4 py-16 md:py-24">
-          <div className="mx-auto grid max-w-6xl items-center gap-12 md:grid-cols-2">
-            <div className="animate-fade-up text-center md:text-left">
-              <Badge tone="muted" className="mb-4">Para mayoristas de LATAM</Badge>
-              <h1 className="font-heading text-4xl font-bold leading-tight md:text-6xl">
-                Tu lista de precios, <span className="text-brand-gradient">un catálogo online</span> con pedidos
+        {/* ══ Hero ════════════════════════════════════════════════════════ */}
+        <section className="border-b border-border">
+          <div className="mx-auto grid max-w-6xl gap-12 px-5 pb-16 pt-14 lg:grid-cols-12 lg:gap-10 lg:px-8 lg:pb-24 lg:pt-20">
+            <div className="lg:col-span-7">
+              <p className="t-eyebrow">Para mayoristas y distribuidores</p>
+
+              <h1 className="t-display mt-6">
+                Deja de mandar
+                <br />
+                el Excel por
+                <br />
+                <span className="text-primary">WhatsApp.</span>
               </h1>
-              <p className="mx-auto mt-5 max-w-md text-lg text-muted-foreground md:mx-0">
-                {siteConfig.description}
+
+              <p className="t-lead mt-7 max-w-xl text-muted-foreground">
+                {siteConfig.name} convierte tu lista de precios en un catálogo con enlace
+                propio. Tu cliente entra, arma el pedido y te llega ordenado: sin instalar
+                nada y sin crear cuenta.
               </p>
-              <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row md:justify-start">
-                <Link href="/login?tab=signup" className={`${primaryBtn} h-14 w-full py-3.5 text-base sm:w-auto`}>
-                  Crear mi catálogo gratis <ArrowRight className="size-5" aria-hidden="true" />
+
+              <div className="mt-9 flex flex-wrap items-center gap-x-7 gap-y-4">
+                <Link
+                  href="/login?tab=signup"
+                  className="inline-flex h-13 items-center gap-2 rounded-[var(--radius-theme-sm)] bg-primary px-6 text-[0.9375rem] font-medium text-on-primary transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_88%,black)]"
+                >
+                  Crear mi catálogo
+                  <ArrowRight className="size-4" aria-hidden="true" />
                 </Link>
-                <a href="#como" className={`${outlineBtn} h-14 w-full py-3.5 text-base sm:w-auto`}>
+                {/* Secundario como enlace, no como segundo botón: dos botones
+                    del mismo peso anulan la jerarquía de la llamada. */}
+                <a href="#como" className="link-ink text-sm font-medium">
                   Ver cómo funciona
                 </a>
               </div>
-              <p className="mt-4 text-sm font-medium text-muted-foreground">Sin tarjeta · Plan gratis para siempre</p>
+
+              <p className="t-label mt-7 text-muted-foreground">
+                Gratis para siempre · Sin tarjeta
+              </p>
             </div>
-            <div className="animate-fade-up">
-              <ProductPreview />
+
+            {/* El bloque sangra a la derecha en pantallas grandes. */}
+            <div className="lg:col-span-5 lg:-mr-6 xl:-mr-16">
+              <Reveal>
+                <PriceListPreview />
+              </Reveal>
             </div>
           </div>
         </section>
 
-        {/* Stats */}
-        <section className="border-y border-border bg-card">
-          <div className="mx-auto grid max-w-5xl grid-cols-2 gap-6 px-4 py-8 md:grid-cols-4">
-            {stats.map((s) => (
-              <div key={s.l} className="text-center">
-                <div className="font-heading text-3xl font-bold text-primary md:text-4xl">{s.n}</div>
-                <div className="mt-1 text-sm text-muted-foreground">{s.l}</div>
+        {/* ══ Cifras ══════════════════════════════════════════════════════ */}
+        <section className="border-b border-border">
+          <dl className="mx-auto grid max-w-6xl grid-cols-2 md:grid-cols-4">
+            {STATS.map((s, i) => (
+              <div
+                key={s.l}
+                className={`px-5 py-7 lg:px-8 ${i % 2 === 1 ? "border-l border-border" : ""} ${
+                  i >= 2 ? "border-t border-border md:border-t-0" : ""
+                } md:border-l md:first:border-l-0`}
+              >
+                <dt className="t-num text-2xl md:text-3xl">{s.n}</dt>
+                <dd className="t-small mt-1.5 text-muted-foreground">{s.l}</dd>
               </div>
             ))}
+          </dl>
+        </section>
+
+        {/* ══ Cita a sangría ══════════════════════════════════════════════ */}
+        <section className="border-b border-border">
+          <div className="mx-auto max-w-6xl px-5 py-16 lg:px-8 lg:py-20">
+            <Reveal>
+              <blockquote className="max-w-3xl border-l-2 border-primary pl-6 lg:pl-9">
+                <p className="t-h1">
+                  “Un pedido por WhatsApp son catorce mensajes, tres capturas de pantalla y
+                  un precio que ya no existe.”
+                </p>
+                <footer className="t-label mt-5 text-muted-foreground">
+                  Lo que escuchamos en cada bodega que visitamos
+                </footer>
+              </blockquote>
+            </Reveal>
           </div>
         </section>
 
-        {/* Features */}
-        <section className="px-4 py-20">
-          <div className="mx-auto max-w-6xl">
-            <div className="text-center">
-              <Badge tone="primary" className="mb-3">Todo lo que necesitas</Badge>
-              <h2 className="font-heading text-3xl font-bold md:text-4xl">Vender al por mayor, sin fricción</h2>
-            </div>
-            <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {features.map(({ icon: Icon, title, desc }) => (
-                <Card key={title} className="transition-shadow hover:shadow-soft">
-                  <CardContent className="p-6">
-                    <span className="mb-4 flex size-12 items-center justify-center rounded-[var(--radius-theme-sm)] bg-muted text-primary">
-                      <Icon className="size-6" aria-hidden="true" />
-                    </span>
-                    <h3 className="font-heading text-lg font-bold">{title}</h3>
-                    <p className="mt-1 text-muted-foreground">{desc}</p>
-                  </CardContent>
-                </Card>
+        {/* ══ Cómo funciona ═══════════════════════════════════════════════ */}
+        <section id="como" className="scroll-mt-20 border-b border-border">
+          <div className="mx-auto max-w-6xl px-5 py-16 lg:px-8 lg:py-20">
+            <p className="t-eyebrow">Cómo funciona</p>
+            <h2 className="t-h1 mt-5 max-w-lg">Tres pasos, una tarde.</h2>
+
+            <ol className="mt-12 grid gap-px md:grid-cols-3">
+              {STEPS.map((s, i) => (
+                <Reveal key={s.n} delay={i * 70}>
+                  <li className="h-full border-t-2 border-foreground pt-5 md:pr-7">
+                    <span className="t-num text-4xl text-primary">{s.n}</span>
+                    <h3 className="t-h2 mt-3">{s.title}</h3>
+                    <p className="t-body mt-2.5 text-muted-foreground">{s.body}</p>
+                  </li>
+                </Reveal>
               ))}
-            </div>
+            </ol>
           </div>
         </section>
 
-        {/* Cómo funciona */}
-        <section id="como" className="bg-card px-4 py-20">
-          <div className="mx-auto max-w-5xl">
-            <div className="text-center">
-              <Badge tone="primary" className="mb-3">En 3 pasos</Badge>
-              <h2 className="font-heading text-3xl font-bold md:text-4xl">Así de fácil</h2>
+        {/* ══ Por qué ═════════════════════════════════════════════════════ */}
+        <section id="porque" className="scroll-mt-20 border-b border-border">
+          <div className="mx-auto max-w-6xl px-5 py-16 lg:px-8 lg:py-20">
+            <div className="max-w-2xl">
+              <p className="t-eyebrow">Por qué</p>
+              <h2 className="t-h1 mt-5">
+                Hecho para vender al por mayor, no para parecer una tienda.
+              </h2>
             </div>
-            <div className="mt-12 grid gap-6 md:grid-cols-3">
-              {steps.map(({ icon: Icon, n, title, desc }) => (
-                <div key={n} className="rounded-[var(--radius-theme)] border border-border bg-background p-6">
-                  <div className="flex items-center gap-3">
-                    <span className="flex size-10 items-center justify-center rounded-full bg-primary font-heading font-bold text-on-primary">{n}</span>
-                    <Icon className="size-6 text-primary" aria-hidden="true" />
-                  </div>
-                  <h3 className="mt-4 font-heading text-lg font-bold">{title}</h3>
-                  <p className="mt-1 text-muted-foreground">{desc}</p>
+
+            {/* Rejilla con reglas interiores: se lee como una ficha técnica. */}
+            <div className="grid-ruled mt-12 grid sm:grid-cols-2 lg:grid-cols-3">
+              {FEATURES.map((f) => (
+                <div key={f.title} className="p-6">
+                  <p className="t-label text-primary">{f.label}</p>
+                  <h3 className="t-h3 mt-3">{f.title}</h3>
+                  <p className="t-small mt-2 text-muted-foreground">{f.body}</p>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Pricing */}
-        <section id="planes" className="px-4 py-20">
-          <div className="mx-auto max-w-6xl">
-            <div className="text-center">
-              <Badge tone="primary" className="mb-3">Precios simples</Badge>
-              <h2 className="font-heading text-3xl font-bold md:text-4xl">Empieza gratis, crece sin límites</h2>
+        {/* ══ Apariencias ═════════════════════════════════════════════════ */}
+        <section className="border-b border-border">
+          <div className="mx-auto max-w-6xl px-5 py-16 lg:px-8 lg:py-20">
+            <div className="flex flex-wrap items-end justify-between gap-6">
+              <div className="max-w-xl">
+                <p className="t-eyebrow">Apariencia</p>
+                <h2 className="t-h1 mt-5">Cinco, elegidas por rubro.</h2>
+                <p className="t-body mt-3 text-muted-foreground">
+                  No es un muestrario de colores: cada una cambia paleta, esquinas y
+                  temperatura del papel. Pruébalas aquí mismo con el selector de arriba.
+                </p>
+              </div>
             </div>
-            <div className="mt-12 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-              {PLAN_ORDER.map((tier) => {
-                const plan = PLANS[tier];
-                return (
-                  <Card key={tier} className={plan.highlighted ? "border-primary ring-2 ring-primary/30" : undefined}>
-                    <CardContent className="flex h-full flex-col gap-4 p-6">
-                      <div>
-                        {plan.highlighted && <Badge tone="primary" className="mb-2">Popular</Badge>}
-                        <h3 className="font-heading text-lg font-bold">{plan.name}</h3>
-                        <p className="mt-1">
-                          <span className="font-heading text-3xl font-bold">{plan.priceLabel}</span>
-                          {tier !== "free" && <span className="text-muted-foreground"> /mes</span>}
-                        </p>
-                      </div>
-                      <ul className="flex-1 space-y-2 text-sm">
-                        {plan.features.map((f) => (
-                          <li key={f} className="flex items-start gap-2">
-                            <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
-                            <span className="text-muted-foreground">{f}</span>
-                          </li>
-                        ))}
-                      </ul>
-                      <Link href="/login?tab=signup" className={`${primaryBtn} h-11 text-sm`}>
-                        Empezar
-                      </Link>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+
+            <ul className="grid-ruled mt-10 grid sm:grid-cols-2 lg:grid-cols-5">
+              {THEMES.map((t) => (
+                <li key={t.id} className="p-5">
+                  {/* Muestra con los tres tonos del theme, apiladas como tintas. */}
+                  <span className="flex h-16 w-full overflow-hidden rounded-[2px] border border-border">
+                    <span className="h-full flex-1" style={{ background: t.swatch.background }} />
+                    <span className="h-full flex-1" style={{ background: t.swatch.primary }} />
+                    <span className="h-full w-3" style={{ background: t.swatch.accent }} />
+                  </span>
+                  <p className="t-h3 mt-3">{t.name}</p>
+                  <p className="t-small mt-1 text-muted-foreground">{t.description}</p>
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
 
-        {/* CTA final */}
-        <section className="px-4 pb-24 pt-4">
-          <div className="mx-auto max-w-4xl rounded-[var(--radius-theme-lg)] bg-brand-gradient p-10 text-center text-on-primary shadow-soft md:p-14">
-            <h2 className="font-heading text-3xl font-bold md:text-4xl">Empieza hoy, es gratis</h2>
-            <p className="mx-auto mt-3 max-w-md opacity-90">
-              Crea tu catálogo en minutos y compártelo por WhatsApp.
+        {/* ══ Precios ═════════════════════════════════════════════════════ */}
+        <section id="planes" className="scroll-mt-20 border-b border-border">
+          <div className="mx-auto max-w-6xl px-5 py-16 lg:px-8 lg:py-20">
+            <div className="max-w-xl">
+              <p className="t-eyebrow">Precios</p>
+              <h2 className="t-h1 mt-5">Empieza gratis. Paga cuando crezcas.</h2>
+            </div>
+
+            <div className="grid-ruled mt-12 grid md:grid-cols-2 xl:grid-cols-4">
+              {PLAN_ORDER.map((tier) => {
+                const plan = PLANS[tier];
+                return (
+                  <div key={tier} className="flex flex-col p-6">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <h3 className="t-h3">{plan.name}</h3>
+                      {plan.highlighted && (
+                        <span className="t-label text-primary">Recomendado</span>
+                      )}
+                    </div>
+
+                    <p className="mt-4 flex items-baseline gap-1.5">
+                      <span className="t-price text-4xl">{plan.priceLabel}</span>
+                      {tier !== "free" && (
+                        <span className="t-label text-muted-foreground">/mes</span>
+                      )}
+                    </p>
+
+                    <ul className="mt-6 flex-1 space-y-2.5">
+                      {plan.features.map((f) => (
+                        <li key={f} className="flex items-start gap-2.5 text-[0.8125rem]">
+                          <Check
+                            className="mt-0.5 size-3.5 shrink-0 text-primary"
+                            aria-hidden="true"
+                          />
+                          <span className="text-muted-foreground">{f}</span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    <Link
+                      href="/login?tab=signup"
+                      className={
+                        plan.highlighted
+                          ? "mt-7 inline-flex h-11 items-center justify-center rounded-[var(--radius-theme-sm)] bg-primary px-4 text-sm font-medium text-on-primary transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_88%,black)]"
+                          : "mt-7 inline-flex h-11 items-center justify-center rounded-[var(--radius-theme-sm)] border border-input px-4 text-sm font-medium transition-colors hover:bg-muted"
+                      }
+                    >
+                      {tier === "free" ? "Empezar gratis" : `Elegir ${plan.name}`}
+                    </Link>
+                  </div>
+                );
+              })}
+            </div>
+
+            <p className="t-small mt-6 text-muted-foreground">
+              Los planes de pago se cobran con Paddle. Puedes cambiar o cancelar cuando
+              quieras.
             </p>
-            <Link
-              href="/login?tab=signup"
-              className="mt-7 inline-flex h-14 items-center justify-center gap-2 rounded-[var(--radius-theme-sm)] bg-card px-8 py-3.5 text-base font-bold text-card-foreground transition-transform hover:-translate-y-0.5"
-            >
-              Crear mi catálogo <ArrowRight className="size-5" aria-hidden="true" />
-            </Link>
+          </div>
+        </section>
+
+        {/* ══ Cierre ══════════════════════════════════════════════════════
+            Banda de tinta plena. Un color sólido, no un degradado de dos
+            tonos: el degradado es el acabado más delator de todos.        */}
+        <section className="bg-secondary text-on-secondary">
+          <div className="mx-auto max-w-6xl px-5 py-20 lg:px-8 lg:py-28">
+            <div className="max-w-2xl">
+              <p className="t-eyebrow opacity-70">Último paso</p>
+              <h2 className="t-display mt-6">Publica tu catálogo esta tarde.</h2>
+              <p className="t-lead mt-6 max-w-lg opacity-80">
+                Trae el archivo que ya usas. En diez minutos tienes un enlace que puedes
+                mandar a tus clientes.
+              </p>
+              <Link
+                href="/login?tab=signup"
+                className="mt-9 inline-flex h-13 items-center gap-2 rounded-[var(--radius-theme-sm)] bg-primary px-6 text-[0.9375rem] font-medium text-on-primary transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_88%,black)]"
+              >
+                Crear cuenta gratis
+                <ArrowRight className="size-4" aria-hidden="true" />
+              </Link>
+            </div>
           </div>
         </section>
       </main>
 
-      <footer className="border-t border-border px-4 py-8 text-center text-sm text-muted-foreground">
-        © {new Date().getFullYear()} {siteConfig.name} · {siteConfig.domain} — {siteConfig.tagline}.
+      {/* ══ Pie ═══════════════════════════════════════════════════════════ */}
+      <footer className="border-t border-border">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-8 lg:px-8">
+          <Wordmark size="sm" />
+          <p className="t-label text-muted-foreground">
+            {siteConfig.domain} · {siteConfig.tagline}
+          </p>
+          <p className="t-label text-muted-foreground">
+            © {new Date().getFullYear()}
+          </p>
+        </div>
       </footer>
     </div>
   );

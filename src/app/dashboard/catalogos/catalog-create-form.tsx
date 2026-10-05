@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import { Loader2, Plus } from "lucide-react";
 import { createCatalog, type CatalogState } from "./actions";
 import { Button } from "@/components/ui/button";
-import { Input, Label } from "@/components/ui/input";
+import { Input, Label, FieldError } from "@/components/ui/input";
 import { slugify } from "@/lib/utils";
 
 const initial: CatalogState = { ok: false };
@@ -15,10 +15,10 @@ export function CatalogCreateForm() {
   const slug = slugify(name);
 
   return (
-    <form action={action} className="space-y-3">
+    <form action={action} className="rule-t rule-b py-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
         <div className="flex-1">
-          <Label htmlFor="cat-name">Nombre del catálogo</Label>
+          <Label htmlFor="cat-name">Nombre del nuevo catálogo</Label>
           <Input
             id="cat-name"
             name="name"
@@ -41,25 +41,18 @@ export function CatalogCreateForm() {
 
       {/* El slug se deriva del nombre; mostrarlo antes evita la sorpresa de
           descubrir la URL definitiva después de crearlo. */}
-      <p className="text-xs text-muted-foreground">
+      <p className="t-small mt-3 text-muted-foreground">
         {slug ? (
           <>
-            Enlace: <span className="font-mono">/c/{slug}</span> · se crea como borrador y lo
-            publicas cuando quieras.
+            Enlace: <span className="t-num text-foreground">/c/{slug}</span> · se crea como
+            borrador y lo publicas cuando quieras.
           </>
         ) : (
           "Se crea como borrador: nadie podrá verlo hasta que lo publiques."
         )}
       </p>
 
-      {state.error && (
-        <p
-          role="alert"
-          className="rounded-[var(--radius-theme-sm)] bg-destructive/10 p-3 text-sm font-semibold text-destructive"
-        >
-          {state.error}
-        </p>
-      )}
+      {state.error && <FieldError>{state.error}</FieldError>}
     </form>
   );
 }

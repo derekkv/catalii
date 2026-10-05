@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { requireBusiness } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { OrdersClient, type OrderWithItems } from "./orders-client";
+import { PageHeader } from "@/components/dashboard/page-header";
 import { StatTiles } from "@/components/dashboard/stat-tiles";
+import { formatMoney } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Pedidos", robots: { index: false } };
 
@@ -29,22 +31,27 @@ export default async function PedidosPage() {
   const revenueCents = billable.reduce((s, o) => s + o.total_cents, 0);
   const currency = orders[0]?.currency ?? "USD";
   const pending = orders.filter((o) => o.status === "pending").length;
+  const avgCents = billable.length > 0 ? Math.round(revenueCents / billable.length) : 0;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      <div>
-        <h1 className="font-heading text-2xl font-bold md:text-3xl">Pedidos</h1>
-        <p className="text-muted-foreground">
-          Gestiona y da seguimiento a los pedidos que llegan de tus catálogos.
-        </p>
-      </div>
+    <div className="mx-auto max-w-4xl space-y-7">
+      <PageHeader
+        eyebrow="Operación"
+        title="Pedidos"
+        description="Los pedidos que llegan de tus catálogos, con su estado y seguimiento."
+      />
 
       {orders.length > 0 && (
         <StatTiles
           items={[
-            { label: "Por atender", value: String(pending), tone: pending > 0 ? "accent" : "muted" },
+            {
+              label: "Por atender",
+              value: String(pending),
+              tone: pending > 0 ? "accent" : "muted",
+            },
             { label: "Pedidos del mes", value: String(ofMonth.length) },
-            { label: "Valor del mes", value: formatCents(revenueCents, currency) },
+            { label: "Valor del mes", value: formatMoney(revenueCents, currency) },
+            { label: "Ticket promedio", value: formatMoney(avgCents, currency) },
           ]}
         />
       )}
@@ -52,12 +59,4 @@ export default async function PedidosPage() {
       <OrdersClient orders={orders} />
     </div>
   );
-}
-
-function formatCents(cents: number, currency: string) {
-  return new Intl.NumberFormat("es-MX", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 0,
-  }).format(cents / 100);
 }

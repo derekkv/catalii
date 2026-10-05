@@ -1,26 +1,43 @@
 import type { Metadata } from "next";
-import { Fredoka, Nunito } from "next/font/google";
+import { Fraunces, Archivo, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+
+/*
+ * Tipografía — dirección "papel de imprenta comercial".
+ *
+ *  · Fraunces (display): serif de contraste alto con ejes SOFT/WONK. Tiene
+ *    carácter propio; evita el look de plantilla de Inter/Poppins/Playfair.
+ *  · Archivo (UI): grotesca de origen tipográfico-periodístico, legible a
+ *    tamaños pequeños y con 100–900 para construir jerarquía real.
+ *  · JetBrains Mono: SKU, precios, totales y micro-etiquetas. Los datos
+ *    tabulares de un catálogo mayorista piden cifras de ancho fijo.
+ */
+const display = Fraunces({
+  variable: "--font-display",
+  subsets: ["latin"],
+  axes: ["SOFT", "WONK", "opsz"],
+  display: "swap",
+});
+
+const body = Archivo({
+  variable: "--font-body",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const mono = JetBrains_Mono({
+  variable: "--font-mono",
+  subsets: ["latin"],
+  weight: ["400", "500", "700"],
+  display: "swap",
+});
+
 import { ThemeScript } from "@/components/theme/theme-script";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { ToastProvider } from "@/components/ui/toast";
 import { ConfirmProvider } from "@/components/ui/confirm";
 import { DevBanner } from "@/components/dev-banner";
 import { siteConfig, getSiteUrl } from "@/lib/site";
-
-const display = Fredoka({
-  variable: "--font-display",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
-
-const body = Nunito({
-  variable: "--font-body",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
@@ -52,7 +69,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="es"
       suppressHydrationWarning
       data-scroll-behavior="smooth"
-      className={`${display.variable} ${body.variable} h-full`}
+      className={`${display.variable} ${body.variable} ${mono.variable} h-full`}
     >
       <head>
         <ThemeScript />

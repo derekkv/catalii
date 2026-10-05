@@ -3,7 +3,7 @@ import { CheckCircle2, Clock } from "lucide-react";
 import { requireBusiness, getUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { PricingClient } from "./pricing-client";
-import { Card, CardContent } from "@/components/ui/card";
+import { PageHeader } from "@/components/dashboard/page-header";
 import { UsageMeter } from "@/components/dashboard/usage-meter";
 import { getPlan } from "@/lib/plans";
 import type { PaddleSubscription } from "@/types/database";
@@ -42,50 +42,45 @@ export default async function FacturacionPage({
   const plan = getPlan(business.plan);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
-      <div>
-        <h1 className="font-heading text-2xl font-bold md:text-3xl">Plan y facturación</h1>
-        <p className="text-muted-foreground">
-          Estás en el plan <strong>{plan.name}</strong>. Mejora cuando lo necesites.
-        </p>
-      </div>
+    <div className="mx-auto max-w-5xl space-y-7">
+      <PageHeader
+        eyebrow={`Plan ${plan.name}`}
+        title="Plan y facturación"
+        description="Mejora cuando lo necesites. Los límites se aplican al instante."
+      />
 
-      {/* Vuelta del checkout de Paddle: el plan lo aplica el webhook, así que se
-          avisa de forma explícita en vez de dejar al usuario mirando el plan
-          antiguo y pensando que el pago falló. */}
+      {/* Vuelta del checkout de Paddle: el plan lo activa el webhook, así que
+          se avisa de forma explícita en vez de dejar al usuario mirando el
+          plan antiguo y pensando que el pago falló. */}
       {success && (
-        <Card className="border-primary">
-          <CardContent className="flex items-start gap-3 p-4 text-sm">
-            <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
-            <p>
-              <span className="font-semibold">¡Pago recibido!</span> Estamos activando tu plan.
-              Puede tardar unos segundos; recarga la página si aún ves el plan anterior.
-            </p>
-          </CardContent>
-        </Card>
+        <p className="flex items-start gap-3 border-l-2 border-primary bg-muted px-4 py-3 text-sm">
+          <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+          <span>
+            <span className="font-medium">Pago recibido.</span> Estamos activando tu plan;
+            puede tardar unos segundos. Recarga la página si aún ves el anterior.
+          </span>
+        </p>
       )}
 
       {subscription?.scheduled_change_at && (
-        <Card>
-          <CardContent className="flex items-start gap-3 p-4 text-sm">
-            <Clock className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
-            <p>
-              Tu suscripción tiene un cambio programado para{" "}
-              <strong>
-                {new Date(subscription.scheduled_change_at).toLocaleDateString("es-MX", {
-                  dateStyle: "long",
-                })}
-              </strong>
-              .
-            </p>
-          </CardContent>
-        </Card>
+        <p className="flex items-start gap-3 border-l-2 border-input bg-muted px-4 py-3 text-sm">
+          <Clock className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+          <span>
+            Tu suscripción tiene un cambio programado para{" "}
+            <span className="t-num">
+              {new Date(subscription.scheduled_change_at).toLocaleDateString("es-MX", {
+                dateStyle: "long",
+              })}
+            </span>
+            .
+          </span>
+        </p>
       )}
 
-      {/* Consumo actual: argumenta el upgrade con datos propios del negocio. */}
+      {/* Consumo actual: argumenta la mejora de plan con datos del negocio. */}
       <section>
-        <h2 className="mb-3 font-heading text-lg font-bold">Tu consumo</h2>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <h2 className="t-h2 mb-4">Tu consumo</h2>
+        <div className="flex flex-wrap gap-x-12 gap-y-6 border-y border-border py-5">
           <UsageMeter
             label="Productos"
             used={productCount.count ?? 0}
@@ -99,11 +94,14 @@ export default async function FacturacionPage({
         </div>
       </section>
 
-      <PricingClient email={user?.email ?? undefined} currentTier={business.plan} />
+      <section>
+        <h2 className="t-h2 mb-4">Planes</h2>
+        <PricingClient email={user?.email ?? undefined} currentTier={business.plan} />
+      </section>
 
-      <p className="text-center text-xs text-muted-foreground">
-        Pagos procesados de forma segura por Paddle. El estado del plan se actualiza
-        automáticamente vía webhooks.
+      <p className="t-small rule-t pt-5 text-muted-foreground">
+        Pagos procesados por Paddle. El estado del plan se actualiza automáticamente vía
+        webhooks firmados.
       </p>
     </div>
   );

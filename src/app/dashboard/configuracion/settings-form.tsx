@@ -5,14 +5,19 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { updateBusiness, type SettingsState } from "./actions";
 import { Button } from "@/components/ui/button";
-import { Input, Label } from "@/components/ui/input";
+import { Input, Label, FieldError, FieldHint } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
-import { THEMES } from "@/lib/themes";
+import { ThemeSwatch } from "@/components/theme/theme-swatch";
+import { THEMES, resolveTheme } from "@/lib/themes";
 import type { Business } from "@/types/database";
 
 const initial: SettingsState = { ok: false };
 
 export function SettingsForm({ business }: { business: Business }) {
+  // Se normaliza el theme guardado: si viene de la versión anterior del
+  // sistema de diseño, ningún radio quedaría marcado y el formulario se
+  // enviaría sin theme, haciendo fallar la validación del enum.
+  const currentTheme = resolveTheme(business.theme);
   const router = useRouter();
   const { toast } = useToast();
 
@@ -53,10 +58,12 @@ export function SettingsForm({ business }: { business: Business }) {
       </div>
 
       <fieldset>
-        <legend className="mb-2 text-sm font-medium">Theme por defecto de tus catálogos</legend>
-        <p className="mb-2 text-xs text-muted-foreground">
+        <legend className="t-label mb-2 text-muted-foreground">
+          Apariencia por defecto
+        </legend>
+        <FieldHint>
           Cada catálogo puede sobrescribirlo desde su propia configuración.
-        </p>
+        </FieldHint>
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
           {THEMES.map((t) => (
             <label
@@ -68,28 +75,17 @@ export function SettingsForm({ business }: { business: Business }) {
                 type="radio"
                 name="theme"
                 value={t.id}
-                defaultChecked={business.theme === t.id}
+                defaultChecked={currentTheme === t.id}
                 className="sr-only"
               />
-              <span
-                className="size-6 rounded-full"
-                style={{ background: `linear-gradient(135deg, ${t.swatch.primary}, ${t.swatch.accent})` }}
-                aria-hidden="true"
-              />
-              <span className="text-[10px] font-medium">{t.name}</span>
+              <ThemeSwatch theme={t} />
+              <span className="t-label text-[0.5625rem]">{t.name}</span>
             </label>
           ))}
         </div>
       </fieldset>
 
-      {state.error && (
-        <p
-          role="alert"
-          className="rounded-[var(--radius-theme-sm)] bg-destructive/10 p-3 text-sm font-semibold text-destructive"
-        >
-          {state.error}
-        </p>
-      )}
+      {state.error && <FieldError>{state.error}</FieldError>}
 
       <Button type="submit" disabled={pending} className="gap-2">
         {pending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}

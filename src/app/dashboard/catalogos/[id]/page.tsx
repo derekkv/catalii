@@ -5,8 +5,8 @@ import { ArrowLeft } from "lucide-react";
 import { requireBusiness } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/site";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/dashboard/page-header";
 import { CatalogConfigForm, DeleteCatalogButton } from "./catalog-editor";
 import { ProductSelector } from "./product-selector";
 import { ShareCard } from "./share-card";
@@ -44,66 +44,57 @@ export default async function CatalogDetailPage({
   const publicUrl = `${base}/c/${cat.slug}`;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-5">
+      {/* El enlace de vuelta va antes del título: es el orden de lectura y
+          evita que el usuario tenga que buscarlo debajo de la cabecera. */}
       <Link
         href="/dashboard/catalogos"
-        className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground"
+        className="t-label link-ink inline-flex items-center gap-2 text-muted-foreground"
       >
-        <ArrowLeft className="size-4" aria-hidden="true" /> Volver a catálogos
+        <ArrowLeft className="size-3.5" aria-hidden="true" /> Todos los catálogos
       </Link>
 
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="font-heading text-2xl font-bold md:text-3xl">{cat.name}</h1>
-          <p className="text-muted-foreground">
-            {selectedIds.length === 0
-              ? "Asigna productos y publícalo para compartirlo."
-              : `${selectedIds.length} ${selectedIds.length === 1 ? "producto asignado" : "productos asignados"}.`}
+      <PageHeader
+        eyebrow="Catálogo"
+        title={cat.name}
+        description={
+          selectedIds.length === 0
+            ? "Asigna productos y publícalo para poder compartirlo."
+            : `${selectedIds.length} ${selectedIds.length === 1 ? "producto asignado" : "productos asignados"}.`
+        }
+        actions={
+          <Badge tone={cat.is_public ? "success" : "muted"}>
+            {cat.is_public ? "Publicado" : "Borrador"}
+          </Badge>
+        }
+      />
+
+      <section className="space-y-4 rule-t pt-6">
+        <div>
+          <h2 className="t-h2">Compartir</h2>
+          <p className="t-small mt-1 text-muted-foreground">
+            Enlace y QR para mandar por WhatsApp, imprimir o pegar en el mostrador.
           </p>
         </div>
-        <Badge tone={cat.is_public ? "success" : "muted"}>
-          {cat.is_public ? "Publicado" : "Borrador"}
-        </Badge>
-      </div>
+        <ShareCard url={publicUrl} isPublic={cat.is_public} name={cat.display_name || cat.name} />
+      </section>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Compartir</CardTitle>
-          <CardDescription>
-            Enlace y QR para mandar por WhatsApp, imprimir o pegar en tu mostrador.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ShareCard url={publicUrl} isPublic={cat.is_public} name={cat.display_name || cat.name} />
-        </CardContent>
-      </Card>
+      <section className="space-y-4 rule-t pt-6">
+        <h2 className="t-h2">Configuración y apariencia</h2>
+        <CatalogConfigForm catalog={cat} siteUrl={base} productCount={selectedIds.length} />
+      </section>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Configuración y apariencia</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <CatalogConfigForm
-            catalog={cat}
-            siteUrl={base}
-            productCount={selectedIds.length}
-          />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Productos en el catálogo</CardTitle>
-          <CardDescription>
+      <section className="space-y-4 rule-t pt-6">
+        <div>
+          <h2 className="t-h2">Productos en el catálogo</h2>
+          <p className="t-small mt-1 text-muted-foreground">
             Elige qué parte de tu inventario se muestra en este catálogo.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ProductSelector catalogId={cat.id} products={products} selectedIds={selectedIds} />
-        </CardContent>
-      </Card>
+          </p>
+        </div>
+        <ProductSelector catalogId={cat.id} products={products} selectedIds={selectedIds} />
+      </section>
 
-      <div className="flex justify-end">
+      <div className="flex justify-end rule-t pt-6">
         <DeleteCatalogButton id={cat.id} name={cat.name} />
       </div>
     </div>

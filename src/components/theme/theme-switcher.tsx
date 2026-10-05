@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Palette, Check, ChevronDown } from "lucide-react";
 import { THEMES } from "@/lib/themes";
+import { ThemeSwatch } from "./theme-swatch";
 import { useTheme } from "./theme-provider";
 import { cn } from "@/lib/utils";
 
@@ -70,20 +71,9 @@ export function ThemeSwitcher({ className }: { className?: string }) {
                   active && "bg-muted",
                 )}
               >
-                <span
-                  className="flex size-8 shrink-0 items-center justify-center rounded-full border border-border"
-                  style={{ background: t.swatch.background }}
-                  aria-hidden="true"
-                >
-                  <span
-                    className="size-4 rounded-full"
-                    style={{
-                      background: `linear-gradient(135deg, ${t.swatch.primary}, ${t.swatch.accent})`,
-                    }}
-                  />
-                </span>
+                <ThemeSwatch theme={t} className="shrink-0" />
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-semibold text-card-foreground">
+                  <span className="block text-[0.8125rem] font-medium text-card-foreground">
                     {t.name}
                   </span>
                   <span className="block truncate text-xs text-muted-foreground">

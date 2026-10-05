@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { getUser, getBusiness } from "@/lib/auth";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { OnboardingForm } from "./onboarding-form";
+import { Wordmark } from "@/components/brand/wordmark";
 
 export const metadata: Metadata = {
   title: "Configura tu negocio",
@@ -16,18 +16,18 @@ export default async function OnboardingPage() {
   if (business) redirect("/dashboard");
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg items-center px-4 py-12">
-      <Card className="w-full animate-fade-up shadow-soft">
-        <CardHeader>
-          <CardTitle className="text-2xl">¡Bienvenido! 👋</CardTitle>
-          <CardDescription>
-            Cuéntanos sobre tu negocio para crear tu primer catálogo.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <OnboardingForm defaultEmail={user.email ?? undefined} />
-        </CardContent>
-      </Card>
+    <main id="contenido" className="grain mx-auto max-w-lg px-5 py-14">
+      <Wordmark size="sm" className="text-muted-foreground" />
+
+      <p className="t-eyebrow mt-9">Paso 1 de 1</p>
+      <h1 className="t-h1 mt-4">Cuéntanos de tu negocio</h1>
+      <p className="t-body mt-3 text-muted-foreground">
+        Con esto creamos tu espacio. Todo se puede cambiar después.
+      </p>
+
+      <div className="mt-9 rule-t pt-8">
+        <OnboardingForm defaultEmail={user.email ?? undefined} />
+      </div>
     </main>
   );
 }

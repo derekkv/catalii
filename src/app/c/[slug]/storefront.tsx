@@ -221,7 +221,7 @@ export function Storefront({ slug, displayName, whatsapp, products }: Props) {
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value as SortKey)}
-              className="h-11 cursor-pointer appearance-none rounded-[var(--radius-theme-sm)] border border-border bg-card pl-9 pr-3 text-sm font-medium text-card-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="t-label h-11 cursor-pointer appearance-none rounded-[var(--radius-theme-sm)] border border-input bg-card pl-9 pr-3 text-card-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[color-mix(in_srgb,var(--ring)_28%,transparent)]"
             >
               {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
                 <option key={key} value={key}>
@@ -249,7 +249,7 @@ export function Storefront({ slug, displayName, whatsapp, products }: Props) {
       {currencies.length > 1 && (
         <p
           role="status"
-          className="mt-3 flex items-start gap-2 rounded-[var(--radius-theme-sm)] bg-muted p-3 text-xs text-muted-foreground"
+          className="t-small mt-4 flex items-start gap-2 border-l-2 border-accent bg-muted px-3 py-2.5 text-muted-foreground"
         >
           <Info className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
           Este catálogo mezcla monedas ({currencies.join(", ")}). El total es una referencia en{" "}
@@ -258,10 +258,10 @@ export function Storefront({ slug, displayName, whatsapp, products }: Props) {
       )}
 
       {/* Recuento de resultados: feedback inmediato al buscar/filtrar. */}
-      <p className="pt-4 text-sm text-muted-foreground" aria-live="polite">
+      <p className="t-label pt-5 text-muted-foreground" aria-live="polite">
         {filtered.length === products.length
           ? `${products.length} ${products.length === 1 ? "producto" : "productos"}`
-          : `${filtered.length} de ${products.length} productos`}
+          : `${filtered.length} de ${products.length}`}
       </p>
 
       {/* ── Grid de productos ─────────────────────────────────────────────── */}
@@ -296,13 +296,13 @@ export function Storefront({ slug, displayName, whatsapp, products }: Props) {
           <button
             type="button"
             onClick={() => setCartOpen(true)}
-            className="pointer-events-auto flex w-full max-w-md cursor-pointer items-center justify-between gap-3 rounded-full bg-primary px-5 py-3 text-on-primary shadow-soft transition-transform hover:scale-[1.02]"
+            className="pointer-events-auto flex w-full max-w-md cursor-pointer items-center justify-between gap-3 rounded-[var(--radius-theme-sm)] bg-primary px-5 py-3.5 text-on-primary shadow-lift transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_88%,black)]"
           >
-            <span className="flex items-center gap-2 font-semibold">
-              <ShoppingCart className="size-5" aria-hidden="true" />
-              Ver pedido ({totalItems})
+            <span className="t-label flex items-center gap-2">
+              <ShoppingCart className="size-4" aria-hidden="true" />
+              Ver pedido · {totalItems}
             </span>
-            <span className="font-heading font-bold">{formatMoney(totalCents, currency)}</span>
+            <span className="t-price text-base">{formatMoney(totalCents, currency)}</span>
           </button>
         </div>
       )}
@@ -360,7 +360,7 @@ function ProductCard({
 
   return (
     <li>
-      <article className="flex h-full flex-col overflow-hidden rounded-[var(--radius-theme)] border border-border bg-card">
+      <article className="flex h-full flex-col border border-border bg-card">
         {/* Toda la zona de imagen + nombre abre el detalle: es el patrón que
             esperan los compradores y permite leer la descripción (antes
             inaccesible desde el catálogo). */}
@@ -368,44 +368,46 @@ function ProductCard({
           type="button"
           onClick={onOpenDetail}
           disabled={!hasDetail}
-          className={cn(
-            "group block text-left",
-            hasDetail ? "cursor-pointer" : "cursor-default",
-          )}
+          className={cn("group block text-left", hasDetail ? "cursor-pointer" : "cursor-default")}
           aria-label={hasDetail ? `Ver detalle de ${p.name}` : undefined}
         >
-          <div className="relative aspect-square bg-muted">
+          <div className="relative aspect-square overflow-hidden border-b border-border bg-muted">
             {p.image_url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={p.image_url}
                 alt={p.name}
                 loading="lazy"
-                className="size-full object-cover transition-transform group-hover:scale-[1.03]"
+                className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
               />
             ) : (
               <div className="flex size-full items-center justify-center text-muted-foreground">
-                <PackageOpen className="size-8" aria-hidden="true" />
+                <PackageOpen className="size-7" aria-hidden="true" />
               </div>
             )}
             {lowStock && (
-              <span className="absolute left-2 top-2 rounded-full bg-accent px-2 py-0.5 text-[11px] font-bold text-on-accent">
+              <span className="t-label absolute left-0 top-0 bg-accent px-2 py-1 text-on-accent">
                 Quedan {p.stock}
               </span>
             )}
           </div>
-          <h3 className="line-clamp-2 px-3 pt-3 text-sm font-semibold leading-tight">{p.name}</h3>
+
+          <h3 className="line-clamp-2 px-3 pt-3 text-[0.8125rem] font-medium leading-snug">
+            {p.name}
+          </h3>
         </button>
 
-        <div className="flex flex-1 flex-col gap-2 p-3 pt-2">
+        <div className="flex flex-1 flex-col gap-2.5 p-3 pt-2">
           <div className="mt-auto">
-            <p className="font-heading text-lg font-bold">
+            {/* Precio en mono: en una rejilla, las cifras forman columna. */}
+            <p className="t-price text-lg leading-none">
               {formatMoney(p.price_cents, p.currency)}
             </p>
             {p.min_order_qty > 1 && (
-              <p className="text-xs text-muted-foreground">Pedido mínimo: {p.min_order_qty}</p>
+              <p className="t-label mt-1.5 text-muted-foreground">Mín. {p.min_order_qty}</p>
             )}
           </div>
+
           {qty > 0 ? (
             <QtyStepper
               qty={qty}
@@ -415,8 +417,8 @@ function ProductCard({
               onChange={onSetQty}
             />
           ) : (
-            <Button size="sm" className="w-full gap-1" onClick={onAdd}>
-              <Plus className="size-4" aria-hidden="true" /> Agregar
+            <Button size="sm" className="w-full gap-1.5" onClick={onAdd}>
+              <Plus className="size-3.5" aria-hidden="true" /> Agregar
             </Button>
           )}
         </div>
@@ -453,7 +455,7 @@ function ProductDetail({
       description={product.category ?? undefined}
       footer={
         <>
-          <span className="mr-auto font-heading text-xl font-bold">
+          <span className="t-price mr-auto text-xl">
             {formatMoney(product.price_cents * amount, product.currency)}
           </span>
           <Button onClick={() => onAdd(amount)} className="gap-2">
@@ -469,13 +471,13 @@ function ProductDetail({
           <img
             src={product.image_url}
             alt={product.name}
-            className="aspect-square w-full rounded-[var(--radius-theme)] bg-muted object-contain"
+            className="aspect-square w-full border border-border bg-muted object-contain"
           />
         )}
 
-        <p className="font-heading text-2xl font-bold">
+        <p className="t-price text-3xl">
           {formatMoney(product.price_cents, product.currency)}
-          <span className="ml-1 text-sm font-medium text-muted-foreground">c/u</span>
+          <span className="t-label ml-2 text-muted-foreground">c/u</span>
         </p>
 
         {product.description && (
@@ -484,29 +486,29 @@ function ProductDetail({
           </p>
         )}
 
-        <dl className="grid grid-cols-2 gap-2 text-sm">
+        <dl className="grid grid-cols-2 gap-y-2 border-y border-border py-3 text-[0.8125rem]">
           {product.stock > 0 && (
             <>
-              <dt className="text-muted-foreground">Disponibles</dt>
-              <dd className="text-right font-semibold">{product.stock}</dd>
+              <dt className="t-label text-muted-foreground">Disponibles</dt>
+              <dd className="t-num text-right">{product.stock}</dd>
             </>
           )}
           {product.min_order_qty > 1 && (
             <>
-              <dt className="text-muted-foreground">Pedido mínimo</dt>
-              <dd className="text-right font-semibold">{product.min_order_qty}</dd>
+              <dt className="t-label text-muted-foreground">Pedido mínimo</dt>
+              <dd className="t-num text-right">{product.min_order_qty}</dd>
             </>
           )}
           {qty > 0 && (
             <>
-              <dt className="text-muted-foreground">Ya en tu pedido</dt>
-              <dd className="text-right font-semibold">{qty}</dd>
+              <dt className="t-label text-muted-foreground">Ya en tu pedido</dt>
+              <dd className="t-num text-right">{qty}</dd>
             </>
           )}
         </dl>
 
         <div>
-          <p className="mb-1.5 text-sm font-medium">Cantidad a agregar</p>
+          <p className="t-label mb-2 text-muted-foreground">Cantidad a agregar</p>
           <QtyStepper
             qty={amount}
             min={1}
@@ -540,10 +542,11 @@ function Chip({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "shrink-0 cursor-pointer whitespace-nowrap rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
+        "shrink-0 cursor-pointer whitespace-nowrap border px-3 py-1.5 transition-colors",
+        "t-label rounded-[var(--radius-theme-sm)]",
         active
           ? "border-primary bg-primary text-on-primary"
-          : "border-border bg-card hover:bg-muted",
+          : "border-input text-muted-foreground hover:bg-muted hover:text-foreground",
       )}
     >
       {children}
@@ -576,21 +579,21 @@ function QtyStepper({
   }
 
   return (
-    <div className="flex items-center justify-between rounded-[var(--radius-theme-sm)] border border-border">
+    <div className="flex items-stretch border border-input">
       <button
         type="button"
         aria-label={atFloor && allowZero ? `Quitar ${label} del pedido` : `Quitar una unidad de ${label}`}
         onClick={decrease}
         disabled={atFloor && !allowZero}
-        className="flex size-11 cursor-pointer items-center justify-center rounded-l-[var(--radius-theme-sm)] transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+        className="flex size-10 shrink-0 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-35"
       >
         {atFloor && allowZero ? (
-          <Trash2 className="size-4" aria-hidden="true" />
+          <Trash2 className="size-3.5" aria-hidden="true" />
         ) : (
-          <Minus className="size-4" aria-hidden="true" />
+          <Minus className="size-3.5" aria-hidden="true" />
         )}
       </button>
-      <span className="min-w-10 text-center text-sm font-semibold tabular-nums">
+      <span className="t-num flex flex-1 items-center justify-center border-x border-input text-sm">
         <span className="sr-only">{label}: </span>
         {qty}
       </span>
@@ -599,9 +602,9 @@ function QtyStepper({
         aria-label={`Agregar una unidad de ${label}`}
         onClick={() => onChange(qty + 1)}
         disabled={atMax}
-        className="flex size-11 cursor-pointer items-center justify-center rounded-r-[var(--radius-theme-sm)] transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+        className="flex size-10 shrink-0 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-35"
       >
-        <Plus className="size-4" aria-hidden="true" />
+        <Plus className="size-3.5" aria-hidden="true" />
       </button>
     </div>
   );
@@ -729,10 +732,10 @@ function CartDrawer({
       <Drawer open={open} onClose={close} title="Pedido enviado">
         <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
           <CheckCircle2 className="size-14 text-primary" aria-hidden="true" />
-          <h3 className="font-heading text-xl font-bold">¡Listo!</h3>
+          <h3 className="t-h2">Pedido registrado</h3>
           <p className="text-muted-foreground">
-            Tu pedido <span className="font-mono font-semibold">#{orderId.slice(0, 8)}</span> quedó
-            registrado. {displayName} lo revisará pronto.
+            Folio <span className="t-num text-foreground">{orderId.slice(0, 8)}</span>.{" "}
+            {displayName} lo revisará pronto.
           </p>
           <p className="text-sm text-muted-foreground">
             Avisar por WhatsApp acelera la respuesta.
@@ -781,12 +784,12 @@ function CartDrawer({
           <li key={product.id} className="flex flex-col gap-2 py-3">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold">{product.name}</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-[0.8125rem] font-medium">{product.name}</p>
+                <p className="t-label mt-1 text-muted-foreground">
                   {formatMoney(product.price_cents, product.currency)} c/u
                 </p>
               </div>
-              <span className="shrink-0 text-sm font-bold tabular-nums">
+              <span className="t-price shrink-0 text-sm">
                 {formatMoney(product.price_cents * qty, product.currency)}
               </span>
             </div>
@@ -804,11 +807,11 @@ function CartDrawer({
       </ul>
 
       <form onSubmit={checkout} className="space-y-3 border-t border-border p-4">
-        <div className="flex items-center justify-between text-lg">
-          <span className="font-medium">Total</span>
-          <span className="font-heading font-bold">{formatMoney(totalCents, currency)}</span>
+        <div className="flex items-baseline justify-between rule-b pb-3">
+          <span className="t-label text-muted-foreground">Total del pedido</span>
+          <span className="t-price text-xl">{formatMoney(totalCents, currency)}</span>
         </div>
-        <p className="text-xs text-muted-foreground">
+        <p className="t-small text-muted-foreground">
           El total es estimado; {displayName} confirma envío y forma de pago.
         </p>
 
@@ -867,7 +870,7 @@ function CartDrawer({
             ref={errorRef}
             tabIndex={-1}
             role="alert"
-            className="rounded-[var(--radius-theme-sm)] bg-destructive/10 p-3 text-sm font-semibold text-destructive outline-none"
+            className="border-l-2 border-destructive bg-[color-mix(in_srgb,var(--destructive)_8%,transparent)] px-3 py-2 text-[0.8125rem] font-medium text-destructive outline-none"
           >
             {errorMsg}
           </p>

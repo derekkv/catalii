@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { businessSchema } from "@/lib/validation";
 import { slugify } from "@/lib/utils";
+import { resolveTheme } from "@/lib/themes";
 
 export interface FormState {
   ok: boolean;
@@ -23,7 +24,10 @@ export async function createBusiness(_prev: FormState, formData: FormData): Prom
     slug: rawSlug ? slugify(rawSlug) : slugify(String(formData.get("name") ?? "")),
     whatsapp: formData.get("whatsapp") ?? "",
     email: formData.get("email") ?? user.email ?? "",
-    theme: formData.get("theme") ?? "vibrant",
+    // `resolveTheme` en lugar de un id escrito a mano: si el registro de
+    // themes cambia, esto no se queda apuntando a uno que ya no existe (y que
+    // haría fallar la validación del enum).
+    theme: resolveTheme(String(formData.get("theme") ?? "")),
   });
 
   if (!parsed.success) {

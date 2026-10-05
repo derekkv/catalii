@@ -42,7 +42,7 @@ export function ShareButton({ url, title }: { url: string; title: string }) {
       onClick={share}
       aria-label="Compartir catálogo"
       title="Compartir catálogo"
-      className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-[var(--radius-theme-sm)] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
     >
       {copied ? (
         <Check className="size-5 text-primary" aria-hidden="true" />
