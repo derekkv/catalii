@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { getUser, getBusiness } from "@/lib/auth";
+import { getBusiness } from "@/lib/auth";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { SignOutButton } from "@/components/dashboard/signout-button";
 import { ThemeSwitcher } from "@/components/theme/theme-switcher";
@@ -8,9 +7,8 @@ import { Wordmark } from "@/components/brand/wordmark";
 import { getPlan } from "@/lib/plans";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const user = await getUser();
-  if (!user) redirect("/login");
-
+  // Una sola verificación de sesión: `getBusiness()` ya exige usuario, así que
+  // llamar antes a `getUser()` duplicaba la llamada de red a Auth.
   const business = await getBusiness();
 
   // Sin negocio (onboarding): render limpio sin el shell del panel.
