@@ -31,6 +31,14 @@ export interface ThemeMeta {
 }
 
 export const THEMES: ThemeMeta[] = [
+  // Acero va primero: es el theme por defecto y así encabeza los selectores.
+  {
+    id: "acero",
+    name: "Acero",
+    description: "Azul industrial a escuadra. Ferretería, refacciones, insumos técnicos.",
+    mode: "light",
+    swatch: { primary: "#1B3A5C", accent: "#B2561B", background: "#F5F7F8", card: "#FFFFFF" },
+  },
   {
     id: "press",
     name: "Imprenta",
@@ -53,13 +61,6 @@ export const THEMES: ThemeMeta[] = [
     swatch: { primary: "#1F5C38", accent: "#A85A16", background: "#F8F7F1", card: "#FFFFFF" },
   },
   {
-    id: "acero",
-    name: "Acero",
-    description: "Azul industrial a escuadra. Ferretería, refacciones, insumos técnicos.",
-    mode: "light",
-    swatch: { primary: "#1B3A5C", accent: "#B2561B", background: "#F5F7F8", card: "#FFFFFF" },
-  },
-  {
     id: "hueso",
     name: "Hueso",
     description: "Tinta negra y oro apagado, sin curvas. Perfumería, joyería, textil premium.",
@@ -68,7 +69,7 @@ export const THEMES: ThemeMeta[] = [
   },
 ];
 
-export const DEFAULT_THEME = "press";
+export const DEFAULT_THEME = "acero";
 
 const THEME_IDS = new Set(THEMES.map((t) => t.id));
 

@@ -1,40 +1,50 @@
 import Link from "next/link";
-import { ArrowRight, Check, Minus, Plus, Zap, Link2, QrCode, Smartphone, Tag, Boxes } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  Minus,
+  Plus,
+  LayoutDashboard,
+  Package,
+  ShoppingCart,
+  BookOpen,
+  Settings,
+} from "lucide-react";
 import { ThemeSwitcher } from "@/components/theme/theme-switcher";
 import { Wordmark, Monogram } from "@/components/brand/wordmark";
 import { Reveal } from "@/components/reveal";
+import { Badge } from "@/components/ui/badge";
+import { StatTiles } from "@/components/dashboard/stat-tiles";
 import { PLAN_ORDER, PLANS } from "@/lib/plans";
 import { siteConfig } from "@/lib/site";
 import { THEMES } from "@/lib/themes";
+import { cn } from "@/lib/utils";
 
 /*
- * Landing — rediseño "producto moderno".
+ * Landing — mismo lenguaje que el panel.
  *
- * Se abandona la maqueta tipo pieza impresa (reglas de pelo, grano de papel,
- * versalitas monoespaciadas) por un lenguaje de SaaS actual:
- *  · Superficies con esquinas suaves y sombras difusas y ligeras.
- *  · Tarjetas en lugar de celdas con reglas interiores.
- *  · Badges tipo "pill" en vez de cejas monoespaciadas.
- *  · Un velo de color suave en el hero y en el cierre para dar profundidad.
- *
- * Se conservan los tokens de color por theme (bg-primary, muted-foreground…)
- * porque los comparten el panel y los catálogos públicos; aquí sólo cambia la
- * forma, no la paleta.
+ * La landing deja de tener su propio estilo "SaaS genérico" y adopta el
+ * sistema del dashboard (papel de imprenta comercial):
+ *  · Cejas en versalitas (.t-eyebrow), títulos en serif (.t-h1) y regla de
+ *    cierre, igual que <PageHeader>.
+ *  · Cifras con <StatTiles>: reglas verticales, rótulo t-label y t-num.
+ *  · Pasos como el <SetupChecklist>: ordinal monoespaciado y regla por paso.
+ *  · Rejillas con reglas interiores (.grid-ruled) en lugar de tarjetas con
+ *    sombra. Radios del theme (--radius-theme-sm), sin píldoras.
+ *  · El hero muestra el propio panel, para que lo que ve el visitante sea lo
+ *    que encontrará al entrar.
  */
 
 const STEPS = [
   {
-    n: "01",
     title: "Sube la lista que ya tienes",
     body: "Importa tu CSV o Excel exportado. Reconoce encabezados en español, así que no tienes que renombrar columnas.",
   },
   {
-    n: "02",
     title: "Arma el catálogo",
     body: "Elige qué productos entran, pon tu logo, escoge la apariencia y publícalo. Puedes tener varios catálogos distintos.",
   },
   {
-    n: "03",
     title: "Manda el enlace",
     body: "Por WhatsApp o con un QR impreso en el mostrador. El pedido te llega al panel, ordenado y con los precios de hoy.",
   },
@@ -42,37 +52,31 @@ const STEPS = [
 
 const FEATURES = [
   {
-    icon: Smartphone,
     label: "Comprador",
     title: "Pedidos sin crear cuenta",
     body: "Tu cliente no se registra ni descarga nada: abre el enlace, arma el pedido y lo envía.",
   },
   {
-    icon: Tag,
     label: "Precios",
     title: "Una sola fuente de verdad",
     body: "Cambias el precio una vez y todos tus catálogos quedan actualizados. Nadie pide sobre una lista vieja.",
   },
   {
-    icon: Zap,
     label: "Móvil",
     title: "Pensado para el chat",
     body: "Se abre dentro de WhatsApp, en un teléfono de gama media y con datos móviles. Ahí es donde te compran.",
   },
   {
-    icon: Boxes,
     label: "Mayoreo",
     title: "Mínimos y presentaciones",
     body: "Caja de 24, bulto de 50, mínimo de 10 piezas: el catálogo respeta tus reglas de venta al por mayor.",
   },
   {
-    icon: QrCode,
     label: "Difusión",
     title: "Enlace, QR e imprimible",
     body: "El mismo catálogo sirve para el chat, para pegar el QR en el mostrador y para imprimirlo en una hoja.",
   },
   {
-    icon: Link2,
     label: "Marca",
     title: "Tu nombre arriba, no el nuestro",
     body: "Logo, banner y una apariencia distinta según lo que vendas. Cinco, elegidas por rubro.",
@@ -80,79 +84,206 @@ const FEATURES = [
 ];
 
 const STATS = [
-  { n: "10 min", l: "de Excel a catálogo publicado" },
-  { n: "0", l: "apps que instalar, tú o tu cliente" },
-  { n: "5", l: "apariencias según tu rubro" },
-  { n: "24/7", l: "recibiendo pedidos" },
+  { label: "Excel → catálogo", value: "10 min", hint: "de archivo a enlace publicado" },
+  { label: "Apps que instalar", value: "0", hint: "ni tú ni tu cliente" },
+  { label: "Apariencias", value: "5", hint: "elegidas según tu rubro" },
+  { label: "Recibiendo pedidos", value: "24/7", hint: "aunque tengas cerrado" },
 ];
 
-/** Previsualización del producto: una tarjeta de catálogo, con profundidad. */
+/* Clases de botón idénticas a las del panel (ver components/ui/button.tsx). */
+const btnBase =
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[var(--radius-theme-sm)] font-medium transition-[background-color,border-color,color,translate] duration-150 active:translate-y-px";
+const btnPrimary = cn(
+  btnBase,
+  "bg-primary text-on-primary hover:bg-[color-mix(in_srgb,var(--primary)_88%,black)]",
+);
+const btnOutline = cn(btnBase, "border border-input text-foreground hover:bg-muted");
+
+/** Cabecera de sección: misma anatomía que <PageHeader> del panel, con h2. */
+function SectionHeader({
+  eyebrow,
+  title,
+  description,
+  id,
+}: {
+  eyebrow: string;
+  title: string;
+  description?: string;
+  id?: string;
+}) {
+  return (
+    <header className="rule-b pb-5">
+      <p className="t-eyebrow">{eyebrow}</p>
+      <h2 id={id} className="t-h1 mt-3 max-w-2xl">
+        {title}
+      </h2>
+      {description && (
+        <p className="t-body mt-2 max-w-xl text-muted-foreground">{description}</p>
+      )}
+    </header>
+  );
+}
+
+/**
+ * Vista previa del panel: barra lateral, cabecera de página, métricas y
+ * registro de pedidos, con las mismas piezas que /dashboard. Es decorativa
+ * (aria-hidden) y estática.
+ */
+function DashboardPreview() {
+  const nav = [
+    { label: "Resumen", icon: LayoutDashboard, active: true },
+    { label: "Productos", icon: Package },
+    { label: "Pedidos", icon: ShoppingCart },
+    { label: "Catálogos", icon: BookOpen },
+    { label: "Ajustes", icon: Settings },
+  ];
+  const orders = [
+    { date: "07 oct", name: "Abarrotes Lupita", tone: "warning", status: "Pendiente", total: "$718.80" },
+    { date: "07 oct", name: "Tienda Don Beto", tone: "primary", status: "Confirmado", total: "$1,240.00" },
+    { date: "06 oct", name: "Minisúper La Esquina", tone: "success", status: "Enviado", total: "$2,315.50" },
+  ] as const;
+
+  return (
+    <div
+      aria-hidden="true"
+      className="shadow-lift overflow-hidden rounded-[var(--radius-theme)] border border-border bg-background"
+    >
+      {/* Barra de ventana */}
+      <div className="flex items-center gap-1.5 rule-b bg-muted px-3 py-2">
+        <span className="size-2 rounded-full bg-input" />
+        <span className="size-2 rounded-full bg-input" />
+        <span className="size-2 rounded-full bg-input" />
+        <span className="t-label ml-3 truncate text-muted-foreground">
+          {siteConfig.domain}/dashboard
+        </span>
+      </div>
+
+      <div className="flex">
+        {/* Lateral */}
+        <div className="hidden w-36 shrink-0 flex-col border-r border-border sm:flex">
+          <div className="rule-b px-3.5 py-3">
+            <Wordmark size="sm" className="text-base" />
+          </div>
+          <div className="py-2">
+            {nav.map(({ label, icon: Icon, active }) => (
+              <div
+                key={label}
+                className={cn(
+                  "flex items-center gap-2.5 border-l-2 py-2 pl-3 pr-2",
+                  active
+                    ? "border-primary bg-muted text-foreground"
+                    : "border-transparent text-muted-foreground",
+                )}
+              >
+                <Icon className="size-3.5 shrink-0" />
+                <span className="t-label text-[0.625rem]">{label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Contenido */}
+        <div className="min-w-0 flex-1 space-y-4 p-4">
+          <div className="rule-b pb-3">
+            <p className="t-eyebrow text-[0.625rem]">Distribuidora El Sol</p>
+            <p className="t-h2 mt-2">1 pedido por atender</p>
+          </div>
+
+          <dl className="grid grid-cols-3 border-y border-border">
+            {[
+              { l: "Por atender", v: "1", accent: true },
+              { l: "Del mes", v: "38" },
+              { l: "Productos", v: "214" },
+            ].map((s, i) => (
+              <div key={s.l} className={cn("px-2.5 py-2.5", i > 0 && "border-l border-border")}>
+                <dt className="t-label truncate text-[0.5625rem] text-muted-foreground">{s.l}</dt>
+                <dd className={cn("t-num mt-1.5 text-lg leading-none", s.accent && "text-accent")}>
+                  {s.v}
+                </dd>
+              </div>
+            ))}
+          </dl>
+
+          <div>
+            <p className="t-h3 text-sm">Últimos pedidos</p>
+            <ul className="mt-2 border-y border-border">
+              {orders.map((o, i) => (
+                <li key={o.name} className={cn("flex items-center gap-2.5 py-2", i > 0 && "rule-t")}>
+                  <span className="t-num w-10 shrink-0 text-[0.6875rem] text-muted-foreground">
+                    {o.date}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-xs font-medium">{o.name}</span>
+                  <Badge tone={o.tone} className="hidden text-[0.5625rem] md:inline-flex">
+                    {o.status}
+                  </Badge>
+                  <span className="t-price w-16 shrink-0 text-right text-xs">{o.total}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Lo que ve el comprador: el catálogo público, con las fichas del sistema. */
 function PriceListPreview() {
   const rows = [
     { name: "Coca-Cola 600 ml", sku: "CC-600", price: "12.50", unit: "caja 24", qty: 24 },
     { name: "Galleta María 170 g", sku: "GM-170", price: "18.00", unit: "bulto 12", qty: 0 },
     { name: "Aceite vegetal 1 L", sku: "AV-1000", price: "34.90", unit: "caja 12", qty: 12 },
-    { name: "Atún en agua 140 g", sku: "AT-140", price: "21.00", unit: "bulto 48", qty: 0 },
   ];
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-xl shadow-foreground/5 ring-1 ring-foreground/5">
-      {/* Encabezado del catálogo */}
-      <div className="flex items-center gap-3 border-b border-border bg-muted/40 p-4">
-        <Monogram letter="D" className="size-10 rounded-xl text-base" />
+    <div
+      aria-hidden="true"
+      className="overflow-hidden rounded-[var(--radius-theme)] border border-border bg-card"
+    >
+      <div className="flex items-center gap-3 rule-b p-4">
+        <Monogram letter="D" className="size-9 text-base" />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold">Distribuidora El Sol</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">Lista vigente · Mayoreo</p>
+          <p className="t-h3 truncate">Distribuidora El Sol</p>
+          <p className="t-label mt-1 text-muted-foreground">Lista vigente · Mayoreo</p>
         </div>
-        <span className="hidden rounded-full bg-success/15 px-2.5 py-1 text-[0.6875rem] font-medium text-success sm:inline">
-          En línea
-        </span>
       </div>
 
-      {/* Renglones */}
-      <ul className="divide-y divide-border">
-        {rows.map((r) => (
-          <li key={r.sku} className="flex items-center gap-3 px-4 py-3">
+      <ul>
+        {rows.map((r, i) => (
+          <li key={r.sku} className={cn("flex items-center gap-3 px-4 py-3", i > 0 && "rule-t")}>
             <div className="min-w-0 flex-1">
               <p className="truncate text-[0.8125rem] font-medium">{r.name}</p>
-              <p className="mt-0.5 truncate text-xs text-muted-foreground">
+              <p className="t-label mt-1 truncate text-muted-foreground">
                 {r.sku} · {r.unit}
               </p>
             </div>
-            <span className="text-[0.9375rem] font-semibold tabular-nums">${r.price}</span>
+            <span className="t-price text-[0.9375rem]">${r.price}</span>
             {r.qty > 0 ? (
-              <span className="flex items-center" aria-hidden="true">
-                <span className="flex size-7 items-center justify-center rounded-l-lg border border-input text-muted-foreground">
+              <span className="flex items-center">
+                <span className="flex size-7 items-center justify-center rounded-l-[var(--radius-theme-sm)] border border-input text-muted-foreground">
                   <Minus className="size-3" />
                 </span>
-                <span className="flex h-7 w-9 items-center justify-center border-y border-input text-xs tabular-nums">
+                <span className="t-num flex h-7 w-9 items-center justify-center border-y border-input text-xs">
                   {r.qty}
                 </span>
-                <span className="flex size-7 items-center justify-center rounded-r-lg border border-input text-muted-foreground">
+                <span className="flex size-7 items-center justify-center rounded-r-[var(--radius-theme-sm)] border border-input text-muted-foreground">
                   <Plus className="size-3" />
                 </span>
               </span>
             ) : (
-              <span
-                className="flex h-7 items-center gap-1 rounded-lg bg-primary px-2.5 text-on-primary"
-                aria-hidden="true"
-              >
+              <span className="flex h-7 items-center gap-1 rounded-[var(--radius-theme-sm)] bg-primary px-2.5 text-on-primary">
                 <Plus className="size-3" />
-                <span className="text-[0.6875rem] font-medium">Añadir</span>
+                <span className="t-label">Añadir</span>
               </span>
             )}
           </li>
         ))}
       </ul>
 
-      {/* Pie: total y aviso */}
-      <div className="flex items-baseline justify-between gap-3 border-t border-border bg-muted/40 px-4 py-3">
-        <span className="text-xs text-muted-foreground">Total del pedido</span>
-        <span className="text-lg font-semibold tabular-nums">$718.80</span>
+      <div className="flex items-baseline justify-between gap-3 rule-t bg-muted px-4 py-3">
+        <span className="t-label text-muted-foreground">Total del pedido</span>
+        <span className="t-price text-lg">$718.80</span>
       </div>
-      <p className="border-t border-border px-4 py-3 text-center text-xs text-muted-foreground">
-        El pedido llega a tu panel y al WhatsApp
-      </p>
     </div>
   );
 }
@@ -160,14 +291,14 @@ function PriceListPreview() {
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col overflow-x-hidden">
-      {/* ══ Barra superior ════════════════════════════════════════════════ */}
-      <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl items-center gap-4 px-5 py-3.5 lg:px-8">
+      {/* ══ Cabecera: misma barra que el panel ════════════════════════════ */}
+      <header className="sticky top-0 z-40 border-b border-border bg-background/92 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-6xl items-center gap-4 px-5 py-2.5 lg:px-8">
           <Link href="/" aria-label={siteConfig.name}>
             <Wordmark />
           </Link>
 
-          <nav aria-label="Secciones" className="ml-6 hidden gap-7 md:flex">
+          <nav aria-label="Secciones" className="ml-6 hidden gap-6 md:flex">
             {[
               { href: "#como", label: "Cómo funciona" },
               { href: "#porque", label: "Por qué" },
@@ -176,25 +307,22 @@ export default function Home() {
               <a
                 key={l.href}
                 href={l.href}
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                className="t-label flex h-11 items-center text-muted-foreground transition-colors hover:text-foreground"
               >
                 {l.label}
               </a>
             ))}
           </nav>
 
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-1.5">
             <ThemeSwitcher />
             <Link
               href="/login"
-              className="hidden h-10 items-center px-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
+              className="t-label hidden h-11 items-center px-3 text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
             >
               Entrar
             </Link>
-            <Link
-              href="/login?tab=signup"
-              className="inline-flex h-10 items-center rounded-full bg-primary px-4 text-sm font-medium text-on-primary shadow-sm transition-all hover:bg-[color-mix(in_srgb,var(--primary)_88%,black)] hover:shadow-md"
-            >
+            <Link href="/login?tab=signup" className={cn(btnPrimary, "h-11 px-4 text-sm")}>
               Crear cuenta
             </Link>
           </div>
@@ -203,88 +331,64 @@ export default function Home() {
 
       <main id="contenido" className="flex-1">
         {/* ══ Hero ════════════════════════════════════════════════════════ */}
-        <section className="relative overflow-hidden border-b border-border">
-          {/* Velo de color suave para dar profundidad sin degradado chillón. */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 -z-10 opacity-[0.07]"
-            style={{
-              background:
-                "radial-gradient(60rem 40rem at 85% -10%, var(--primary), transparent 60%)",
-            }}
-          />
-          <div className="mx-auto grid max-w-6xl items-center gap-12 px-5 pb-20 pt-16 lg:grid-cols-12 lg:gap-10 lg:px-8 lg:pb-28 lg:pt-24">
-            <div className="lg:col-span-7">
-              <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm">
-                <span className="size-1.5 rounded-full bg-primary" aria-hidden="true" />
-                Para mayoristas y distribuidores
-              </span>
+        <section className="border-b border-border">
+          <div className="mx-auto grid max-w-6xl items-center gap-12 px-5 pb-16 pt-12 lg:grid-cols-12 lg:gap-10 lg:px-8 lg:pb-20 lg:pt-16">
+            <div className="lg:col-span-6">
+              <p className="t-eyebrow">Para mayoristas y distribuidores</p>
 
-              <h1 className="mt-6 text-[clamp(2.5rem,6.4vw,4.5rem)] font-bold leading-[1.02] tracking-tight">
-                Deja de mandar el Excel por{" "}
-                <span className="text-primary">WhatsApp.</span>
+              <h1 className="t-display mt-6">
+                Deja de mandar el Excel por <span className="text-primary">WhatsApp.</span>
               </h1>
 
-              <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
+              <p className="t-lead mt-6 max-w-xl text-muted-foreground">
                 {siteConfig.name} convierte tu lista de precios en un catálogo con enlace
                 propio. Tu cliente entra, arma el pedido y te llega ordenado: sin instalar
                 nada y sin crear cuenta.
               </p>
 
-              <div className="mt-9 flex flex-wrap items-center gap-x-4 gap-y-4">
+              <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4">
                 <Link
                   href="/login?tab=signup"
-                  className="inline-flex h-12 items-center gap-2 rounded-full bg-primary px-6 text-[0.9375rem] font-medium text-on-primary shadow-md transition-all hover:bg-[color-mix(in_srgb,var(--primary)_88%,black)] hover:shadow-lg"
+                  className={cn(btnPrimary, "h-13 px-6 text-[0.9375rem]")}
                 >
                   Crear mi catálogo
                   <ArrowRight className="size-4" aria-hidden="true" />
                 </Link>
-                <a
-                  href="#como"
-                  className="inline-flex h-12 items-center rounded-full border border-input px-6 text-[0.9375rem] font-medium transition-colors hover:bg-muted"
-                >
+                <a href="#como" className="link-ink text-sm font-medium">
                   Ver cómo funciona
                 </a>
               </div>
 
-              <p className="mt-6 text-sm text-muted-foreground">
+              <p className="t-label mt-7 text-muted-foreground">
                 Gratis para siempre · Sin tarjeta
               </p>
             </div>
 
-            <div className="lg:col-span-5">
+            <div className="lg:col-span-6">
               <Reveal>
-                <PriceListPreview />
+                <DashboardPreview />
               </Reveal>
             </div>
           </div>
         </section>
 
-        {/* ══ Cifras ══════════════════════════════════════════════════════ */}
-        <section className="border-b border-border bg-muted/30">
-          <dl className="mx-auto grid max-w-6xl grid-cols-2 gap-4 px-5 py-10 md:grid-cols-4 lg:px-8">
-            {STATS.map((s) => (
-              <div
-                key={s.l}
-                className="rounded-2xl border border-border bg-card p-5 shadow-sm"
-              >
-                <dt className="text-2xl font-bold tabular-nums md:text-3xl">{s.n}</dt>
-                <dd className="mt-1.5 text-sm text-muted-foreground">{s.l}</dd>
-              </div>
-            ))}
-          </dl>
+        {/* ══ Cifras: el mismo componente de métricas del panel ═══════════ */}
+        <section>
+          <div className="mx-auto max-w-6xl px-5 lg:px-8">
+            <StatTiles items={STATS} />
+          </div>
         </section>
 
         {/* ══ Cita ════════════════════════════════════════════════════════ */}
         <section className="border-b border-border">
           <div className="mx-auto max-w-6xl px-5 py-16 lg:px-8 lg:py-20">
             <Reveal>
-              <blockquote className="mx-auto max-w-3xl text-center">
-                <p className="text-2xl font-semibold leading-snug tracking-tight md:text-3xl">
+              <blockquote className="max-w-3xl border-l-2 border-primary pl-6 lg:pl-9">
+                <p className="t-h1">
                   “Un pedido por WhatsApp son catorce mensajes, tres capturas de pantalla y
                   un precio que ya no existe.”
                 </p>
-                <footer className="mt-5 text-sm text-muted-foreground">
+                <footer className="t-label mt-5 text-muted-foreground">
                   Lo que escuchamos en cada bodega que visitamos
                 </footer>
               </blockquote>
@@ -292,92 +396,87 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ══ Cómo funciona ═══════════════════════════════════════════════ */}
+        {/* ══ Cómo funciona: sumario numerado como "Primeros pasos" ═══════ */}
         <section id="como" className="scroll-mt-20 border-b border-border">
-          <div className="mx-auto max-w-6xl px-5 py-16 lg:px-8 lg:py-24">
-            <div className="max-w-lg">
-              <span className="text-sm font-semibold text-primary">Cómo funciona</span>
-              <h2 className="mt-3 text-3xl font-bold tracking-tight md:text-4xl">
-                Tres pasos, una tarde.
-              </h2>
+          <div className="mx-auto grid max-w-6xl gap-10 px-5 py-16 lg:grid-cols-12 lg:px-8 lg:py-20">
+            <div className="lg:col-span-7">
+              <SectionHeader eyebrow="Cómo funciona" title="Tres pasos, una tarde." />
+
+              <Reveal>
+                <ol className="mt-6 border border-border bg-card">
+                  <li className="flex flex-wrap items-baseline justify-between gap-2 rule-b px-5 py-4">
+                    <span className="t-h3">Pon tu catálogo en marcha</span>
+                    <span className="t-label text-muted-foreground">3 pasos</span>
+                  </li>
+                  {STEPS.map((s, i) => (
+                    <li
+                      key={s.title}
+                      className={cn("flex items-start gap-4 px-5 py-5", i > 0 && "rule-t")}
+                    >
+                      <span className="t-num mt-0.5 w-6 shrink-0 text-sm text-primary">
+                        0{i + 1}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-sm font-medium">{s.title}</h3>
+                        <p className="t-small mt-1 text-muted-foreground">{s.body}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </Reveal>
             </div>
 
-            <ol className="mt-12 grid gap-5 md:grid-cols-3">
-              {STEPS.map((s, i) => (
-                <Reveal key={s.n} delay={i * 70}>
-                  <li className="h-full rounded-2xl border border-border bg-card p-6 shadow-sm transition-shadow hover:shadow-md">
-                    <span className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-lg font-bold text-primary tabular-nums">
-                      {s.n}
-                    </span>
-                    <h3 className="mt-4 text-lg font-semibold">{s.title}</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{s.body}</p>
-                  </li>
-                </Reveal>
-              ))}
-            </ol>
+            <div className="lg:col-span-5 lg:pt-24">
+              <p className="t-label mb-3 text-muted-foreground">Lo que ve tu cliente</p>
+              <Reveal delay={70}>
+                <PriceListPreview />
+              </Reveal>
+              <p className="t-small mt-3 text-muted-foreground">
+                El pedido llega a tu panel y al WhatsApp.
+              </p>
+            </div>
           </div>
         </section>
 
         {/* ══ Por qué ═════════════════════════════════════════════════════ */}
-        <section id="porque" className="scroll-mt-20 border-b border-border bg-muted/30">
-          <div className="mx-auto max-w-6xl px-5 py-16 lg:px-8 lg:py-24">
-            <div className="max-w-2xl">
-              <span className="text-sm font-semibold text-primary">Por qué</span>
-              <h2 className="mt-3 text-3xl font-bold tracking-tight md:text-4xl">
-                Hecho para vender al por mayor, no para parecer una tienda.
-              </h2>
-            </div>
+        <section id="porque" className="scroll-mt-20 border-b border-border">
+          <div className="mx-auto max-w-6xl px-5 py-16 lg:px-8 lg:py-20">
+            <SectionHeader
+              eyebrow="Por qué"
+              title="Hecho para vender al por mayor, no para parecer una tienda."
+            />
 
-            <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {FEATURES.map((f) => {
-                const Icon = f.icon;
-                return (
-                  <div
-                    key={f.title}
-                    className="rounded-2xl border border-border bg-card p-6 shadow-sm transition-shadow hover:shadow-md"
-                  >
-                    <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                      <Icon className="size-5" aria-hidden="true" />
-                    </span>
-                    <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-primary">
-                      {f.label}
-                    </p>
-                    <h3 className="mt-1 text-base font-semibold">{f.title}</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.body}</p>
-                  </div>
-                );
-              })}
+            <div className="grid-ruled mt-8 grid bg-card sm:grid-cols-2 lg:grid-cols-3">
+              {FEATURES.map((f) => (
+                <div key={f.title} className="p-6">
+                  <Badge tone="primary">{f.label}</Badge>
+                  <h3 className="t-h3 mt-3">{f.title}</h3>
+                  <p className="t-small mt-2 text-muted-foreground">{f.body}</p>
+                </div>
+              ))}
             </div>
           </div>
         </section>
 
         {/* ══ Apariencias ═════════════════════════════════════════════════ */}
         <section className="border-b border-border">
-          <div className="mx-auto max-w-6xl px-5 py-16 lg:px-8 lg:py-24">
-            <div className="max-w-xl">
-              <span className="text-sm font-semibold text-primary">Apariencia</span>
-              <h2 className="mt-3 text-3xl font-bold tracking-tight md:text-4xl">
-                Cinco, elegidas por rubro.
-              </h2>
-              <p className="mt-3 text-muted-foreground">
-                No es un muestrario de colores: cada una cambia paleta, esquinas y
-                temperatura. Pruébalas aquí mismo con el selector de arriba.
-              </p>
-            </div>
+          <div className="mx-auto max-w-6xl px-5 py-16 lg:px-8 lg:py-20">
+            <SectionHeader
+              eyebrow="Apariencia"
+              title="Cinco, elegidas por rubro."
+              description="No es un muestrario de colores: cada una cambia paleta, esquinas y temperatura del papel. Pruébalas aquí mismo con el selector de arriba."
+            />
 
-            <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
+            <ul className="grid-ruled mt-8 grid bg-card sm:grid-cols-2 lg:grid-cols-5">
               {THEMES.map((t) => (
-                <li
-                  key={t.id}
-                  className="rounded-2xl border border-border bg-card p-5 shadow-sm transition-shadow hover:shadow-md"
-                >
-                  <span className="flex h-16 w-full overflow-hidden rounded-xl border border-border">
+                <li key={t.id} className="p-5">
+                  <span className="flex h-16 w-full overflow-hidden rounded-[var(--radius-theme-sm)] border border-border">
                     <span className="h-full flex-1" style={{ background: t.swatch.background }} />
                     <span className="h-full flex-1" style={{ background: t.swatch.primary }} />
                     <span className="h-full w-3" style={{ background: t.swatch.accent }} />
                   </span>
-                  <p className="mt-3 text-base font-semibold">{t.name}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">{t.description}</p>
+                  <p className="t-h3 mt-3">{t.name}</p>
+                  <p className="t-small mt-1 text-muted-foreground">{t.description}</p>
                 </li>
               ))}
             </ul>
@@ -385,39 +484,30 @@ export default function Home() {
         </section>
 
         {/* ══ Precios ═════════════════════════════════════════════════════ */}
-        <section id="planes" className="scroll-mt-20 border-b border-border bg-muted/30">
-          <div className="mx-auto max-w-6xl px-5 py-16 lg:px-8 lg:py-24">
-            <div className="max-w-xl">
-              <span className="text-sm font-semibold text-primary">Precios</span>
-              <h2 className="mt-3 text-3xl font-bold tracking-tight md:text-4xl">
-                Empieza gratis. Paga cuando crezcas.
-              </h2>
-            </div>
+        <section id="planes" className="scroll-mt-20 border-b border-border">
+          <div className="mx-auto max-w-6xl px-5 py-16 lg:px-8 lg:py-20">
+            <SectionHeader eyebrow="Precios" title="Empieza gratis. Paga cuando crezcas." />
 
-            <div className="mt-12 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+            <div className="grid-ruled mt-8 grid bg-card md:grid-cols-2 xl:grid-cols-4">
               {PLAN_ORDER.map((tier) => {
                 const plan = PLANS[tier];
                 return (
                   <div
                     key={tier}
-                    className={
-                      plan.highlighted
-                        ? "relative flex flex-col rounded-2xl border-2 border-primary bg-card p-6 shadow-lg xl:-mt-3 xl:mb-3"
-                        : "flex flex-col rounded-2xl border border-border bg-card p-6 shadow-sm"
-                    }
-                  >
-                    {plan.highlighted && (
-                      <span className="absolute -top-3 left-6 rounded-full bg-primary px-3 py-1 text-[0.6875rem] font-semibold uppercase tracking-wide text-on-primary">
-                        Recomendado
-                      </span>
+                    className={cn(
+                      "flex flex-col p-6",
+                      plan.highlighted && "bg-muted shadow-[inset_0_2px_0_0_var(--primary)]",
                     )}
-
-                    <h3 className="text-base font-semibold">{plan.name}</h3>
+                  >
+                    <div className="flex items-baseline justify-between gap-2">
+                      <h3 className="t-h3">{plan.name}</h3>
+                      {plan.highlighted && <Badge tone="primary">Recomendado</Badge>}
+                    </div>
 
                     <p className="mt-4 flex items-baseline gap-1.5">
-                      <span className="text-4xl font-bold tabular-nums">{plan.priceLabel}</span>
+                      <span className="t-price text-4xl">{plan.priceLabel}</span>
                       {tier !== "free" && (
-                        <span className="text-sm text-muted-foreground">/mes</span>
+                        <span className="t-label text-muted-foreground">/mes</span>
                       )}
                     </p>
 
@@ -425,7 +515,7 @@ export default function Home() {
                       {plan.features.map((f) => (
                         <li key={f} className="flex items-start gap-2.5 text-[0.8125rem]">
                           <Check
-                            className="mt-0.5 size-4 shrink-0 text-primary"
+                            className="mt-0.5 size-3.5 shrink-0 text-primary"
                             aria-hidden="true"
                           />
                           <span className="text-muted-foreground">{f}</span>
@@ -435,11 +525,10 @@ export default function Home() {
 
                     <Link
                       href="/login?tab=signup"
-                      className={
-                        plan.highlighted
-                          ? "mt-7 inline-flex h-11 items-center justify-center rounded-full bg-primary px-4 text-sm font-medium text-on-primary shadow-sm transition-all hover:bg-[color-mix(in_srgb,var(--primary)_88%,black)] hover:shadow-md"
-                          : "mt-7 inline-flex h-11 items-center justify-center rounded-full border border-input px-4 text-sm font-medium transition-colors hover:bg-muted"
-                      }
+                      className={cn(
+                        plan.highlighted ? btnPrimary : btnOutline,
+                        "mt-7 h-11 px-4 text-sm",
+                      )}
                     >
                       {tier === "free" ? "Empezar gratis" : `Elegir ${plan.name}`}
                     </Link>
@@ -448,7 +537,7 @@ export default function Home() {
               })}
             </div>
 
-            <p className="mt-6 text-sm text-muted-foreground">
+            <p className="t-small mt-4 text-muted-foreground">
               Los planes de pago se cobran con Paddle. Puedes cambiar o cancelar cuando
               quieras.
             </p>
@@ -456,28 +545,18 @@ export default function Home() {
         </section>
 
         {/* ══ Cierre ══════════════════════════════════════════════════════ */}
-        <section className="relative overflow-hidden bg-secondary text-on-secondary">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 opacity-20"
-            style={{
-              background:
-                "radial-gradient(50rem 30rem at 20% 120%, var(--primary), transparent 60%)",
-            }}
-          />
-          <div className="relative mx-auto max-w-6xl px-5 py-20 lg:px-8 lg:py-28">
+        <section className="bg-secondary text-on-secondary">
+          <div className="mx-auto max-w-6xl px-5 py-20 lg:px-8 lg:py-24">
             <div className="max-w-2xl">
-              <span className="text-sm font-semibold opacity-70">Último paso</span>
-              <h2 className="mt-4 text-[clamp(2.25rem,5vw,3.5rem)] font-bold leading-[1.05] tracking-tight">
-                Publica tu catálogo esta tarde.
-              </h2>
-              <p className="mt-6 max-w-lg text-lg opacity-80">
+              <p className="t-label opacity-70">Último paso</p>
+              <h2 className="t-display mt-5">Publica tu catálogo esta tarde.</h2>
+              <p className="t-lead mt-6 max-w-lg opacity-80">
                 Trae el archivo que ya usas. En diez minutos tienes un enlace que puedes
                 mandar a tus clientes.
               </p>
               <Link
                 href="/login?tab=signup"
-                className="mt-9 inline-flex h-12 items-center gap-2 rounded-full bg-primary px-6 text-[0.9375rem] font-medium text-on-primary shadow-lg transition-all hover:bg-[color-mix(in_srgb,var(--primary)_88%,black)]"
+                className={cn(btnPrimary, "mt-9 h-13 px-6 text-[0.9375rem]")}
               >
                 Crear cuenta gratis
                 <ArrowRight className="size-4" aria-hidden="true" />
@@ -489,12 +568,12 @@ export default function Home() {
 
       {/* ══ Pie ═══════════════════════════════════════════════════════════ */}
       <footer className="border-t border-border">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-8 lg:px-8">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-6 lg:px-8">
           <Wordmark size="sm" />
-          <p className="text-sm text-muted-foreground">
+          <p className="t-label text-muted-foreground">
             {siteConfig.domain} · {siteConfig.tagline}
           </p>
-          <p className="text-sm text-muted-foreground">© {new Date().getFullYear()}</p>
+          <p className="t-label text-muted-foreground">© {new Date().getFullYear()}</p>
         </div>
       </footer>
     </div>

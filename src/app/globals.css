@@ -72,10 +72,9 @@
  * Cada uno cambia color, radio y temperatura del papel.
  */
 
-/* ── Imprenta (por defecto) · papel cálido + tinta vermellón ──────────────
+/* ── Imprenta · papel cálido + tinta vermellón ────────────────────────────
  * Abarrotes, bebidas, distribución general. El acento es un rojo de tinta
  * de imprenta, no un naranja de bootcamp.                                 */
-:root,
 [data-theme="press"] {
   --primary: #b43b1f;
   --on-primary: #fdfbf7;
@@ -169,9 +168,13 @@
   --grain: 0.03;
 }
 
-/* ── Acero · papel frío + tinta azul industrial ───────────────────────────
+/* ── Acero (por defecto) · papel frío + tinta azul industrial ─────────────
  * Ferretería, refacciones, insumos técnicos. Radio 2 px: se lee más
- * "catálogo técnico" que "app".                                           */
+ * "catálogo técnico" que "app". Va en :root para que sea el fallback si
+ * el <html> todavía no tiene data-theme. `:where()` deja la especificidad
+ * en 0: este bloque va después de Imprenta/Noche/Mercado y, sin él, :root
+ * les ganaría aunque el <html> diga data-theme="press".                   */
+:where(:root),
 [data-theme="acero"] {
   --primary: #1b3a5c;
   --on-primary: #f4f8fb;
