@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Check, Minus, Plus } from "lucide-react";
+import { ArrowRight, Check, Minus, Plus, Zap, Link2, QrCode, Smartphone, Tag, Boxes } from "lucide-react";
 import { ThemeSwitcher } from "@/components/theme/theme-switcher";
 import { Wordmark, Monogram } from "@/components/brand/wordmark";
 import { Reveal } from "@/components/reveal";
@@ -8,16 +8,18 @@ import { siteConfig } from "@/lib/site";
 import { THEMES } from "@/lib/themes";
 
 /*
- * Landing.
+ * Landing — rediseño "producto moderno".
  *
- * Maquetada como una pieza impresa, no como una secuencia de tarjetas:
- *  · Cabecera tipo masthead con reglas superior e inferior.
- *  · Retícula asimétrica 7/5 en el hero; el bloque de producto sangra a la
- *    derecha en lugar de quedar centrado y enmarcado.
- *  · Separación por reglas de pelo. Ninguna sombra difusa, ningún degradado.
- *  · Numeración y rótulos en versalitas monoespaciadas.
- *  · Un bloque de cita a sangría para romper el ritmo a un tercio de la
- *    página, que es donde se pierde la atención.
+ * Se abandona la maqueta tipo pieza impresa (reglas de pelo, grano de papel,
+ * versalitas monoespaciadas) por un lenguaje de SaaS actual:
+ *  · Superficies con esquinas suaves y sombras difusas y ligeras.
+ *  · Tarjetas en lugar de celdas con reglas interiores.
+ *  · Badges tipo "pill" en vez de cejas monoespaciadas.
+ *  · Un velo de color suave en el hero y en el cierre para dar profundidad.
+ *
+ * Se conservan los tokens de color por theme (bg-primary, muted-foreground…)
+ * porque los comparten el panel y los catálogos públicos; aquí sólo cambia la
+ * forma, no la paleta.
  */
 
 const STEPS = [
@@ -40,31 +42,37 @@ const STEPS = [
 
 const FEATURES = [
   {
+    icon: Smartphone,
     label: "Comprador",
     title: "Pedidos sin crear cuenta",
     body: "Tu cliente no se registra ni descarga nada: abre el enlace, arma el pedido y lo envía.",
   },
   {
+    icon: Tag,
     label: "Precios",
     title: "Una sola fuente de verdad",
     body: "Cambias el precio una vez y todos tus catálogos quedan actualizados. Nadie pide sobre una lista vieja.",
   },
   {
+    icon: Zap,
     label: "Móvil",
     title: "Pensado para el chat",
     body: "Se abre dentro de WhatsApp, en un teléfono de gama media y con datos móviles. Ahí es donde te compran.",
   },
   {
+    icon: Boxes,
     label: "Mayoreo",
     title: "Mínimos y presentaciones",
     body: "Caja de 24, bulto de 50, mínimo de 10 piezas: el catálogo respeta tus reglas de venta al por mayor.",
   },
   {
+    icon: QrCode,
     label: "Difusión",
     title: "Enlace, QR e imprimible",
     body: "El mismo catálogo sirve para el chat, para pegar el QR en el mostrador y para imprimirlo en una hoja.",
   },
   {
+    icon: Link2,
     label: "Marca",
     title: "Tu nombre arriba, no el nuestro",
     body: "Logo, banner y una apariencia distinta según lo que vendas. Cinco, elegidas por rubro.",
@@ -78,7 +86,7 @@ const STATS = [
   { n: "24/7", l: "recibiendo pedidos" },
 ];
 
-/** Previsualización: una lista de precios impresa, no una rejilla de colores. */
+/** Previsualización del producto: una tarjeta de catálogo, con profundidad. */
 function PriceListPreview() {
   const rows = [
     { name: "Coca-Cola 600 ml", sku: "CC-600", price: "12.50", unit: "caja 24", qty: 24 },
@@ -88,51 +96,49 @@ function PriceListPreview() {
   ];
 
   return (
-    <div className="border border-border bg-card">
-      {/* Encabezado del documento */}
-      <div className="flex items-center gap-3 rule-b p-4">
-        <Monogram letter="D" className="size-9 text-base" />
+    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-xl shadow-foreground/5 ring-1 ring-foreground/5">
+      {/* Encabezado del catálogo */}
+      <div className="flex items-center gap-3 border-b border-border bg-muted/40 p-4">
+        <Monogram letter="D" className="size-10 rounded-xl text-base" />
         <div className="min-w-0 flex-1">
-          <p className="t-h3 truncate">Distribuidora El Sol</p>
-          <p className="t-label mt-1 text-muted-foreground">Lista vigente · Mayoreo</p>
+          <p className="truncate text-sm font-semibold">Distribuidora El Sol</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">Lista vigente · Mayoreo</p>
         </div>
+        <span className="hidden rounded-full bg-success/15 px-2.5 py-1 text-[0.6875rem] font-medium text-success sm:inline">
+          En línea
+        </span>
       </div>
 
       {/* Renglones */}
-      <ul>
-        {rows.map((r, i) => (
-          <li
-            key={r.sku}
-            className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? "rule-t" : ""}`}
-          >
+      <ul className="divide-y divide-border">
+        {rows.map((r) => (
+          <li key={r.sku} className="flex items-center gap-3 px-4 py-3">
             <div className="min-w-0 flex-1">
               <p className="truncate text-[0.8125rem] font-medium">{r.name}</p>
-              <p className="t-label mt-1 truncate text-muted-foreground">
+              <p className="mt-0.5 truncate text-xs text-muted-foreground">
                 {r.sku} · {r.unit}
               </p>
             </div>
-            <span className="t-price text-[0.9375rem]">${r.price}</span>
-            {/* Los renglones sin cantidad muestran el botón de añadir, no un
-                cero: un 0 dentro del selector se lee como un fallo. */}
+            <span className="text-[0.9375rem] font-semibold tabular-nums">${r.price}</span>
             {r.qty > 0 ? (
               <span className="flex items-center" aria-hidden="true">
-                <span className="flex size-7 items-center justify-center border border-input text-muted-foreground">
+                <span className="flex size-7 items-center justify-center rounded-l-lg border border-input text-muted-foreground">
                   <Minus className="size-3" />
                 </span>
-                <span className="t-num flex h-7 w-9 items-center justify-center border-y border-input text-xs">
+                <span className="flex h-7 w-9 items-center justify-center border-y border-input text-xs tabular-nums">
                   {r.qty}
                 </span>
-                <span className="flex size-7 items-center justify-center border border-input text-muted-foreground">
+                <span className="flex size-7 items-center justify-center rounded-r-lg border border-input text-muted-foreground">
                   <Plus className="size-3" />
                 </span>
               </span>
             ) : (
               <span
-                className="flex h-7 items-center gap-1 bg-primary px-2.5 text-on-primary"
+                className="flex h-7 items-center gap-1 rounded-lg bg-primary px-2.5 text-on-primary"
                 aria-hidden="true"
               >
                 <Plus className="size-3" />
-                <span className="t-label">Añadir</span>
+                <span className="text-[0.6875rem] font-medium">Añadir</span>
               </span>
             )}
           </li>
@@ -140,11 +146,11 @@ function PriceListPreview() {
       </ul>
 
       {/* Pie: total y aviso */}
-      <div className="flex items-baseline justify-between gap-3 rule-t bg-muted px-4 py-3">
-        <span className="t-label text-muted-foreground">Total del pedido</span>
-        <span className="t-price text-lg">$718.80</span>
+      <div className="flex items-baseline justify-between gap-3 border-t border-border bg-muted/40 px-4 py-3">
+        <span className="text-xs text-muted-foreground">Total del pedido</span>
+        <span className="text-lg font-semibold tabular-nums">$718.80</span>
       </div>
-      <p className="t-label rule-t px-4 py-3 text-center text-muted-foreground">
+      <p className="border-t border-border px-4 py-3 text-center text-xs text-muted-foreground">
         El pedido llega a tu panel y al WhatsApp
       </p>
     </div>
@@ -153,15 +159,15 @@ function PriceListPreview() {
 
 export default function Home() {
   return (
-    <div className="grain flex min-h-screen flex-col overflow-x-hidden">
-      {/* ══ Masthead ══════════════════════════════════════════════════════ */}
-      <header className="sticky top-0 z-40 border-b border-border bg-background/92 backdrop-blur-sm">
+    <div className="flex min-h-screen flex-col overflow-x-hidden">
+      {/* ══ Barra superior ════════════════════════════════════════════════ */}
+      <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center gap-4 px-5 py-3.5 lg:px-8">
           <Link href="/" aria-label={siteConfig.name}>
             <Wordmark />
           </Link>
 
-          <nav aria-label="Secciones" className="ml-6 hidden gap-6 md:flex">
+          <nav aria-label="Secciones" className="ml-6 hidden gap-7 md:flex">
             {[
               { href: "#como", label: "Cómo funciona" },
               { href: "#porque", label: "Por qué" },
@@ -170,7 +176,7 @@ export default function Home() {
               <a
                 key={l.href}
                 href={l.href}
-                className="t-label text-muted-foreground transition-colors hover:text-foreground"
+                className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
               >
                 {l.label}
               </a>
@@ -181,13 +187,13 @@ export default function Home() {
             <ThemeSwitcher />
             <Link
               href="/login"
-              className="t-label hidden h-11 items-center px-3 text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
+              className="hidden h-10 items-center px-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
             >
               Entrar
             </Link>
             <Link
               href="/login?tab=signup"
-              className="inline-flex h-11 items-center rounded-[var(--radius-theme-sm)] bg-primary px-4 text-sm font-medium text-on-primary transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_88%,black)]"
+              className="inline-flex h-10 items-center rounded-full bg-primary px-4 text-sm font-medium text-on-primary shadow-sm transition-all hover:bg-[color-mix(in_srgb,var(--primary)_88%,black)] hover:shadow-md"
             >
               Crear cuenta
             </Link>
@@ -197,47 +203,56 @@ export default function Home() {
 
       <main id="contenido" className="flex-1">
         {/* ══ Hero ════════════════════════════════════════════════════════ */}
-        <section className="border-b border-border">
-          <div className="mx-auto grid max-w-6xl gap-12 px-5 pb-16 pt-14 lg:grid-cols-12 lg:gap-10 lg:px-8 lg:pb-24 lg:pt-20">
+        <section className="relative overflow-hidden border-b border-border">
+          {/* Velo de color suave para dar profundidad sin degradado chillón. */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 -z-10 opacity-[0.07]"
+            style={{
+              background:
+                "radial-gradient(60rem 40rem at 85% -10%, var(--primary), transparent 60%)",
+            }}
+          />
+          <div className="mx-auto grid max-w-6xl items-center gap-12 px-5 pb-20 pt-16 lg:grid-cols-12 lg:gap-10 lg:px-8 lg:pb-28 lg:pt-24">
             <div className="lg:col-span-7">
-              <p className="t-eyebrow">Para mayoristas y distribuidores</p>
+              <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm">
+                <span className="size-1.5 rounded-full bg-primary" aria-hidden="true" />
+                Para mayoristas y distribuidores
+              </span>
 
-              <h1 className="t-display mt-6">
-                Deja de mandar
-                <br />
-                el Excel por
-                <br />
+              <h1 className="mt-6 text-[clamp(2.5rem,6.4vw,4.5rem)] font-bold leading-[1.02] tracking-tight">
+                Deja de mandar el Excel por{" "}
                 <span className="text-primary">WhatsApp.</span>
               </h1>
 
-              <p className="t-lead mt-7 max-w-xl text-muted-foreground">
+              <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
                 {siteConfig.name} convierte tu lista de precios en un catálogo con enlace
                 propio. Tu cliente entra, arma el pedido y te llega ordenado: sin instalar
                 nada y sin crear cuenta.
               </p>
 
-              <div className="mt-9 flex flex-wrap items-center gap-x-7 gap-y-4">
+              <div className="mt-9 flex flex-wrap items-center gap-x-4 gap-y-4">
                 <Link
                   href="/login?tab=signup"
-                  className="inline-flex h-13 items-center gap-2 rounded-[var(--radius-theme-sm)] bg-primary px-6 text-[0.9375rem] font-medium text-on-primary transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_88%,black)]"
+                  className="inline-flex h-12 items-center gap-2 rounded-full bg-primary px-6 text-[0.9375rem] font-medium text-on-primary shadow-md transition-all hover:bg-[color-mix(in_srgb,var(--primary)_88%,black)] hover:shadow-lg"
                 >
                   Crear mi catálogo
                   <ArrowRight className="size-4" aria-hidden="true" />
                 </Link>
-                {/* Secundario como enlace, no como segundo botón: dos botones
-                    del mismo peso anulan la jerarquía de la llamada. */}
-                <a href="#como" className="link-ink text-sm font-medium">
+                <a
+                  href="#como"
+                  className="inline-flex h-12 items-center rounded-full border border-input px-6 text-[0.9375rem] font-medium transition-colors hover:bg-muted"
+                >
                   Ver cómo funciona
                 </a>
               </div>
 
-              <p className="t-label mt-7 text-muted-foreground">
+              <p className="mt-6 text-sm text-muted-foreground">
                 Gratis para siempre · Sin tarjeta
               </p>
             </div>
 
-            {/* El bloque sangra a la derecha en pantallas grandes. */}
-            <div className="lg:col-span-5 lg:-mr-6 xl:-mr-16">
+            <div className="lg:col-span-5">
               <Reveal>
                 <PriceListPreview />
               </Reveal>
@@ -246,32 +261,30 @@ export default function Home() {
         </section>
 
         {/* ══ Cifras ══════════════════════════════════════════════════════ */}
-        <section className="border-b border-border">
-          <dl className="mx-auto grid max-w-6xl grid-cols-2 md:grid-cols-4">
-            {STATS.map((s, i) => (
+        <section className="border-b border-border bg-muted/30">
+          <dl className="mx-auto grid max-w-6xl grid-cols-2 gap-4 px-5 py-10 md:grid-cols-4 lg:px-8">
+            {STATS.map((s) => (
               <div
                 key={s.l}
-                className={`px-5 py-7 lg:px-8 ${i % 2 === 1 ? "border-l border-border" : ""} ${
-                  i >= 2 ? "border-t border-border md:border-t-0" : ""
-                } md:border-l md:first:border-l-0`}
+                className="rounded-2xl border border-border bg-card p-5 shadow-sm"
               >
-                <dt className="t-num text-2xl md:text-3xl">{s.n}</dt>
-                <dd className="t-small mt-1.5 text-muted-foreground">{s.l}</dd>
+                <dt className="text-2xl font-bold tabular-nums md:text-3xl">{s.n}</dt>
+                <dd className="mt-1.5 text-sm text-muted-foreground">{s.l}</dd>
               </div>
             ))}
           </dl>
         </section>
 
-        {/* ══ Cita a sangría ══════════════════════════════════════════════ */}
+        {/* ══ Cita ════════════════════════════════════════════════════════ */}
         <section className="border-b border-border">
           <div className="mx-auto max-w-6xl px-5 py-16 lg:px-8 lg:py-20">
             <Reveal>
-              <blockquote className="max-w-3xl border-l-2 border-primary pl-6 lg:pl-9">
-                <p className="t-h1">
+              <blockquote className="mx-auto max-w-3xl text-center">
+                <p className="text-2xl font-semibold leading-snug tracking-tight md:text-3xl">
                   “Un pedido por WhatsApp son catorce mensajes, tres capturas de pantalla y
                   un precio que ya no existe.”
                 </p>
-                <footer className="t-label mt-5 text-muted-foreground">
+                <footer className="mt-5 text-sm text-muted-foreground">
                   Lo que escuchamos en cada bodega que visitamos
                 </footer>
               </blockquote>
@@ -281,17 +294,23 @@ export default function Home() {
 
         {/* ══ Cómo funciona ═══════════════════════════════════════════════ */}
         <section id="como" className="scroll-mt-20 border-b border-border">
-          <div className="mx-auto max-w-6xl px-5 py-16 lg:px-8 lg:py-20">
-            <p className="t-eyebrow">Cómo funciona</p>
-            <h2 className="t-h1 mt-5 max-w-lg">Tres pasos, una tarde.</h2>
+          <div className="mx-auto max-w-6xl px-5 py-16 lg:px-8 lg:py-24">
+            <div className="max-w-lg">
+              <span className="text-sm font-semibold text-primary">Cómo funciona</span>
+              <h2 className="mt-3 text-3xl font-bold tracking-tight md:text-4xl">
+                Tres pasos, una tarde.
+              </h2>
+            </div>
 
-            <ol className="mt-12 grid gap-px md:grid-cols-3">
+            <ol className="mt-12 grid gap-5 md:grid-cols-3">
               {STEPS.map((s, i) => (
                 <Reveal key={s.n} delay={i * 70}>
-                  <li className="h-full border-t-2 border-foreground pt-5 md:pr-7">
-                    <span className="t-num text-4xl text-primary">{s.n}</span>
-                    <h3 className="t-h2 mt-3">{s.title}</h3>
-                    <p className="t-body mt-2.5 text-muted-foreground">{s.body}</p>
+                  <li className="h-full rounded-2xl border border-border bg-card p-6 shadow-sm transition-shadow hover:shadow-md">
+                    <span className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-lg font-bold text-primary tabular-nums">
+                      {s.n}
+                    </span>
+                    <h3 className="mt-4 text-lg font-semibold">{s.title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{s.body}</p>
                   </li>
                 </Reveal>
               ))}
@@ -300,53 +319,65 @@ export default function Home() {
         </section>
 
         {/* ══ Por qué ═════════════════════════════════════════════════════ */}
-        <section id="porque" className="scroll-mt-20 border-b border-border">
-          <div className="mx-auto max-w-6xl px-5 py-16 lg:px-8 lg:py-20">
+        <section id="porque" className="scroll-mt-20 border-b border-border bg-muted/30">
+          <div className="mx-auto max-w-6xl px-5 py-16 lg:px-8 lg:py-24">
             <div className="max-w-2xl">
-              <p className="t-eyebrow">Por qué</p>
-              <h2 className="t-h1 mt-5">
+              <span className="text-sm font-semibold text-primary">Por qué</span>
+              <h2 className="mt-3 text-3xl font-bold tracking-tight md:text-4xl">
                 Hecho para vender al por mayor, no para parecer una tienda.
               </h2>
             </div>
 
-            {/* Rejilla con reglas interiores: se lee como una ficha técnica. */}
-            <div className="grid-ruled mt-12 grid sm:grid-cols-2 lg:grid-cols-3">
-              {FEATURES.map((f) => (
-                <div key={f.title} className="p-6">
-                  <p className="t-label text-primary">{f.label}</p>
-                  <h3 className="t-h3 mt-3">{f.title}</h3>
-                  <p className="t-small mt-2 text-muted-foreground">{f.body}</p>
-                </div>
-              ))}
+            <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {FEATURES.map((f) => {
+                const Icon = f.icon;
+                return (
+                  <div
+                    key={f.title}
+                    className="rounded-2xl border border-border bg-card p-6 shadow-sm transition-shadow hover:shadow-md"
+                  >
+                    <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <Icon className="size-5" aria-hidden="true" />
+                    </span>
+                    <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-primary">
+                      {f.label}
+                    </p>
+                    <h3 className="mt-1 text-base font-semibold">{f.title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.body}</p>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </section>
 
         {/* ══ Apariencias ═════════════════════════════════════════════════ */}
         <section className="border-b border-border">
-          <div className="mx-auto max-w-6xl px-5 py-16 lg:px-8 lg:py-20">
-            <div className="flex flex-wrap items-end justify-between gap-6">
-              <div className="max-w-xl">
-                <p className="t-eyebrow">Apariencia</p>
-                <h2 className="t-h1 mt-5">Cinco, elegidas por rubro.</h2>
-                <p className="t-body mt-3 text-muted-foreground">
-                  No es un muestrario de colores: cada una cambia paleta, esquinas y
-                  temperatura del papel. Pruébalas aquí mismo con el selector de arriba.
-                </p>
-              </div>
+          <div className="mx-auto max-w-6xl px-5 py-16 lg:px-8 lg:py-24">
+            <div className="max-w-xl">
+              <span className="text-sm font-semibold text-primary">Apariencia</span>
+              <h2 className="mt-3 text-3xl font-bold tracking-tight md:text-4xl">
+                Cinco, elegidas por rubro.
+              </h2>
+              <p className="mt-3 text-muted-foreground">
+                No es un muestrario de colores: cada una cambia paleta, esquinas y
+                temperatura. Pruébalas aquí mismo con el selector de arriba.
+              </p>
             </div>
 
-            <ul className="grid-ruled mt-10 grid sm:grid-cols-2 lg:grid-cols-5">
+            <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
               {THEMES.map((t) => (
-                <li key={t.id} className="p-5">
-                  {/* Muestra con los tres tonos del theme, apiladas como tintas. */}
-                  <span className="flex h-16 w-full overflow-hidden rounded-[2px] border border-border">
+                <li
+                  key={t.id}
+                  className="rounded-2xl border border-border bg-card p-5 shadow-sm transition-shadow hover:shadow-md"
+                >
+                  <span className="flex h-16 w-full overflow-hidden rounded-xl border border-border">
                     <span className="h-full flex-1" style={{ background: t.swatch.background }} />
                     <span className="h-full flex-1" style={{ background: t.swatch.primary }} />
                     <span className="h-full w-3" style={{ background: t.swatch.accent }} />
                   </span>
-                  <p className="t-h3 mt-3">{t.name}</p>
-                  <p className="t-small mt-1 text-muted-foreground">{t.description}</p>
+                  <p className="mt-3 text-base font-semibold">{t.name}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{t.description}</p>
                 </li>
               ))}
             </ul>
@@ -354,29 +385,39 @@ export default function Home() {
         </section>
 
         {/* ══ Precios ═════════════════════════════════════════════════════ */}
-        <section id="planes" className="scroll-mt-20 border-b border-border">
-          <div className="mx-auto max-w-6xl px-5 py-16 lg:px-8 lg:py-20">
+        <section id="planes" className="scroll-mt-20 border-b border-border bg-muted/30">
+          <div className="mx-auto max-w-6xl px-5 py-16 lg:px-8 lg:py-24">
             <div className="max-w-xl">
-              <p className="t-eyebrow">Precios</p>
-              <h2 className="t-h1 mt-5">Empieza gratis. Paga cuando crezcas.</h2>
+              <span className="text-sm font-semibold text-primary">Precios</span>
+              <h2 className="mt-3 text-3xl font-bold tracking-tight md:text-4xl">
+                Empieza gratis. Paga cuando crezcas.
+              </h2>
             </div>
 
-            <div className="grid-ruled mt-12 grid md:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-12 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
               {PLAN_ORDER.map((tier) => {
                 const plan = PLANS[tier];
                 return (
-                  <div key={tier} className="flex flex-col p-6">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <h3 className="t-h3">{plan.name}</h3>
-                      {plan.highlighted && (
-                        <span className="t-label text-primary">Recomendado</span>
-                      )}
-                    </div>
+                  <div
+                    key={tier}
+                    className={
+                      plan.highlighted
+                        ? "relative flex flex-col rounded-2xl border-2 border-primary bg-card p-6 shadow-lg xl:-mt-3 xl:mb-3"
+                        : "flex flex-col rounded-2xl border border-border bg-card p-6 shadow-sm"
+                    }
+                  >
+                    {plan.highlighted && (
+                      <span className="absolute -top-3 left-6 rounded-full bg-primary px-3 py-1 text-[0.6875rem] font-semibold uppercase tracking-wide text-on-primary">
+                        Recomendado
+                      </span>
+                    )}
+
+                    <h3 className="text-base font-semibold">{plan.name}</h3>
 
                     <p className="mt-4 flex items-baseline gap-1.5">
-                      <span className="t-price text-4xl">{plan.priceLabel}</span>
+                      <span className="text-4xl font-bold tabular-nums">{plan.priceLabel}</span>
                       {tier !== "free" && (
-                        <span className="t-label text-muted-foreground">/mes</span>
+                        <span className="text-sm text-muted-foreground">/mes</span>
                       )}
                     </p>
 
@@ -384,7 +425,7 @@ export default function Home() {
                       {plan.features.map((f) => (
                         <li key={f} className="flex items-start gap-2.5 text-[0.8125rem]">
                           <Check
-                            className="mt-0.5 size-3.5 shrink-0 text-primary"
+                            className="mt-0.5 size-4 shrink-0 text-primary"
                             aria-hidden="true"
                           />
                           <span className="text-muted-foreground">{f}</span>
@@ -396,8 +437,8 @@ export default function Home() {
                       href="/login?tab=signup"
                       className={
                         plan.highlighted
-                          ? "mt-7 inline-flex h-11 items-center justify-center rounded-[var(--radius-theme-sm)] bg-primary px-4 text-sm font-medium text-on-primary transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_88%,black)]"
-                          : "mt-7 inline-flex h-11 items-center justify-center rounded-[var(--radius-theme-sm)] border border-input px-4 text-sm font-medium transition-colors hover:bg-muted"
+                          ? "mt-7 inline-flex h-11 items-center justify-center rounded-full bg-primary px-4 text-sm font-medium text-on-primary shadow-sm transition-all hover:bg-[color-mix(in_srgb,var(--primary)_88%,black)] hover:shadow-md"
+                          : "mt-7 inline-flex h-11 items-center justify-center rounded-full border border-input px-4 text-sm font-medium transition-colors hover:bg-muted"
                       }
                     >
                       {tier === "free" ? "Empezar gratis" : `Elegir ${plan.name}`}
@@ -407,28 +448,36 @@ export default function Home() {
               })}
             </div>
 
-            <p className="t-small mt-6 text-muted-foreground">
+            <p className="mt-6 text-sm text-muted-foreground">
               Los planes de pago se cobran con Paddle. Puedes cambiar o cancelar cuando
               quieras.
             </p>
           </div>
         </section>
 
-        {/* ══ Cierre ══════════════════════════════════════════════════════
-            Banda de tinta plena. Un color sólido, no un degradado de dos
-            tonos: el degradado es el acabado más delator de todos.        */}
-        <section className="bg-secondary text-on-secondary">
-          <div className="mx-auto max-w-6xl px-5 py-20 lg:px-8 lg:py-28">
+        {/* ══ Cierre ══════════════════════════════════════════════════════ */}
+        <section className="relative overflow-hidden bg-secondary text-on-secondary">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 opacity-20"
+            style={{
+              background:
+                "radial-gradient(50rem 30rem at 20% 120%, var(--primary), transparent 60%)",
+            }}
+          />
+          <div className="relative mx-auto max-w-6xl px-5 py-20 lg:px-8 lg:py-28">
             <div className="max-w-2xl">
-              <p className="t-eyebrow opacity-70">Último paso</p>
-              <h2 className="t-display mt-6">Publica tu catálogo esta tarde.</h2>
-              <p className="t-lead mt-6 max-w-lg opacity-80">
+              <span className="text-sm font-semibold opacity-70">Último paso</span>
+              <h2 className="mt-4 text-[clamp(2.25rem,5vw,3.5rem)] font-bold leading-[1.05] tracking-tight">
+                Publica tu catálogo esta tarde.
+              </h2>
+              <p className="mt-6 max-w-lg text-lg opacity-80">
                 Trae el archivo que ya usas. En diez minutos tienes un enlace que puedes
                 mandar a tus clientes.
               </p>
               <Link
                 href="/login?tab=signup"
-                className="mt-9 inline-flex h-13 items-center gap-2 rounded-[var(--radius-theme-sm)] bg-primary px-6 text-[0.9375rem] font-medium text-on-primary transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_88%,black)]"
+                className="mt-9 inline-flex h-12 items-center gap-2 rounded-full bg-primary px-6 text-[0.9375rem] font-medium text-on-primary shadow-lg transition-all hover:bg-[color-mix(in_srgb,var(--primary)_88%,black)]"
               >
                 Crear cuenta gratis
                 <ArrowRight className="size-4" aria-hidden="true" />
@@ -442,12 +491,10 @@ export default function Home() {
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-8 lg:px-8">
           <Wordmark size="sm" />
-          <p className="t-label text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             {siteConfig.domain} · {siteConfig.tagline}
           </p>
-          <p className="t-label text-muted-foreground">
-            © {new Date().getFullYear()}
-          </p>
+          <p className="text-sm text-muted-foreground">© {new Date().getFullYear()}</p>
         </div>
       </footer>
     </div>
