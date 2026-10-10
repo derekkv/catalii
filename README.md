@@ -161,8 +161,9 @@ nivel, se ajusta en un sitio.
 
 ## Notas
 
-- Este MVP usa `<img>` para imágenes de productos por URL. Para producción,
-  considera subirlas a Supabase Storage y usar `next/image` con `remotePatterns`.
+- Las imágenes de productos, logos y banners se suben a **Cloudflare R2** (ver
+  "Imágenes en R2" más abajo). Las URLs externas (`image_url` del CSV) siguen
+  funcionando como respaldo.
 - Para probar webhooks en local, expón el puerto con `ngrok http 3000` y usa esa
   URL en el notification destination de Paddle.
 
@@ -302,3 +303,61 @@ Build, pon **Build command = `pnpm cf:build`** y **Deploy command =
 Pista rápida: en los logs del build debes ver las líneas de OpenNext
 (`Bundling middleware...`, `Worker saved in .open-next/worker.js`,
 `OpenNext build complete`). Si no aparecen, el build command es incorrecto.
+
+
+
+## Imágenes en R2 (productos, logos y banners)
+
+- **Productos:** hasta 3 fotos; la primera es la principal.
+- **Negocio:** foto de perfil/logo y banner por defecto (*Ajustes*).
+- **Catálogos:** logo y banner propios; si no tienen, heredan los del negocio.
+
+### Cómo funciona
+
+1. El navegador comprime cada imagen (`src/lib/media/resize.ts`): una versión
+   optimizada en WebP (JPEG si el navegador no codifica WebP) y una miniatura.
+   | Tipo | Optimizada | Miniatura |
+   |---|---|---|
+   | Producto | ≤ 1600 px, ≤ 1.5 MB | ≤ 480 px |
+   | Logo | 512×512 (recorte cuadrado) | 128×128 |
+   | Banner | 1800×600 (recorte 3:1) | 600×200 |
+2. `POST /api/uploads` revalida en el servidor (sesión, mismo origen, firma de
+   bytes, dimensiones y peso), genera la clave y escribe ambos objetos en R2.
+3. La BD guarda solo la **clave** (`product.images`, `*.logo_key`,
+   `*.banner_key`; migración `0004_media.sql`). La URL se arma en
+   `src/lib/media/config.ts`, así cambiar de dominio no obliga a migrar datos.
+4. Al quitar/reemplazar una imagen o borrar un producto/catálogo se borran sus
+   objetos de R2. Las subidas no guardadas se descartan (`DELETE /api/uploads`,
+   que nunca borra claves referenciadas en la BD).
+
+Clave: `<bucket>/<business_id>/<uuid>.webp` y su miniatura `<uuid>_t.webp`.
+
+### Buckets (uno por tipo)
+
+| Bucket | Binding | Contenido |
+|---|---|---|
+| `catalii-products` | `MEDIA_PRODUCTS` | Fotos de producto |
+| `catalii-logos` | `MEDIA_LOGOS` | Logos / fotos de perfil |
+| `catalii-banners` | `MEDIA_BANNERS` | Banners |
+
+```bash
+pnpm media:buckets   # crea los 3 buckets (una vez)
+```
+
+### Servidor de medios (`media-worker/`)
+
+Worker aparte que solo sirve las imágenes (GET/HEAD, caché de borde, CORS,
+caché inmutable de 1 año). Sin Next ni middleware de sesión.
+
+```bash
+pnpm media:deploy    # despliega catalii-media
+```
+
+Conecta un dominio (p. ej. `media.catalii.com`, ver `routes` en
+`media-worker/wrangler.jsonc`) y define en el **build** de la app
+`NEXT_PUBLIC_MEDIA_URL=https://media.catalii.com`. Sin esa variable la app las
+sirve por `/api/media/...` (fallback, también usado en `next dev`).
+
+En local, `next dev` usa R2 emulado (`.wrangler/state`). Para probar el Worker
+de medios: `pnpm media:dev` (comparte el mismo estado) y
+`NEXT_PUBLIC_MEDIA_URL=http://localhost:8788`.

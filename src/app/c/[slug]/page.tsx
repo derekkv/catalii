@@ -4,6 +4,7 @@ import { MessageCircle, PackageOpen } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { resolveTheme } from "@/lib/themes";
 import { getSiteUrl, siteConfig } from "@/lib/site";
+import { absoluteUrl, productImages, resolveBrandImage } from "@/lib/media/config";
 import { Storefront, type PublicProduct } from "./storefront";
 import { ShareButton } from "./catalog-actions";
 import { Monogram } from "@/components/brand/wordmark";
@@ -34,7 +35,7 @@ async function loadCatalog(slug: string) {
 
   const { data: rows } = await supabase
     .from("catalog_product")
-    .select("sort_order, product:product(id,name,description,category,price_cents,currency,stock,min_order_qty,image_url,active)")
+    .select("sort_order, product:product(id,name,description,category,price_cents,currency,stock,min_order_qty,image_url,images,active)")
     .eq("catalog_id", cat.id)
     .order("sort_order", { ascending: true });
 
@@ -42,7 +43,24 @@ async function loadCatalog(slug: string) {
     .map((r) => r.product)
     .filter((p): p is RawProduct => p !== null && p.active);
 
-  return { catalog: cat, products };
+  // Logo/banner: los del catálogo; si no tiene, los heredados del negocio
+  // (vía RPC, porque `business` no es legible por anon).
+  let logo = resolveBrandImage(cat.logo_key, cat.logo_url, "thumb");
+  let logoFull = resolveBrandImage(cat.logo_key, cat.logo_url);
+  let banner = resolveBrandImage(cat.banner_key, cat.banner_url);
+  if (!logo || !banner) {
+    const { data: inherited } = await supabase.rpc("public_catalog_branding", { p_slug: slug });
+    const row = (Array.isArray(inherited) ? inherited[0] : inherited) as
+      | { logo_key: string | null; banner_key: string | null }
+      | undefined;
+    if (!logo && row?.logo_key) {
+      logo = resolveBrandImage(row.logo_key, null, "thumb");
+      logoFull = resolveBrandImage(row.logo_key, null);
+    }
+    if (!banner && row?.banner_key) banner = resolveBrandImage(row.banner_key, null);
+  }
+
+  return { catalog: cat, products, branding: { logo, logoFull, banner } };
 }
 
 export async function generateMetadata({
@@ -59,6 +77,7 @@ export async function generateMetadata({
     data.catalog.description ||
     `Catálogo de ${name}. Explora productos, precios y haz tu pedido en línea.`;
   const url = `${getSiteUrl()}/c/${data.catalog.slug}`;
+  const ogImage = data.branding.banner ?? data.branding.logoFull;
 
   return {
     title: name,
@@ -69,7 +88,7 @@ export async function generateMetadata({
       title: name,
       description,
       url,
-      images: data.catalog.banner_url ? [{ url: data.catalog.banner_url }] : undefined,
+      images: ogImage ? [{ url: absoluteUrl(ogImage, getSiteUrl()) }] : undefined,
     },
     robots: { index: true, follow: true },
   };
@@ -84,10 +103,11 @@ export default async function PublicCatalogPage({
   const data = await loadCatalog(slug);
   if (!data) notFound();
 
-  const { catalog, products } = data;
+  const { catalog, products, branding } = data;
   const theme = resolveTheme(catalog.theme);
   const displayName = catalog.display_name || catalog.name;
   const url = `${getSiteUrl()}/c/${catalog.slug}`;
+  const site = getSiteUrl();
 
   // JSON-LD para SEO (tienda + listado de productos)
   const jsonLd = {
@@ -96,12 +116,20 @@ export default async function PublicCatalogPage({
     name: displayName,
     url,
     ...(catalog.description ? { description: catalog.description } : {}),
-    makesOffer: products.slice(0, 30).map((p) => ({
-      "@type": "Offer",
-      itemOffered: { "@type": "Product", name: p.name },
-      price: (p.price_cents / 100).toFixed(2),
-      priceCurrency: p.currency,
-    })),
+    ...(branding.logoFull ? { logo: absoluteUrl(branding.logoFull, site) } : {}),
+    makesOffer: products.slice(0, 30).map((p) => {
+      const img = productImages(p)[0];
+      return {
+        "@type": "Offer",
+        itemOffered: {
+          "@type": "Product",
+          name: p.name,
+          ...(img ? { image: absoluteUrl(img.src, site) } : {}),
+        },
+        price: (p.price_cents / 100).toFixed(2),
+        priceCurrency: p.currency,
+      };
+    }),
   };
 
   return (
@@ -122,10 +150,10 @@ export default async function PublicCatalogPage({
           la izquierda, rótulo en versalitas, acciones a la derecha.      */}
       <header className="sticky top-0 z-30 h-[var(--catalog-header-h)] border-b border-border bg-background/94 backdrop-blur-sm">
         <div className="mx-auto flex h-full max-w-3xl items-center gap-3 px-4">
-          {catalog.logo_url ? (
+          {branding.logo ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={catalog.logo_url}
+              src={branding.logo}
               alt=""
               className="size-10 shrink-0 rounded-[var(--radius-theme-sm)] object-cover"
             />
@@ -159,11 +187,12 @@ export default async function PublicCatalogPage({
       </header>
 
       <main id="contenido" className="mx-auto max-w-3xl px-4 pb-24">
-        {catalog.banner_url && (
+        {branding.banner && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={catalog.banner_url}
+            src={branding.banner}
             alt=""
+            fetchPriority="high"
             className="mt-4 aspect-[3/1] w-full border border-border object-cover"
           />
         )}

@@ -4,8 +4,10 @@ import { revalidatePath } from "next/cache";
 import Papa from "papaparse";
 import { createClient } from "@/lib/supabase/server";
 import { getBusiness } from "@/lib/auth";
-import { productSchema } from "@/lib/validation";
+import { productSchema, productImagesSchema } from "@/lib/validation";
 import { getPlan } from "@/lib/plans";
+import { assertUploadedKey, deleteMedia } from "@/lib/media/server";
+import type { StoredImage } from "@/types/database";
 
 export interface ActionState {
   ok: boolean;
@@ -18,6 +20,41 @@ const fail = (error: string): ActionState => ({ ok: false, error });
 
 function toCents(value: number): number {
   return Math.round(value * 100);
+}
+
+/**
+ * Lee y valida las imágenes del formulario.
+ *
+ * `previous` son las que ya tenía el producto: esas no se vuelven a comprobar
+ * en R2. Las nuevas deben ser del negocio y existir en el bucket, para que
+ * nadie pueda asociar claves inventadas o de otro negocio.
+ */
+async function readImages(
+  formData: FormData,
+  businessId: string,
+  previous: StoredImage[] = [],
+): Promise<{ images: StoredImage[] } | { error: string }> {
+  const raw = formData.get("images");
+  if (raw === null || raw === "") return { images: [] };
+  let json: unknown;
+  try {
+    json = JSON.parse(String(raw));
+  } catch {
+    return { error: "Imágenes inválidas." };
+  }
+  const parsed = productImagesSchema.safeParse(json);
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Imágenes inválidas." };
+
+  const known = new Set(previous.map((i) => i.key));
+  const checks = await Promise.all(
+    parsed.data.map((img) =>
+      known.has(img.key) ? true : assertUploadedKey(img.key, businessId, "product").catch(() => false),
+    ),
+  );
+  if (checks.some((ok) => !ok)) {
+    return { error: "Alguna foto no terminó de subirse. Quítala y vuelve a intentarlo." };
+  }
+  return { images: parsed.data };
 }
 
 export async function createProduct(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -39,6 +76,9 @@ export async function createProduct(_prev: ActionState, formData: FormData): Pro
   if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Datos inválidos.");
   const p = parsed.data;
 
+  const imgs = await readImages(formData, business.id);
+  if ("error" in imgs) return fail(imgs.error);
+
   const { error } = await supabase.from("product").insert({
     business_id: business.id,
     name: p.name,
@@ -50,6 +90,7 @@ export async function createProduct(_prev: ActionState, formData: FormData): Pro
     stock: p.stock,
     min_order_qty: p.min_order_qty,
     image_url: p.image_url || null,
+    images: imgs.images,
     active: p.active,
   });
   if (error) return fail("No se pudo guardar el producto.");
@@ -69,6 +110,19 @@ export async function updateProduct(_prev: ActionState, formData: FormData): Pro
   const p = parsed.data;
 
   const supabase = await createClient();
+
+  const { data: current } = await supabase
+    .from("product")
+    .select("images")
+    .eq("id", id)
+    .eq("business_id", business.id)
+    .maybeSingle();
+  if (!current) return fail("Producto no encontrado.");
+  const previous = ((current as { images: StoredImage[] | null }).images ?? []) as StoredImage[];
+
+  const imgs = await readImages(formData, business.id, previous);
+  if ("error" in imgs) return fail(imgs.error);
+
   // La cláusula business_id + RLS garantizan que solo edite lo suyo.
   const { error } = await supabase
     .from("product")
@@ -82,11 +136,16 @@ export async function updateProduct(_prev: ActionState, formData: FormData): Pro
       stock: p.stock,
       min_order_qty: p.min_order_qty,
       image_url: p.image_url || null,
+      images: imgs.images,
       active: p.active,
     })
     .eq("id", id)
     .eq("business_id", business.id);
   if (error) return fail("No se pudo actualizar.");
+
+  // Solo tras guardar: las fotos quitadas se borran de R2.
+  const kept = new Set(imgs.images.map((i) => i.key));
+  await deleteMedia(previous.filter((i) => !kept.has(i.key)).map((i) => i.key));
 
   revalidatePath("/dashboard/productos");
   return ok("Producto actualizado.");
@@ -98,7 +157,16 @@ export async function deleteProduct(formData: FormData): Promise<void> {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
   const supabase = await createClient();
-  await supabase.from("product").delete().eq("id", id).eq("business_id", business.id);
+  const { data: removed } = await supabase
+    .from("product")
+    .delete()
+    .eq("id", id)
+    .eq("business_id", business.id)
+    .select("images");
+  const keys = ((removed ?? []) as { images: StoredImage[] | null }[]).flatMap((r) =>
+    (r.images ?? []).map((i) => i.key),
+  );
+  await deleteMedia(keys);
   revalidatePath("/dashboard/productos");
 }
 

@@ -1,0 +1,39 @@
+{
+	// ─────────────────────────────────────────────────────────────────────────
+	// Catalii Media — Worker que sirve las imágenes de R2 (servidor aparte).
+	//
+	//   Local:   pnpm media:dev     → http://localhost:8788
+	//   Deploy:  pnpm media:deploy
+	//
+	// Después de desplegar, conecta un dominio propio (abajo) y pon en el BUILD
+	// de la app: NEXT_PUBLIC_MEDIA_URL=https://media.catalii.com
+	// Sin esa variable la app sirve las imágenes por /api/media (fallback).
+	// ─────────────────────────────────────────────────────────────────────────
+	"name": "catalii-media",
+	"main": "src/index.ts",
+	"compatibility_date": "2025-09-23",
+	"observability": {
+		"enabled": true
+	},
+	// Dominio dedicado. Descomenta y ajusta tras añadir la zona en Cloudflare:
+	// "routes": [{ "pattern": "media.catalii.com", "custom_domain": true }],
+	"vars": {
+		// Orígenes con permiso CORS (las <img> no lo necesitan; sí canvas/fetch).
+		"ALLOWED_ORIGINS": "https://catalii.com,http://localhost:3000"
+	},
+	// Mismos buckets que la app (wrangler.jsonc). Solo lectura en este Worker.
+	"r2_buckets": [
+		{
+			"binding": "MEDIA_PRODUCTS",
+			"bucket_name": "catalii-products"
+		},
+		{
+			"binding": "MEDIA_LOGOS",
+			"bucket_name": "catalii-logos"
+		},
+		{
+			"binding": "MEDIA_BANNERS",
+			"bucket_name": "catalii-banners"
+		}
+	]
+}

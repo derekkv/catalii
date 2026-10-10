@@ -3,12 +3,24 @@
 export type OrderStatus = "pending" | "confirmed" | "shipped" | "cancelled";
 export type PlanTier = "free" | "starter" | "pro" | "business";
 
+/**
+ * Imagen subida a R2. `key` es la clave de la versión optimizada; la miniatura
+ * se deriva con `thumbKeyOf(key)` (src/lib/media/config.ts).
+ */
+export interface StoredImage {
+  key: string;
+  w: number;
+  h: number;
+}
+
 export interface Business {
   id: string;
   owner_id: string;
   name: string;
   slug: string;
   logo_url: string | null;
+  logo_key: string | null;
+  banner_key: string | null;
   whatsapp: string | null;
   email: string | null;
   theme: string;
@@ -28,7 +40,10 @@ export interface Product {
   currency: string;
   stock: number;
   min_order_qty: number;
+  /** URL externa (CSV / legado). Se usa solo si `images` está vacío. */
   image_url: string | null;
+  /** Hasta 3 imágenes subidas; la primera es la principal. */
+  images: StoredImage[];
   active: boolean;
   created_at: string;
   updated_at: string;
@@ -43,6 +58,8 @@ export interface Catalog {
   display_name: string | null;
   logo_url: string | null;
   banner_url: string | null;
+  logo_key: string | null;
+  banner_key: string | null;
   whatsapp: string | null;
   theme: string | null;
   is_public: boolean;

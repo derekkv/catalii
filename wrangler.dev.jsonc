@@ -12,8 +12,8 @@
 	//   A DurableObjectNamespace in the config referenced the class
 	//   "DOQueueHandler", but no such Durable Object class is exported...
 	//
-	// Esta config omite esos bindings de producción (DO, R2 y migraciones) y deja
-	// solo lo que sí tiene sentido en local. El `wrangler.jsonc` de producción
+	// Esta config omite esos bindings de producción (DO, R2 de caché y
+	// migraciones) y deja solo lo que sí tiene sentido en local. El `wrangler.jsonc` de producción
 	// queda intacto. Mantener ambos sincronizados: si se añade un binding que el
 	// código use también en dev (p. ej. una KV o una var), replicarlo aquí.
 	// ─────────────────────────────────────────────────────────────────────────
@@ -25,5 +25,22 @@
 	],
 	"observability": {
 		"enabled": true
-	}
+	},
+	// Buckets de medios (subidas de imágenes). En `next dev` son locales
+	// (miniflare, persistidos en .wrangler/state): no tocan los de producción.
+	// Deben coincidir con los de wrangler.jsonc.
+	"r2_buckets": [
+		{
+			"binding": "MEDIA_PRODUCTS",
+			"bucket_name": "catalii-products"
+		},
+		{
+			"binding": "MEDIA_LOGOS",
+			"bucket_name": "catalii-logos"
+		},
+		{
+			"binding": "MEDIA_BANNERS",
+			"bucket_name": "catalii-banners"
+		}
+	]
 }

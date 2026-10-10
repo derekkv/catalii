@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { requireBusiness } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/site";
+import { resolveBrandImage } from "@/lib/media/config";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { CatalogConfigForm, DeleteCatalogButton } from "./catalog-editor";
@@ -81,7 +82,13 @@ export default async function CatalogDetailPage({
 
       <section className="space-y-4 rule-t pt-6">
         <h2 className="t-h2">Configuración y apariencia</h2>
-        <CatalogConfigForm catalog={cat} siteUrl={base} productCount={selectedIds.length} />
+        <CatalogConfigForm
+          catalog={cat}
+          siteUrl={base}
+          productCount={selectedIds.length}
+          inheritedLogo={resolveBrandImage(business.logo_key, business.logo_url, "thumb")}
+          inheritedBanner={resolveBrandImage(business.banner_key, null, "thumb")}
+        />
       </section>
 
       <section className="space-y-4 rule-t pt-6">

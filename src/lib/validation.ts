@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { THEMES } from "@/lib/themes";
+import { MAIN_KEY_RE, MAX_PRODUCT_IMAGES } from "@/lib/media/config";
 
 const themeIds = THEMES.map((t) => t.id) as [string, ...string[]];
 
@@ -46,6 +47,25 @@ export const catalogSchema = z.object({
 });
 
 export const orderStatusSchema = z.enum(["pending", "confirmed", "shipped", "cancelled"]);
+
+/**
+ * Imágenes de producto enviadas por el formulario (JSON en un campo oculto).
+ * El formato de la clave se valida aquí; la propiedad (que sea del negocio) y
+ * que exista en R2 se comprueban en la acción.
+ */
+export const productImagesSchema = z
+  .array(
+    z.object({
+      key: z.string().regex(MAIN_KEY_RE, "Imagen inválida."),
+      w: z.number().int().min(1).max(10_000),
+      h: z.number().int().min(1).max(10_000),
+    }),
+  )
+  .max(MAX_PRODUCT_IMAGES, `Máximo ${MAX_PRODUCT_IMAGES} imágenes por producto.`)
+  .refine((list) => new Set(list.map((i) => i.key)).size === list.length, "Imágenes repetidas.");
+
+/** Clave de logo/banner, o null para quitarla. */
+export const brandImageKeySchema = z.string().regex(MAIN_KEY_RE).nullable();
 
 /** Ítem del carrito enviado al RPC place_order (sólo id + cantidad; el precio
  * lo recalcula el servidor). */

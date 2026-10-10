@@ -21,6 +21,24 @@
 		{
 			"binding": "NEXT_INC_CACHE_R2_BUCKET",
 			"bucket_name": "catalii-cache"
+		},
+		// ── Medios subidos por los usuarios (ver src/lib/media/) ──────────────
+		// Un bucket por tipo de imagen. Crearlos una vez:
+		//   npx wrangler r2 bucket create catalii-products
+		//   npx wrangler r2 bucket create catalii-logos
+		//   npx wrangler r2 bucket create catalii-banners
+		// Los mismos buckets los lee el Worker de medios (media-worker/).
+		{
+			"binding": "MEDIA_PRODUCTS",
+			"bucket_name": "catalii-products"
+		},
+		{
+			"binding": "MEDIA_LOGOS",
+			"bucket_name": "catalii-logos"
+		},
+		{
+			"binding": "MEDIA_BANNERS",
+			"bucket_name": "catalii-banners"
 		}
 	],
 	// Cola de revalidación en background (Durable Object con SQLite, free-tier).

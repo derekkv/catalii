@@ -14,8 +14,9 @@ export const config = {
      * Todas las rutas excepto:
      * - _next/static, _next/image
      * - favicon, robots, sitemap
+     * - api/media (imágenes de R2: públicas, no necesitan sesión)
      * - archivos con extensión (imágenes, etc.)
      */
-    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|api/media/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

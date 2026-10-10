@@ -21,6 +21,8 @@ import { Input, Label, Textarea } from "@/components/ui/input";
 import { Drawer, Modal } from "@/components/ui/overlay";
 import { useToast } from "@/components/ui/toast";
 import { formatMoney, cn } from "@/lib/utils";
+import { productImages } from "@/lib/media/config";
+import type { StoredImage } from "@/types/database";
 
 export interface PublicProduct {
   id: string;
@@ -32,6 +34,7 @@ export interface PublicProduct {
   stock: number;
   min_order_qty: number;
   image_url: string | null;
+  images: StoredImage[];
 }
 
 interface Props {
@@ -356,7 +359,9 @@ function ProductCard({
   onOpenDetail: () => void;
 }) {
   const lowStock = p.stock > 0 && p.stock <= LOW_STOCK_THRESHOLD;
-  const hasDetail = Boolean(p.description || p.image_url || p.category);
+  const images = productImages(p);
+  const cover = images[0];
+  const hasDetail = Boolean(p.description || cover || p.category);
 
   return (
     <li>
@@ -372,12 +377,14 @@ function ProductCard({
           aria-label={hasDetail ? `Ver detalle de ${p.name}` : undefined}
         >
           <div className="relative aspect-square overflow-hidden border-b border-border bg-muted">
-            {p.image_url ? (
+            {cover ? (
+              // Miniatura en la rejilla: ~30 KB en vez de la foto completa.
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={p.image_url}
+                src={cover.thumb}
                 alt={p.name}
                 loading="lazy"
+                decoding="async"
                 className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
               />
             ) : (
@@ -388,6 +395,11 @@ function ProductCard({
             {lowStock && (
               <span className="t-label absolute left-0 top-0 bg-accent px-2 py-1 text-on-accent">
                 Quedan {p.stock}
+              </span>
+            )}
+            {images.length > 1 && (
+              <span className="t-label absolute bottom-0 right-0 bg-background/90 px-1.5 py-0.5 text-[0.5625rem] text-muted-foreground">
+                {images.length} fotos
               </span>
             )}
           </div>
@@ -466,14 +478,7 @@ function ProductDetail({
       }
     >
       <div className="space-y-4">
-        {product.image_url && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={product.image_url}
-            alt={product.name}
-            className="aspect-square w-full border border-border bg-muted object-contain"
-          />
-        )}
+        <ProductGallery name={product.name} images={productImages(product)} />
 
         <p className="t-price text-3xl">
           {formatMoney(product.price_cents, product.currency)}
@@ -520,6 +525,64 @@ function ProductDetail({
         </div>
       </div>
     </Modal>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * Galería del detalle (hasta 3 fotos)
+ * ────────────────────────────────────────────────────────────────────────── */
+
+function ProductGallery({
+  name,
+  images,
+}: {
+  name: string;
+  images: ReturnType<typeof productImages>;
+}) {
+  const [active, setActive] = useState(0);
+  if (images.length === 0) return null;
+  const current = images[Math.min(active, images.length - 1)];
+
+  return (
+    <div className="space-y-2">
+      {/* Mientras carga la versión completa se ve la miniatura (ya en caché
+          de la rejilla) como fondo: el modal nunca abre en blanco. */}
+      <div
+        className="aspect-square w-full border border-border bg-muted bg-contain bg-center bg-no-repeat"
+        style={{ backgroundImage: `url("${current.thumb}")` }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          key={current.src}
+          src={current.src}
+          alt={images.length > 1 ? `${name}, foto ${active + 1} de ${images.length}` : name}
+          width={current.w}
+          height={current.h}
+          decoding="async"
+          className="size-full object-contain"
+        />
+      </div>
+      {images.length > 1 && (
+        <div className="flex gap-2" role="group" aria-label="Fotos del producto">
+          {images.map((img, i) => (
+            <button
+              key={img.src}
+              type="button"
+              onClick={() => setActive(i)}
+              aria-label={`Ver foto ${i + 1}`}
+              aria-pressed={i === active}
+              className={cn(
+                "size-16 cursor-pointer overflow-hidden border bg-muted transition-colors",
+                i === active ? "border-primary ring-2 ring-ring" : "border-border hover:border-input",
+              )}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={img.thumb} alt="" loading="lazy" className="size-full object-cover" />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 

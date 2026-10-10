@@ -21,6 +21,7 @@ import { Drawer, Modal } from "@/components/ui/overlay";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm";
 import { formatMoney, cn } from "@/lib/utils";
+import { productImages } from "@/lib/media/config";
 import type { Product } from "@/types/database";
 
 const initial: ActionState = { ok: false };
@@ -295,6 +296,7 @@ function ProductRow({
   const confirm = useConfirm();
   const { toast } = useToast();
   const [deleting, setDeleting] = useState(false);
+  const cover = productImages(p)[0];
 
   async function remove() {
     const ok = await confirm({
@@ -328,9 +330,9 @@ function ProductRow({
       )}
     >
       <div className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-[2px] bg-muted">
-        {p.image_url ? (
+        {cover ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={p.image_url} alt="" className="size-full object-cover" />
+          <img src={cover.thumb} alt="" loading="lazy" className="size-full object-cover" />
         ) : (
           <PackageOpen className="size-4 text-muted-foreground" aria-hidden="true" />
         )}

@@ -3,8 +3,9 @@ import { getBusiness } from "@/lib/auth";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { SignOutButton } from "@/components/dashboard/signout-button";
 import { ThemeSwitcher } from "@/components/theme/theme-switcher";
-import { Wordmark } from "@/components/brand/wordmark";
+import { Wordmark, Monogram } from "@/components/brand/wordmark";
 import { getPlan } from "@/lib/plans";
+import { resolveBrandImage } from "@/lib/media/config";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   // Una sola verificación de sesión: `getBusiness()` ya exige usuario, así que
@@ -17,6 +18,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
 
   const plan = getPlan(business.plan);
+  const avatar = resolveBrandImage(business.logo_key, business.logo_url, "thumb");
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
@@ -40,7 +42,19 @@ export default async function DashboardLayout({ children }: { children: React.Re
             className="block rounded-[var(--radius-theme-sm)] transition-colors hover:bg-muted"
           >
             <p className="t-label text-muted-foreground">Negocio</p>
-            <p className="mt-1.5 truncate text-sm font-medium">{business.name}</p>
+            <div className="mt-1.5 flex items-center gap-2">
+              {avatar ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={avatar}
+                  alt=""
+                  className="size-7 shrink-0 rounded-[var(--radius-theme-sm)] object-cover"
+                />
+              ) : (
+                <Monogram letter={business.name} className="size-7 shrink-0 text-sm" />
+              )}
+              <p className="min-w-0 truncate text-sm font-medium">{business.name}</p>
+            </div>
             <p className="t-label mt-2 text-primary">Plan {plan.name}</p>
           </Link>
         </div>

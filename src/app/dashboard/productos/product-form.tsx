@@ -1,12 +1,14 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { createProduct, updateProduct, type ActionState } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Textarea, Select, FieldError, FieldHint } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
+import { ProductImagesField } from "@/components/media/product-images-field";
+import { MAX_PRODUCT_IMAGES } from "@/lib/media/config";
 import type { Product } from "@/types/database";
 
 const initial: ActionState = { ok: false };
@@ -24,6 +26,9 @@ export function ProductForm({
   const isEdit = Boolean(product);
   const router = useRouter();
   const { toast } = useToast();
+  // true cuando el producto se guardó: las fotos nuevas ya no deben descartarse.
+  const committedRef = useRef(false);
+  const [uploading, setUploading] = useState(false);
 
   // Los efectos del éxito se encadenan dentro de la acción (ver nota en
   // products-client): nada de observar el estado resultante desde un efecto.
@@ -31,6 +36,7 @@ export function ProductForm({
     async (prev: ActionState, formData: FormData) => {
       const result = await (isEdit ? updateProduct : createProduct)(prev, formData);
       if (result.ok) {
+        committedRef.current = true;
         toast(result.message ?? (isEdit ? "Producto actualizado." : "Producto agregado."), {
           tone: "success",
         });
@@ -57,6 +63,20 @@ export function ProductForm({
           placeholder="Coca-Cola 600 ml"
           defaultValue={product?.name}
         />
+      </div>
+
+      <div>
+        <p className="t-label mb-2 text-muted-foreground">
+          Fotos ({MAX_PRODUCT_IMAGES} máx.)
+        </p>
+        <ProductImagesField
+          initial={product?.images ?? []}
+          committedRef={committedRef}
+          onBusyChange={setUploading}
+        />
+        <FieldHint>
+          Se comprimen automáticamente. La primera es la que aparece en el catálogo.
+        </FieldHint>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -124,34 +144,20 @@ export function ProductForm({
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <Label htmlFor="min_order_qty">Pedido mínimo</Label>
-          <Input
-            id="min_order_qty"
-            name="min_order_qty"
-            type="number"
-            min="1"
-            inputMode="numeric"
-            defaultValue={product?.min_order_qty ?? 1}
-          />
-          <FieldHint>
-            Unidades mínimas que debe pedir el cliente.
-          </FieldHint>
-        </div>
-        <div>
-          <Label htmlFor="image_url">URL de imagen</Label>
-          <Input
-            id="image_url"
-            name="image_url"
-            type="url"
-            placeholder="https://…/producto.jpg"
-            defaultValue={product?.image_url ?? ""}
-          />
-          <FieldHint>
-            Las fotos aumentan mucho la conversión.
-          </FieldHint>
-        </div>
+      <div>
+        <Label htmlFor="min_order_qty">Pedido mínimo</Label>
+        <Input
+          id="min_order_qty"
+          name="min_order_qty"
+          type="number"
+          min="1"
+          inputMode="numeric"
+          defaultValue={product?.min_order_qty ?? 1}
+          className="sm:w-1/2"
+        />
+        <FieldHint>
+          Unidades mínimas que debe pedir el cliente.
+        </FieldHint>
       </div>
 
       <div>
@@ -167,6 +173,27 @@ export function ProductForm({
           Se muestra al abrir el producto en el catálogo.
         </FieldHint>
       </div>
+
+      {/* URL externa: para productos importados por CSV. Solo se usa si el
+          producto no tiene fotos subidas. */}
+      <details className="group" open={Boolean(product?.image_url) && !product?.images?.length}>
+        <summary className="t-label cursor-pointer text-muted-foreground hover:text-foreground">
+          Usar una URL de imagen externa
+        </summary>
+        <div className="mt-2">
+          <Label htmlFor="image_url" className="sr-only">
+            URL de imagen externa
+          </Label>
+          <Input
+            id="image_url"
+            name="image_url"
+            type="url"
+            placeholder="https://…/producto.jpg"
+            defaultValue={product?.image_url ?? ""}
+          />
+          <FieldHint>Se ignora si subes fotos arriba.</FieldHint>
+        </div>
+      </details>
 
       <label className="flex items-start gap-3 rounded-[var(--radius-theme-sm)] bg-muted p-3 text-sm">
         <input
@@ -187,9 +214,9 @@ export function ProductForm({
       {state.error && <FieldError>{state.error}</FieldError>}
 
       <div className="flex gap-2 pt-1">
-        <Button type="submit" disabled={pending} className="gap-2">
-          {pending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-          {isEdit ? "Guardar cambios" : "Agregar producto"}
+        <Button type="submit" disabled={pending || uploading} className="gap-2">
+          {(pending || uploading) && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+          {uploading ? "Subiendo fotos…" : isEdit ? "Guardar cambios" : "Agregar producto"}
         </Button>
         {onDone && (
           <Button type="button" variant="ghost" onClick={onDone}>

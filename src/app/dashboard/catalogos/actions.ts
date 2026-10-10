@@ -4,9 +4,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getBusiness } from "@/lib/auth";
-import { catalogSchema } from "@/lib/validation";
+import { catalogSchema, brandImageKeySchema } from "@/lib/validation";
 import { getPlan } from "@/lib/plans";
 import { slugify } from "@/lib/utils";
+import { assertUploadedKey, deleteMedia } from "@/lib/media/server";
 
 export interface CatalogState {
   ok: boolean;
@@ -72,14 +73,13 @@ export async function updateCatalog(_prev: CatalogState, formData: FormData): Pr
   if (!id) return { ok: false, error: "Catálogo inválido." };
 
   const name = String(formData.get("name") ?? "");
+  // logo/banner ya no se editan aquí: se suben a R2 con setCatalogImage().
   const parsed = catalogSchema.safeParse({
     name,
     slug: slugify(String(formData.get("slug") || name)),
     description: formData.get("description") ?? "",
     display_name: formData.get("display_name") ?? name,
     whatsapp: formData.get("whatsapp") ?? "",
-    logo_url: formData.get("logo_url") ?? "",
-    banner_url: formData.get("banner_url") ?? "",
     theme: formData.get("theme") ?? "",
     is_public: formData.get("is_public") ?? false,
   });
@@ -95,8 +95,6 @@ export async function updateCatalog(_prev: CatalogState, formData: FormData): Pr
       description: c.description || null,
       display_name: c.display_name || c.name,
       whatsapp: c.whatsapp || null,
-      logo_url: c.logo_url || null,
-      banner_url: c.banner_url || null,
       theme: c.theme || null,
       is_public: c.is_public,
     })
@@ -119,9 +117,65 @@ export async function deleteCatalog(formData: FormData): Promise<void> {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
   const supabase = await createClient();
-  await supabase.from("catalog").delete().eq("id", id).eq("business_id", business.id);
+  const { data: removed } = await supabase
+    .from("catalog")
+    .delete()
+    .eq("id", id)
+    .eq("business_id", business.id)
+    .select("logo_key, banner_key");
+  const row = (removed?.[0] ?? null) as { logo_key: string | null; banner_key: string | null } | null;
+  if (row) await deleteMedia([row.logo_key, row.banner_key]);
   revalidatePath("/dashboard/catalogos");
   redirect("/dashboard/catalogos");
+}
+
+/**
+ * Asigna (o quita, con `key = null`) el logo o el banner del catálogo.
+ * La imagen ya está en R2 (subida por /api/uploads); aquí se valida que sea
+ * del negocio, se guarda la clave y se borra la anterior.
+ */
+export async function setCatalogImage(
+  catalogId: string,
+  kind: "logo" | "banner",
+  key: string | null,
+): Promise<CatalogState> {
+  const business = await getBusiness();
+  if (!business) return { ok: false, error: "No autorizado." };
+  if (kind !== "logo" && kind !== "banner") return { ok: false, error: "Tipo inválido." };
+
+  const parsedKey = brandImageKeySchema.safeParse(key);
+  if (!parsedKey.success) return { ok: false, error: "Imagen inválida." };
+  if (parsedKey.data && !(await assertUploadedKey(parsedKey.data, business.id, kind).catch(() => false))) {
+    return { ok: false, error: "La imagen no se subió correctamente. Reintenta." };
+  }
+
+  const column = kind === "logo" ? "logo_key" : "banner_key";
+  const legacyColumn = kind === "logo" ? "logo_url" : "banner_url";
+
+  const supabase = await createClient();
+  const { data: current } = await supabase
+    .from("catalog")
+    .select(`slug, ${column}`)
+    .eq("id", catalogId)
+    .eq("business_id", business.id)
+    .maybeSingle();
+  if (!current) return { ok: false, error: "Catálogo no encontrado." };
+  const previous = (current as unknown as Record<string, string | null>)[column];
+
+  const { error } = await supabase
+    .from("catalog")
+    // Al subir o quitar, la URL externa antigua deja de aplicar.
+    .update({ [column]: parsedKey.data, [legacyColumn]: null })
+    .eq("id", catalogId)
+    .eq("business_id", business.id);
+  if (error) return { ok: false, error: "No se pudo guardar la imagen." };
+
+  if (previous && previous !== parsedKey.data) await deleteMedia([previous]);
+
+  revalidatePath(`/dashboard/catalogos/${catalogId}`);
+  revalidatePath("/dashboard/catalogos");
+  revalidatePath(`/c/${(current as { slug: string }).slug}`);
+  return { ok: true };
 }
 
 /** Sincroniza qué productos pertenecen al catálogo (set completo). */

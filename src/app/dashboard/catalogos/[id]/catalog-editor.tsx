@@ -3,13 +3,15 @@
 import { useActionState, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Trash2, Globe, Lock } from "lucide-react";
-import { updateCatalog, deleteCatalog, type CatalogState } from "../actions";
+import { updateCatalog, deleteCatalog, setCatalogImage, type CatalogState } from "../actions";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Textarea, FieldError, FieldHint } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm";
 import { ThemeSwatch, ThemeSwatchInherit } from "@/components/theme/theme-swatch";
+import { BrandImageUpload } from "@/components/media/brand-image-upload";
 import { THEMES, resolveTheme } from "@/lib/themes";
+import { resolveBrandImage } from "@/lib/media/config";
 import { slugify, cn } from "@/lib/utils";
 import type { Catalog } from "@/types/database";
 
@@ -19,10 +21,15 @@ export function CatalogConfigForm({
   catalog,
   siteUrl,
   productCount,
+  inheritedLogo = null,
+  inheritedBanner = null,
 }: {
   catalog: Catalog;
   siteUrl: string;
   productCount: number;
+  /** Miniaturas del logo/banner del negocio (se muestran si el catálogo no tiene). */
+  inheritedLogo?: string | null;
+  inheritedBanner?: string | null;
 }) {
   // Cadena vacía = heredar del negocio. Si hay un theme guardado se
   // normaliza, para que un id antiguo no deje la selección en blanco.
@@ -115,36 +122,31 @@ export function CatalogConfigForm({
         />
       </div>
 
-      {/* Branding: estos dos campos ya se mostraban en el catálogo público,
-          pero no existían en el panel, así que eran inalcanzables. */}
-      <fieldset className="grid gap-4 sm:grid-cols-2">
+      {/* Branding: se sube a R2 y se guarda al momento (no depende del botón
+          "Guardar cambios"). Sin imagen propia se hereda la del negocio. */}
+      <fieldset className="space-y-5">
         <legend className="t-label mb-2 text-muted-foreground">Imágenes de marca</legend>
-        <div>
-          <Label htmlFor="logo_url">URL del logo</Label>
-          <Input
-            id="logo_url"
-            name="logo_url"
-            type="url"
-            placeholder="https://…/logo.png"
-            defaultValue={catalog.logo_url ?? ""}
-          />
-          <FieldHint>
-            Cuadrado. Si lo dejas vacío se usa la inicial del nombre.
-          </FieldHint>
-        </div>
-        <div>
-          <Label htmlFor="banner_url">URL del banner</Label>
-          <Input
-            id="banner_url"
-            name="banner_url"
-            type="url"
-            placeholder="https://…/banner.jpg"
-            defaultValue={catalog.banner_url ?? ""}
-          />
-          <FieldHint>
-            Formato 3:1. También se usa como imagen al compartir el enlace.
-          </FieldHint>
-        </div>
+        <BrandImageUpload
+          kind="logo"
+          label="Foto de perfil / logo"
+          hint="Cuadrado. Si no subes uno se usa el del negocio o la inicial del nombre."
+          currentUrl={
+            resolveBrandImage(catalog.logo_key, catalog.logo_url, "thumb") ?? inheritedLogo
+          }
+          inherited={!catalog.logo_key && !catalog.logo_url && Boolean(inheritedLogo)}
+          fallbackLetter={catalog.display_name || catalog.name}
+          onCommit={(key) => setCatalogImage(catalog.id, "logo", key)}
+        />
+        <BrandImageUpload
+          kind="banner"
+          label="Banner"
+          hint="Formato 3:1. También se usa como imagen al compartir el enlace."
+          currentUrl={
+            resolveBrandImage(catalog.banner_key, catalog.banner_url, "thumb") ?? inheritedBanner
+          }
+          inherited={!catalog.banner_key && !catalog.banner_url && Boolean(inheritedBanner)}
+          onCommit={(key) => setCatalogImage(catalog.id, "banner", key)}
+        />
       </fieldset>
 
       <fieldset>
