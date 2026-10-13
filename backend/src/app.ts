@@ -1,5 +1,6 @@
 import express, { type Express } from "express";
 import { healthRouter } from "@/routes/health.route.js";
+import { productRouter } from "@/routes/product.route.js";
 
 /**
  * Construye la app de Express. Se separa de `server.ts` para poder montarla en
@@ -14,6 +15,7 @@ export function createApp(): Express {
   app.use(express.urlencoded({ extended: true }));
 
   app.use("/health", healthRouter);
+  app.use("/api/products", productRouter);
 
   return app;
 }
