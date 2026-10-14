@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ApiError } from "@/lib/errors.js";
 import { publicClient } from "@/lib/supabase.js";
-import type { Order, OrderStatus } from "@/types/database.js";
+import type { Order, OrderItem, OrderStatus } from "@/types/database.js";
 import type { PlaceOrderInput } from "@/schemas/order.schema.js";
 
 export interface PlacedOrder {
@@ -9,6 +9,9 @@ export interface PlacedOrder {
   totalCents: number;
   currency: string;
 }
+
+/** Pedido con sus renglones, como lo necesita el panel. */
+export type OrderWithItems = Order & { order_item: OrderItem[] };
 
 export const orderService = {
   /**
@@ -32,14 +35,14 @@ export const orderService = {
     return { orderId: r.order_id, totalCents: r.total_cents, currency: r.currency };
   },
 
-  async list(db: SupabaseClient, businessId: string): Promise<Order[]> {
+  async list(db: SupabaseClient, businessId: string): Promise<OrderWithItems[]> {
     const { data, error } = await db
       .from("order")
-      .select("*")
+      .select("*, order_item(*)")
       .eq("business_id", businessId)
       .order("created_at", { ascending: false });
     if (error) throw new ApiError(502, "No se pudieron cargar los pedidos.", "db_error");
-    return (data ?? []) as Order[];
+    return (data ?? []) as OrderWithItems[];
   },
 
   async updateStatus(
