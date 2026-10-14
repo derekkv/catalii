@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { catalogService } from "@/services/catalog.service.js";
-import { createCatalogSchema, updateCatalogSchema } from "@/schemas/catalog.schema.js";
+import type { CreateCatalogInput, UpdateCatalogInput } from "@/schemas/catalog.schema.js";
 import { ApiError } from "@/lib/errors.js";
 import type { AuthedRequest } from "@/types/http.js";
 
@@ -18,17 +18,18 @@ export const catalogController = {
 
   async create(req: AuthedRequest, res: Response) {
     const business = requireBiz(req);
-    const parsed = createCatalogSchema.safeParse(req.body);
-    if (!parsed.success) throw ApiError.badRequest(parsed.error.issues[0]?.message ?? "Datos inválidos.");
-    const data = await catalogService.create(req.auth.supabase, business, parsed.data);
+    const data = await catalogService.create(req.auth.supabase, business, req.body as CreateCatalogInput);
     res.status(201).json({ data });
   },
 
   async update(req: AuthedRequest, res: Response) {
     const business = requireBiz(req);
-    const parsed = updateCatalogSchema.safeParse(req.body);
-    if (!parsed.success) throw ApiError.badRequest(parsed.error.issues[0]?.message ?? "Datos inválidos.");
-    const data = await catalogService.update(req.auth.supabase, business.id, req.params.id, parsed.data);
+    const data = await catalogService.update(
+      req.auth.supabase,
+      business.id,
+      req.params.id,
+      req.body as UpdateCatalogInput,
+    );
     res.json({ data });
   },
 

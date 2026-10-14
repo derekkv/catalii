@@ -4,6 +4,7 @@ import { productRouter } from "@/routes/product.route.js";
 import { catalogRouter } from "@/routes/catalog.route.js";
 import { storefrontRouter } from "@/routes/storefront.route.js";
 import { orderRouter } from "@/routes/order.route.js";
+import { notFound, errorHandler } from "@/middlewares/error.js";
 
 /**
  * Construye la app de Express. Se separa de `server.ts` para poder montarla en
@@ -22,6 +23,10 @@ export function createApp(): Express {
   app.use("/api/catalogs", catalogRouter);
   app.use("/api/storefront", storefrontRouter);
   app.use("/api/orders", orderRouter);
+
+  // 404 y manejador de errores: SIEMPRE al final.
+  app.use(notFound);
+  app.use(errorHandler);
 
   return app;
 }

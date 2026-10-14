@@ -1,6 +1,6 @@
 import type { Response } from "express";
 import { productService } from "@/services/product.service.js";
-import { createProductSchema, updateProductSchema } from "@/schemas/product.schema.js";
+import type { CreateProductInput, UpdateProductInput } from "@/schemas/product.schema.js";
 import { ApiError } from "@/lib/errors.js";
 import type { AuthedRequest } from "@/types/http.js";
 
@@ -24,17 +24,23 @@ export const productController = {
 
   async create(req: AuthedRequest, res: Response) {
     const business = requireBiz(req);
-    const parsed = createProductSchema.safeParse(req.body);
-    if (!parsed.success) throw ApiError.badRequest(parsed.error.issues[0]?.message ?? "Datos inválidos.");
-    const product = await productService.create(req.auth.supabase, business, parsed.data);
+    // req.body ya viene validado por validateBody(createProductSchema).
+    const product = await productService.create(
+      req.auth.supabase,
+      business,
+      req.body as CreateProductInput,
+    );
     res.status(201).json({ data: product });
   },
 
   async update(req: AuthedRequest, res: Response) {
     const business = requireBiz(req);
-    const parsed = updateProductSchema.safeParse(req.body);
-    if (!parsed.success) throw ApiError.badRequest(parsed.error.issues[0]?.message ?? "Datos inválidos.");
-    const product = await productService.update(req.auth.supabase, business.id, req.params.id, parsed.data);
+    const product = await productService.update(
+      req.auth.supabase,
+      business.id,
+      req.params.id,
+      req.body as UpdateProductInput,
+    );
     res.json({ data: product });
   },
 
