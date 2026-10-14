@@ -13,7 +13,10 @@
     "cf:typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "media:dev": "wrangler dev -c media-worker/wrangler.jsonc --port 8788 --persist-to .wrangler/state",
     "media:deploy": "wrangler deploy -c media-worker/wrangler.jsonc",
-    "media:buckets": "wrangler r2 bucket create catalii-products && wrangler r2 bucket create catalii-logos && wrangler r2 bucket create catalii-banners"
+    "media:buckets": "wrangler r2 bucket create catalii-products && wrangler r2 bucket create catalii-logos && wrangler r2 bucket create catalii-banners",
+    "backend:dev": "pnpm -C backend dev",
+    "backend:start": "pnpm -C backend start",
+    "backend:typecheck": "pnpm -C backend typecheck"
   },
   "dependencies": {
     "@paddle/paddle-js": "1.4.2",
