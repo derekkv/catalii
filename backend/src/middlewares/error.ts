@@ -12,7 +12,11 @@ export function notFound(_req: Request, res: Response) {
  * Manejador de errores central. Debe ir al final (4 argumentos). Traduce
  * ApiError y ZodError a respuestas JSON consistentes; cualquier otra cosa es un
  * 500 y se registra. En producción no filtra detalles internos.
+ *
+ * El 4º argumento (`next`) es obligatorio: Express solo trata una función como
+ * manejador de errores si declara cuatro parámetros, aunque no se use.
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction) {
   if (err instanceof ApiError) {
     return res.status(err.status).json({ error: { code: err.code, message: err.message } });
