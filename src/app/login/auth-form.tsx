@@ -103,7 +103,7 @@ function SignIn({ next, onForgot }: { next: string; onForgot: () => void }) {
       <input type="hidden" name="next" value={next} />
       <div>
         <Label htmlFor="si-email">Correo</Label>
-        <Input id="si-email" name="email" type="email" autoComplete="email" required placeholder="tu@negocio.com" />
+        <Input id="si-email" name="email" type="email" autoComplete="email" autoFocus required placeholder="tu@negocio.com" />
       </div>
       <div>
         <div className="mb-1.5 flex items-center justify-between">
@@ -137,7 +137,7 @@ function SignUp({ next }: { next: string }) {
       <input type="hidden" name="next" value={next} />
       <div>
         <Label htmlFor="su-name">Tu nombre</Label>
-        <Input id="su-name" name="name" autoComplete="name" maxLength={120} placeholder="Nombre y apellido" />
+        <Input id="su-name" name="name" autoComplete="name" autoFocus maxLength={120} placeholder="Nombre y apellido" />
       </div>
       <div>
         <Label htmlFor="su-email">Correo</Label>
