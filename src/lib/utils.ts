@@ -28,7 +28,10 @@ export function slugify(input: string): string {
     .replace(/[^a-z0-9\s-]/g, "")
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-")
-    .slice(0, 60);
+    .slice(0, 60)
+    // Tras recortar a 60, el corte puede dejar un guión colgando; también se
+    // quitan los de los extremos para no generar slugs como "-abc-".
+    .replace(/^-+|-+$/g, "");
 }
 
 /** Escapa texto para uso seguro dentro de atributos/JSON en el cliente. */
