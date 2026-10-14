@@ -13,6 +13,25 @@ facturación con **Paddle** y base de datos en **Supabase** con RLS.
 - **Paddle** — checkout, webhooks firmados y sincronización de suscripciones
 - **zod** para validación, **papaparse** (import CSV), **qrcode** (QR de compartir)
 
+## Organización (front / back / supabase)
+
+El repo está separado en tres partes:
+
+```
+.
+├── src/            # FRONT  → app Next.js (web + panel + catálogo público)
+├── backend/        # BACK   → API Node.js + Express (ver backend/README.md)
+└── supabase/       # DB     → migraciones, RLS y RPC (ver supabase/README.md)
+```
+
+- **Front (`src/`)** — la app Next.js desplegada en Cloudflare Workers. Hoy su
+  lógica de servidor vive en Server Actions y Route Handlers.
+- **Back (`backend/`)** — un servicio Express independiente que habla con la
+  **misma** Supabase respetando RLS. Pensado para que el front migre a
+  consumirlo de forma incremental, sin tumbar el deploy actual.
+- **Supabase (`supabase/`)** — única fuente de verdad de los datos; la usan
+  tanto el front como el back.
+
 ## Estructura
 
 ```
