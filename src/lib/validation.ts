@@ -4,6 +4,13 @@ import { MAIN_KEY_RE, MAX_PRODUCT_IMAGES } from "@/lib/media/config";
 
 const themeIds = THEMES.map((t) => t.id) as [string, ...string[]];
 
+/**
+ * Checkbox de HTML en un FormData: solo cuenta como marcado si llega "true"/
+ * "on". No se usa z.coerce.boolean() porque Boolean("false") es true, así que
+ * un hidden con value="false" (para los checkbox desmarcados) daría true.
+ */
+const checkboxBool = z.preprocess((v) => v === true || v === "true" || v === "on", z.boolean());
+
 export const slugSchema = z
   .string()
   .trim()
@@ -29,7 +36,7 @@ export const productSchema = z.object({
   stock: z.coerce.number().int().min(0).max(10_000_000).default(0),
   min_order_qty: z.coerce.number().int().min(1).max(1_000_000).default(1),
   image_url: z.string().trim().url().max(600).optional().or(z.literal("")),
-  active: z.coerce.boolean().default(true),
+  active: checkboxBool,
 });
 
 export const catalogSchema = z.object({
@@ -47,7 +54,6 @@ export const catalogSchema = z.object({
 });
 
 export const orderStatusSchema = z.enum(["pending", "confirmed", "shipped", "cancelled"]);
-
 /**
  * Imágenes de producto enviadas por el formulario (JSON en un campo oculto).
  * El formato de la clave se valida aquí; la propiedad (que sea del negocio) y

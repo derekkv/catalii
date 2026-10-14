@@ -196,6 +196,9 @@ export function ProductForm({
       </details>
 
       <label className="flex items-start gap-3 rounded-[var(--radius-theme-sm)] bg-muted p-3 text-sm">
+        {/* El hidden asegura que al desmarcar llegue "false": un checkbox sin
+            marcar no se envía, y antes eso dejaba el producto visible igual. */}
+        <input type="hidden" name="active" value="false" />
         <input
           type="checkbox"
           name="active"
