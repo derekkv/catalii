@@ -211,9 +211,20 @@ export function Storefront({ slug, displayName, whatsapp, products }: Props) {
               placeholder="Buscar producto…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="pl-9"
+              className={cn("pl-9", query && "pr-9")}
               aria-label="Buscar producto"
             />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                aria-label="Limpiar búsqueda"
+                title="Limpiar búsqueda"
+                className="absolute right-2 top-1/2 flex size-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded-[var(--radius-theme-sm)] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <X className="size-4" aria-hidden="true" />
+              </button>
+            )}
           </div>
           <label className="relative inline-flex shrink-0">
             <span className="sr-only">Ordenar productos</span>
