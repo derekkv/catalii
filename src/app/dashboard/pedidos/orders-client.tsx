@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { MessageCircle, ShoppingCart, Search, ChevronDown, Copy, Check, X } from "lucide-react";
+import { MessageCircle, ShoppingCart, Search, ChevronDown, ChevronUp, Copy, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
@@ -205,7 +205,7 @@ function OrderCard({ order: o }: { order: OrderWithItems }) {
 
   const phone = o.customer_whatsapp.replace(/[^0-9]/g, "");
   const items = expanded ? o.order_item : o.order_item.slice(0, 3);
-  const hiddenCount = o.order_item.length - items.length;
+  const extra = o.order_item.length - 3;
 
   const waText = encodeURIComponent(
     `Hola ${o.customer_name}, recibimos tu pedido #${o.id.slice(0, 8)}:\n` +
@@ -284,14 +284,23 @@ function OrderCard({ order: o }: { order: OrderWithItems }) {
           </li>
         ))}
 
-        {hiddenCount > 0 && (
+        {extra > 0 && (
           <li className="pt-1.5">
             <button
               type="button"
-              onClick={() => setExpanded(true)}
+              onClick={() => setExpanded((v) => !v)}
+              aria-expanded={expanded}
               className="t-label link-ink inline-flex cursor-pointer items-center gap-1.5 text-primary"
             >
-              <ChevronDown className="size-3.5" aria-hidden="true" /> {hiddenCount} más
+              {expanded ? (
+                <>
+                  <ChevronUp className="size-3.5" aria-hidden="true" /> Ver menos
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="size-3.5" aria-hidden="true" /> {extra} más
+                </>
+              )}
             </button>
           </li>
         )}
