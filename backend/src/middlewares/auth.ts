@@ -1,14 +1,13 @@
-import type { Response, NextFunction } from "express";
+import type { Request, Response, NextFunction, RequestHandler } from "express";
 import { userClient } from "@/lib/supabase.js";
 import { ApiError } from "@/lib/errors.js";
-import type { AuthedRequest } from "@/types/http.js";
 import type { Business } from "@/types/database.js";
 
 /** Envuelve un handler async para que los throws lleguen al manejador central. */
 export function asyncHandler(
-  fn: (req: AuthedRequest, res: Response, next: NextFunction) => Promise<unknown>,
-) {
-  return (req: AuthedRequest, res: Response, next: NextFunction) => {
+  fn: (req: Request, res: Response, next: NextFunction) => Promise<unknown>,
+): RequestHandler {
+  return (req, res, next) => {
     fn(req, res, next).catch(next);
   };
 }
@@ -23,7 +22,7 @@ function bearer(header: string | undefined): string | null {
  * Exige un access token válido de Supabase. Revalida el token contra Auth (no
  * confía en el JWT a ciegas) y cuelga `req.auth` con un cliente que respeta RLS.
  */
-export async function requireAuth(req: AuthedRequest, _res: Response, next: NextFunction) {
+export async function requireAuth(req: Request, _res: Response, next: NextFunction) {
   try {
     const token = bearer(req.headers.authorization);
     if (!token) throw ApiError.unauthorized("Falta el token de sesión.");
@@ -43,7 +42,7 @@ export async function requireAuth(req: AuthedRequest, _res: Response, next: Next
  * Además de la sesión, exige que el usuario tenga un negocio creado. Lo deja en
  * `req.business`. Para rutas del panel (productos, catálogos, pedidos).
  */
-export async function requireBusiness(req: AuthedRequest, _res: Response, next: NextFunction) {
+export async function requireBusiness(req: Request, _res: Response, next: NextFunction) {
   try {
     if (!req.auth) throw ApiError.unauthorized();
     const { data, error } = await req.auth.supabase

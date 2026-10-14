@@ -3,7 +3,11 @@ import { orderService } from "@/services/order.service.js";
 import type { PlaceOrderInput } from "@/schemas/order.schema.js";
 import type { OrderStatus } from "@/types/database.js";
 import { ApiError } from "@/lib/errors.js";
-import type { AuthedRequest } from "@/types/http.js";
+
+function ctx(req: Request) {
+  if (!req.auth || !req.business) throw ApiError.forbidden();
+  return { db: req.auth.supabase, business: req.business };
+}
 
 export const orderController = {
   /** Público: el cliente final envía su pedido. */
@@ -12,16 +16,16 @@ export const orderController = {
     res.status(201).json({ data: result });
   },
 
-  async list(req: AuthedRequest, res: Response) {
-    if (!req.business) throw ApiError.forbidden();
-    const data = await orderService.list(req.auth.supabase, req.business.id);
+  async list(req: Request, res: Response) {
+    const { db, business } = ctx(req);
+    const data = await orderService.list(db, business.id);
     res.json({ data });
   },
 
-  async updateStatus(req: AuthedRequest, res: Response) {
-    if (!req.business) throw ApiError.forbidden();
+  async updateStatus(req: Request, res: Response) {
+    const { db, business } = ctx(req);
     const { status } = req.body as { status: OrderStatus };
-    const data = await orderService.updateStatus(req.auth.supabase, req.business.id, req.params.id, status);
+    const data = await orderService.updateStatus(db, business.id, req.params.id, status);
     res.json({ data });
   },
 };

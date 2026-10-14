@@ -1,4 +1,3 @@
-import type { Request } from "express";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Business } from "@/types/database.js";
 
@@ -10,9 +9,17 @@ export interface AuthContext {
   supabase: SupabaseClient;
 }
 
-/** Petición ya autenticada (pasó por `requireAuth`). */
-export interface AuthedRequest extends Request {
-  auth: AuthContext;
-  /** Negocio del usuario; presente solo tras `requireBusiness`. */
-  business?: Business;
+/**
+ * Se aumenta el tipo Request de Express (en vez de una interfaz propia) para
+ * que los handlers sigan siendo `Request` normales y Express los acepte. Los
+ * campos son opcionales: solo existen tras pasar por requireAuth/requireBusiness.
+ */
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace Express {
+    interface Request {
+      auth?: AuthContext;
+      business?: Business;
+    }
+  }
 }
