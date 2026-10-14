@@ -12,6 +12,7 @@ import {
   Search,
   EyeOff,
   FileDown,
+  X,
 } from "lucide-react";
 import { ProductForm } from "./product-form";
 import { importProductsCsv, deleteProduct, type ActionState } from "./actions";
@@ -138,9 +139,20 @@ export function ProductsClient({
               placeholder="Buscar por nombre, SKU o categoría…"
               value={query}
               onChange={(e) => applyFilter(() => setQuery(e.target.value))}
-              className="pl-9"
+              className={cn("pl-9", query && "pr-9")}
               aria-label="Buscar productos"
             />
+            {query && (
+              <button
+                type="button"
+                onClick={() => applyFilter(() => setQuery(""))}
+                aria-label="Limpiar búsqueda"
+                title="Limpiar búsqueda"
+                className="absolute right-2 top-1/2 flex size-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded-[var(--radius-theme-sm)] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <X className="size-4" aria-hidden="true" />
+              </button>
+            )}
           </div>
           {categories.length > 0 && (
             <Select
