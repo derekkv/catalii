@@ -1,6 +1,8 @@
 import express, { type Express } from "express";
 import { healthRouter } from "@/routes/health.route.js";
 import { productRouter } from "@/routes/product.route.js";
+import { catalogRouter } from "@/routes/catalog.route.js";
+import { storefrontRouter } from "@/routes/storefront.route.js";
 
 /**
  * Construye la app de Express. Se separa de `server.ts` para poder montarla en
@@ -16,6 +18,8 @@ export function createApp(): Express {
 
   app.use("/health", healthRouter);
   app.use("/api/products", productRouter);
+  app.use("/api/catalogs", catalogRouter);
+  app.use("/api/storefront", storefrontRouter);
 
   return app;
 }

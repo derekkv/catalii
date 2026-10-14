@@ -22,3 +22,13 @@ export function userClient(accessToken: string): SupabaseClient {
     global: { headers: { Authorization: `Bearer ${accessToken}` } },
   });
 }
+
+/**
+ * Cliente anónimo (sin sesión). Para el catálogo público: solo ve lo que las
+ * políticas RLS permiten a `anon` (catálogos marcados como públicos).
+ */
+export function publicClient(): SupabaseClient {
+  return createClient(env.supabaseUrl, env.supabaseAnonKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
