@@ -172,6 +172,7 @@ export default async function DashboardPage() {
                 <Link
                   href={`/c/${c.slug}`}
                   target="_blank"
+                  rel="noopener noreferrer"
                   aria-label={`Abrir catálogo ${c.name} en una pestaña nueva`}
                   className="flex size-11 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 >
