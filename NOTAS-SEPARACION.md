@@ -1,8 +1,5 @@
 # Separación front / back / supabase — notas de entrega
 
-Resumen del trabajo y, sobre todo, las cosas que debes saber antes de dar esto
-por cerrado.
-
 ## Qué se hizo (18 commits)
 
 ### Backend — 8 commits (`backend/`, Node + Express + TypeScript)

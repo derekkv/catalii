@@ -1,22 +1,4 @@
 {
-	// ─────────────────────────────────────────────────────────────────────────
-	// Configuración de wrangler SOLO para `next dev`.
-	//
-	// `next.config.ts` llama a `initOpenNextCloudflareForDev({ configPath })` con
-	// este archivo. El `wrangler.jsonc` principal (producción) declara el Durable
-	// Object `DOQueueHandler` y el bucket R2 de caché, pero esas clases solo las
-	// exporta el Worker que genera `opennextjs-cloudflare build`. En `next dev`
-	// ese Worker no existe, así que cargar el binding del DO hacía que workerd
-	// imprimiera en cada arranque:
-	//
-	//   A DurableObjectNamespace in the config referenced the class
-	//   "DOQueueHandler", but no such Durable Object class is exported...
-	//
-	// Esta config omite esos bindings de producción (DO, R2 de caché y
-	// migraciones) y deja solo lo que sí tiene sentido en local. El `wrangler.jsonc` de producción
-	// queda intacto. Mantener ambos sincronizados: si se añade un binding que el
-	// código use también en dev (p. ej. una KV o una var), replicarlo aquí.
-	// ─────────────────────────────────────────────────────────────────────────
 	"name": "catalii",
 	"main": ".open-next/worker.js",
 	"compatibility_date": "2025-09-23",
@@ -26,9 +8,6 @@
 	"observability": {
 		"enabled": true
 	},
-	// Buckets de medios (subidas de imágenes). En `next dev` son locales
-	// (miniflare, persistidos en .wrangler/state): no tocan los de producción.
-	// Deben coincidir con los de wrangler.jsonc.
 	"r2_buckets": [
 		{
 			"binding": "MEDIA_PRODUCTS",

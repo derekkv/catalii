@@ -12,22 +12,11 @@
 	"observability": {
 		"enabled": true
 	},
-	// ── ISR / caché incremental (páginas con `revalidate`, p. ej. /c/[slug]) ──
-	// Guarda las páginas renderizadas en R2. Crea el bucket antes de desplegar:
-	//   npx wrangler r2 bucket create catalii-cache
-	// Nota: NO marcar este binding como "remote": true. Si se marca, `next build`
-	// intenta abrir una sesión remota de wrangler y falla sin CLOUDFLARE_API_TOKEN.
 	"r2_buckets": [
 		{
 			"binding": "NEXT_INC_CACHE_R2_BUCKET",
 			"bucket_name": "catalii-cache"
 		},
-		// ── Medios subidos por los usuarios (ver src/lib/media/) ──────────────
-		// Un bucket por tipo de imagen. Crearlos una vez:
-		//   npx wrangler r2 bucket create catalii-products
-		//   npx wrangler r2 bucket create catalii-logos
-		//   npx wrangler r2 bucket create catalii-banners
-		// Los mismos buckets los lee el Worker de medios (media-worker/).
 		{
 			"binding": "MEDIA_PRODUCTS",
 			"bucket_name": "catalii-products"
@@ -41,8 +30,6 @@
 			"bucket_name": "catalii-banners"
 		}
 	],
-	// Cola de revalidación en background (Durable Object con SQLite, free-tier).
-	// La clase DOQueueHandler la exporta el Worker de OpenNext automáticamente.
 	"durable_objects": {
 		"bindings": [
 			{
@@ -59,7 +46,4 @@
 			]
 		}
 	]
-	// Variables públicas (NEXT_PUBLIC_*) se inyectan en BUILD (ver README).
-	// Secretos de runtime (SUPABASE_SERVICE_ROLE_KEY, PADDLE_*) se cargan con:
-	//   npx wrangler secret put NOMBRE   (o en .dev.vars para `pnpm cf:preview`)
 }
