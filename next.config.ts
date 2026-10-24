@@ -25,15 +25,6 @@ const nextConfig: NextConfig = {
 
 export default nextConfig;
 
-// Habilita el acceso a bindings de Cloudflare durante `next dev`.
-// Solo en desarrollo: durante `next build` abrir la sesión de wrangler es
-// innecesario y rompe el build en entornos sin CLOUDFLARE_API_TOKEN (CI).
-//
-// Usa `wrangler.dev.jsonc` en lugar del `wrangler.jsonc` de producción: este
-// último declara el Durable Object `DOQueueHandler` y el bucket R2, cuyas
-// clases solo existen en el Worker que genera `opennextjs-cloudflare build`.
-// En `next dev` ese Worker no existe, así que cargar esos bindings imprimía en
-// cada arranque un error de "no such Durable Object class is exported".
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 if (process.env.NODE_ENV === "development") {
   initOpenNextCloudflareForDev({ configPath: "./wrangler.dev.jsonc" });

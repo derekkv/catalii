@@ -1,12 +1,6 @@
-/** Tipos de dominio alineados con supabase/migrations. Montos en centavos. */
-
 export type OrderStatus = "pending" | "confirmed" | "shipped" | "cancelled";
 export type PlanTier = "free" | "starter" | "pro" | "business";
 
-/**
- * Imagen subida a R2. `key` es la clave de la versión optimizada; la miniatura
- * se deriva con `thumbKeyOf(key)` (src/lib/media/config.ts).
- */
 export interface StoredImage {
   key: string;
   w: number;

@@ -1,14 +1,6 @@
--- ============================================================================
--- CataloGO — Esquema inicial (multi-tenant)
--- Cada "business" pertenece a un usuario de auth (owner_id = auth.users.id).
--- Montos SIEMPRE en centavos (integer) para evitar errores de coma flotante.
--- ============================================================================
-
--- Tipos enumerados -----------------------------------------------------------
 create type order_status as enum ('pending', 'confirmed', 'shipped', 'cancelled');
 create type plan_tier as enum ('free', 'starter', 'pro', 'business');
 
--- Trigger genérico para updated_at ------------------------------------------
 create or replace function set_updated_at()
 returns trigger
 language plpgsql
@@ -19,7 +11,6 @@ begin
 end;
 $$;
 
--- Negocio (tenant) -----------------------------------------------------------
 create table business (
   id            uuid primary key default gen_random_uuid(),
   owner_id      uuid not null references auth.users (id) on delete cascade,
@@ -39,7 +30,6 @@ create trigger business_set_updated_at
   before update on business
   for each row execute function set_updated_at();
 
--- Productos ------------------------------------------------------------------
 create table product (
   id             uuid primary key default gen_random_uuid(),
   business_id    uuid not null references business (id) on delete cascade,
@@ -64,8 +54,6 @@ create trigger product_set_updated_at
   before update on product
   for each row execute function set_updated_at();
 
--- Catálogos (branding público vive aquí, NO en business, para no exponer
--- datos sensibles del dueño en las páginas públicas) --------------------------
 create table catalog (
   id             uuid primary key default gen_random_uuid(),
   business_id    uuid not null references business (id) on delete cascade,
@@ -89,7 +77,6 @@ create trigger catalog_set_updated_at
   before update on catalog
   for each row execute function set_updated_at();
 
--- Relación catálogo ↔ producto ----------------------------------------------
 create table catalog_product (
   catalog_id   uuid not null references catalog (id) on delete cascade,
   product_id   uuid not null references product (id) on delete cascade,
@@ -98,7 +85,6 @@ create table catalog_product (
 );
 create index catalog_product_product_idx on catalog_product (product_id);
 
--- Listas de precios ----------------------------------------------------------
 create table price_list (
   id                uuid primary key default gen_random_uuid(),
   business_id       uuid not null references business (id) on delete cascade,
@@ -109,7 +95,6 @@ create table price_list (
 );
 create index price_list_business_idx on price_list (business_id);
 
--- Clientes del mayorista -----------------------------------------------------
 create table customer (
   id             uuid primary key default gen_random_uuid(),
   business_id    uuid not null references business (id) on delete cascade,
@@ -122,7 +107,6 @@ create table customer (
 );
 create index customer_business_idx on customer (business_id);
 
--- Pedidos --------------------------------------------------------------------
 create table "order" (
   id                 uuid primary key default gen_random_uuid(),
   business_id        uuid not null references business (id) on delete cascade,
@@ -145,7 +129,6 @@ create trigger order_set_updated_at
   before update on "order"
   for each row execute function set_updated_at();
 
--- Líneas de pedido (snapshot de nombre/sku/precio al momento del pedido) ------
 create table order_item (
   id               uuid primary key default gen_random_uuid(),
   order_id         uuid not null references "order" (id) on delete cascade,
@@ -158,11 +141,6 @@ create table order_item (
 );
 create index order_item_order_idx on order_item (order_id);
 
--- ============================================================================
--- Paddle: espejo de estado de clientes y suscripciones (billing)
--- Se escriben SOLO desde el webhook con service_role. Los dueños leen su propia
--- suscripción para el gating por plan.
--- ============================================================================
 create table paddle_customer (
   customer_id  text primary key,            -- "ctm_01h..."
   business_id  uuid references business (id) on delete set null,
@@ -187,7 +165,6 @@ create table paddle_subscription (
 create index paddle_sub_customer_idx on paddle_subscription (customer_id);
 create index paddle_sub_business_idx on paddle_subscription (business_id);
 
--- Ledger de idempotencia de webhooks ----------------------------------------
 create table processed_webhook (
   event_id      text primary key,
   processed_at  timestamptz not null default now()

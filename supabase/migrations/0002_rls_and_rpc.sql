@@ -1,8 +1,3 @@
--- ============================================================================
--- CataloGO — Seguridad: RLS, grants y RPC transaccional de pedidos
--- ============================================================================
-
--- Habilitar RLS en TODAS las tablas del esquema público -----------------------
 alter table business            enable row level security;
 alter table product             enable row level security;
 alter table catalog             enable row level security;
@@ -15,8 +10,6 @@ alter table paddle_customer     enable row level security;
 alter table paddle_subscription enable row level security;
 alter table processed_webhook   enable row level security;
 
--- ── Privilegios de tabla (PostgREST/Data API) ───────────────────────────────
--- RLS controla QUÉ filas; los grants controlan si la tabla es alcanzable.
 grant usage on schema public to anon, authenticated;
 
 grant select, insert, update, delete on business  to authenticated;
@@ -30,15 +23,11 @@ grant select on order_item                         to authenticated;
 grant select on paddle_customer                    to authenticated;
 grant select on paddle_subscription                to authenticated;
 
--- Lectura pública (solo catálogos publicados y sus productos activos)
 grant select on catalog          to anon, authenticated;
 grant select on product          to anon, authenticated;
 grant select on catalog_product  to anon, authenticated;
 
--- processed_webhook: sin grants → inaccesible para anon/authenticated.
--- Solo service_role (bypass RLS) lo escribe desde el webhook.
 
--- ── Políticas: business ─────────────────────────────────────────────────────
 create policy business_owner_select on business for select to authenticated
   using (owner_id = (select auth.uid()));
 create policy business_owner_insert on business for insert to authenticated
@@ -49,12 +38,10 @@ create policy business_owner_update on business for update to authenticated
 create policy business_owner_delete on business for delete to authenticated
   using (owner_id = (select auth.uid()));
 
--- ── Políticas: product ──────────────────────────────────────────────────────
 create policy product_owner_all on product for all to authenticated
   using (business_id in (select id from business where owner_id = (select auth.uid())))
   with check (business_id in (select id from business where owner_id = (select auth.uid())));
 
--- Lectura pública: productos activos que pertenecen a un catálogo público
 create policy product_public_select on product for select to anon, authenticated
   using (
     active
@@ -65,14 +52,12 @@ create policy product_public_select on product for select to anon, authenticated
     )
   );
 
--- ── Políticas: catalog ──────────────────────────────────────────────────────
 create policy catalog_owner_all on catalog for all to authenticated
   using (business_id in (select id from business where owner_id = (select auth.uid())))
   with check (business_id in (select id from business where owner_id = (select auth.uid())));
 create policy catalog_public_select on catalog for select to anon, authenticated
   using (is_public);
 
--- ── Políticas: catalog_product ──────────────────────────────────────────────
 create policy catalog_product_owner_all on catalog_product for all to authenticated
   using (catalog_id in (
     select c.id from catalog c
@@ -85,7 +70,6 @@ create policy catalog_product_owner_all on catalog_product for all to authentica
 create policy catalog_product_public_select on catalog_product for select to anon, authenticated
   using (exists (select 1 from catalog c where c.id = catalog_id and c.is_public));
 
--- ── Políticas: price_list y customer (solo dueño) ───────────────────────────
 create policy price_list_owner_all on price_list for all to authenticated
   using (business_id in (select id from business where owner_id = (select auth.uid())))
   with check (business_id in (select id from business where owner_id = (select auth.uid())));
@@ -94,7 +78,6 @@ create policy customer_owner_all on customer for all to authenticated
   using (business_id in (select id from business where owner_id = (select auth.uid())))
   with check (business_id in (select id from business where owner_id = (select auth.uid())));
 
--- ── Políticas: order / order_item (el dueño gestiona; inserta el RPC) ────────
 create policy order_owner_select on "order" for select to authenticated
   using (business_id in (select id from business where owner_id = (select auth.uid())));
 create policy order_owner_update on "order" for update to authenticated
@@ -109,18 +92,11 @@ create policy order_item_owner_select on order_item for select to authenticated
     join business b on b.id = o.business_id
     where b.owner_id = (select auth.uid())));
 
--- ── Políticas: espejo de Paddle (el dueño lee su propia suscripción) ─────────
 create policy paddle_customer_owner_select on paddle_customer for select to authenticated
   using (business_id in (select id from business where owner_id = (select auth.uid())));
 create policy paddle_subscription_owner_select on paddle_subscription for select to authenticated
   using (business_id in (select id from business where owner_id = (select auth.uid())));
 
--- ============================================================================
--- RPC: place_order — creación atómica de pedidos desde el catálogo público.
--- SECURITY DEFINER intencional: es un endpoint público (anon) que valida
--- internamente y RECALCULA los precios desde la tabla product (nunca confía en
--- los precios enviados por el cliente). Evita políticas amplias de INSERT anon.
--- ============================================================================
 create or replace function place_order(
   p_catalog_slug text,
   p_name text,
@@ -144,7 +120,6 @@ declare
   v_subtotal  integer;
   v_count     integer := 0;
 begin
-  -- Validación de entrada
   if p_name is null or char_length(trim(p_name)) = 0 then
     raise exception 'Nombre requerido.' using errcode = 'check_violation';
   end if;
@@ -158,7 +133,6 @@ begin
     raise exception 'Demasiados productos.' using errcode = 'check_violation';
   end if;
 
-  -- El catálogo debe existir y estar publicado
   select * into v_catalog from public.catalog where slug = p_catalog_slug and is_public = true;
   if not found then
     raise exception 'Catálogo no disponible.' using errcode = 'no_data_found';
@@ -223,6 +197,5 @@ begin
 end;
 $$;
 
--- Revoca de PUBLIC y concede solo a los roles esperados
 revoke all on function place_order(text, text, text, text, text, jsonb) from public;
 grant execute on function place_order(text, text, text, text, text, jsonb) to anon, authenticated;

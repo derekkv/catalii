@@ -5,6 +5,18 @@
 	"compatibility_flags": [
 		"nodejs_compat"
 	],
+	"vars": {
+		"NEXT_PUBLIC_SITE_URL": "https://catalii.com",
+		"NEXT_PUBLIC_SUPABASE_URL": "REEMPLAZAR_CON_URL_SUPABASE",
+		"NEXT_PUBLIC_SUPABASE_ANON_KEY": "REEMPLAZAR_CON_ANON_KEY_SUPABASE",
+		"NEXT_PUBLIC_PADDLE_ENV": "sandbox",
+		"NEXT_PUBLIC_PADDLE_CLIENT_TOKEN": "REEMPLAZAR",
+		"NEXT_PUBLIC_PADDLE_PRICE_STARTER": "pri_REEMPLAZAR",
+		"NEXT_PUBLIC_PADDLE_PRICE_PRO": "pri_REEMPLAZAR",
+		"NEXT_PUBLIC_PADDLE_PRICE_BUSINESS": "pri_REEMPLAZAR",
+		"NEXT_PUBLIC_MEDIA_URL": "",
+		"NEXT_PUBLIC_SHOW_DEV_NOTICE": "false"
+	},
 	"assets": {
 		"directory": ".open-next/assets",
 		"binding": "ASSETS"

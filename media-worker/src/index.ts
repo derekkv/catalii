@@ -1,17 +1,3 @@
-/**
- * Catalii Media — Worker dedicado a servir imágenes desde R2.
- *
- * Servidor aparte de la app: sirve solo GET/HEAD de objetos públicos, sin
- * Next.js, sin middleware de sesión y con caché de borde (Cache API). La app
- * sube las imágenes (POST /api/uploads) y este Worker las entrega.
- *
- *   GET https://media.catalii.com/<bucket>/<business_id>/<uuid>[_t].<webp|jpg>
- *
- * <bucket> ∈ products | logos | banners → binding MEDIA_PRODUCTS / _LOGOS / _BANNERS.
- * Las claves llevan uuid, así que los objetos son inmutables y se cachean un año.
- */
-
-// Tipos mínimos de la API de Workers usada (sin depender de @cloudflare/workers-types).
 interface R2ObjectBody {
   body: ReadableStream;
   size: number;
@@ -25,7 +11,6 @@ interface Env {
   MEDIA_PRODUCTS: R2Bucket;
   MEDIA_LOGOS: R2Bucket;
   MEDIA_BANNERS: R2Bucket;
-  /** Orígenes permitidos para CORS, separados por coma. Por defecto "*". */
   ALLOWED_ORIGINS?: string;
 }
 interface Ctx {
