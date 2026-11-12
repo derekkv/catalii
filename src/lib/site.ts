@@ -4,7 +4,7 @@ export const siteConfig = {
   domain: "catalii.com",
   tagline: "Catálogos digitales para mayoristas",
   description:
-    "Convierte tu lista de precios en un catálogo online con pedidos en 10 minutos, sin saber programar. Stock en tiempo real, precios por cliente y pedidos directos por WhatsApp.",
+    "Convierte tu lista de precios en un catálogo online con enlace propio, sin saber programar. Tus clientes arman el pedido sin crear cuenta y te llega ordenado, con aviso opcional por WhatsApp.",
   locale: "es_MX",
   keywords: [
     "catálogo digital mayorista",

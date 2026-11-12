@@ -40,6 +40,16 @@ async function upsertCustomer(event: CustomerCreatedEvent | CustomerUpdatedEvent
   const supabase = createServiceClient();
   const email = event.data.email;
 
+  // Cuenta borrada por el usuario: su fila se conserva con el correo vaciado
+  // (ver "Borrar mi cuenta"). Un customer.updated posterior no debe volver a
+  // escribir el correo ni reenlazar el negocio.
+  const { data: existing } = await supabase
+    .from("paddle_customer")
+    .select("email")
+    .eq("customer_id", event.data.id)
+    .maybeSingle();
+  if (existing && existing.email === "") return;
+
   // Enlaza el customer de Paddle con el business del usuario por email.
   let businessId: string | null = null;
   if (email) {

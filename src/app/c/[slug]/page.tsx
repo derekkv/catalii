@@ -4,10 +4,13 @@ import { MessageCircle, PackageOpen } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { resolveTheme } from "@/lib/themes";
 import { getSiteUrl, siteConfig } from "@/lib/site";
+import { LegalLinks } from "@/components/legal/legal-links";
+import { LEGAL_PATHS } from "@/lib/legal/config";
 import { absoluteUrl, productImages, resolveBrandImage } from "@/lib/media/config";
 import { Storefront, type PublicProduct } from "./storefront";
 import { ShareButton } from "./catalog-actions";
 import { Monogram } from "@/components/brand/wordmark";
+import { BrandLogo } from "@/components/brand/brand-logo";
 import type { Catalog } from "@/types/database";
 
 export const revalidate = 60; // ISR: regenera catálogos públicos cada 60s
@@ -228,9 +231,18 @@ export default async function PublicCatalogPage({
       </main>
 
       <footer className="border-t border-border py-7 text-center">
-        <a href={getSiteUrl()} className="t-label link-ink text-muted-foreground">
+        <a
+          href={getSiteUrl()}
+          className="t-label link-ink inline-flex items-center gap-2 text-muted-foreground"
+        >
+          {/* El nombre lo da el texto del enlace: el símbolo es decorativo. */}
+          <BrandLogo symbolOnly size="sm" decorative />
           Catálogo hecho con {siteConfig.name}
         </a>
+        <LegalLinks
+          className="mt-3 flex justify-center"
+          only={[LEGAL_PATHS.privacy, LEGAL_PATHS.terms]}
+        />
       </footer>
     </div>
   );

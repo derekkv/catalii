@@ -16,6 +16,7 @@ import {
   Info,
 } from "lucide-react";
 import { submitOrder } from "@/lib/actions/order-actions";
+import { LEGAL_PATHS } from "@/lib/legal/config";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Textarea } from "@/components/ui/input";
 import { Drawer, Modal } from "@/components/ui/overlay";
@@ -235,7 +236,7 @@ export function Storefront({ slug, displayName, whatsapp, products }: Props) {
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value as SortKey)}
-              className="t-label h-11 cursor-pointer appearance-none rounded-[var(--radius-theme-sm)] border border-input bg-card pl-9 pr-3 text-card-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[color-mix(in_srgb,var(--ring)_28%,transparent)]"
+              className="t-label h-11 cursor-pointer appearance-none rounded-[var(--radius-theme-sm)] border border-input bg-card pl-9 pr-3 text-card-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[var(--ring)]"
             >
               {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
                 <option key={key} value={key}>
@@ -713,6 +714,7 @@ function CartDrawer({
 }) {
   const [buyer, setBuyer] = useState({ name: "", phone: "", email: "" });
   const [notes, setNotes] = useState("");
+  const [remember, setRemember] = useState(false);
   const [status, setStatus] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [orderId, setOrderId] = useState("");
@@ -725,8 +727,9 @@ function CartDrawer({
 
   const { name, phone, email } = buyer;
 
-  // Los datos del comprador se recuerdan: en mayoreo el mismo cliente vuelve a
-  // pedir cada semana y volver a teclear nombre/teléfono es la fricción #1.
+  // Recordar datos es OPCIONAL (casilla sin marcar por defecto). Solo si ya
+  // había datos guardados de antes se precarga el formulario y se deja la casilla
+  // marcada para que el comprador pueda desmarcarla y borrarlos.
   // Se lee tras la hidratación para no provocar desajuste con el HTML del SSR.
   useEffect(() => {
     try {
@@ -735,6 +738,7 @@ function CartDrawer({
       const d = JSON.parse(raw) as { name?: string; phone?: string; email?: string };
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setBuyer({ name: d.name ?? "", phone: d.phone ?? "", email: d.email ?? "" });
+      setRemember(true);
     } catch {
       /* almacenamiento no disponible */
     }
@@ -761,7 +765,11 @@ function CartDrawer({
 
     if (res.ok) {
       try {
-        localStorage.setItem("catalii-buyer", JSON.stringify({ name, phone, email }));
+        if (remember) {
+          localStorage.setItem("catalii-buyer", JSON.stringify({ name, phone, email }));
+        } else {
+          localStorage.removeItem("catalii-buyer");
+        }
       } catch {
         /* noop */
       }
@@ -915,7 +923,7 @@ function CartDrawer({
             onChange={(e) => setBuyer((b) => ({ ...b, phone: e.target.value }))}
           />
           <p className="mt-1 text-xs text-muted-foreground">
-            Es el número por el que te contactaremos.
+            Usamos tu WhatsApp para que {displayName} te contacte por este pedido.
           </p>
         </div>
         <div>
@@ -938,6 +946,41 @@ function CartDrawer({
             onChange={(e) => setNotes(e.target.value)}
           />
         </div>
+
+        <div className="flex items-start gap-2.5">
+          <input
+            id="c-remember"
+            type="checkbox"
+            checked={remember}
+            onChange={(e) => {
+              setRemember(e.target.checked);
+              if (!e.target.checked) {
+                try {
+                  localStorage.removeItem("catalii-buyer");
+                } catch {
+                  /* noop */
+                }
+              }
+            }}
+            className="mt-0.5 size-4 shrink-0 accent-[var(--primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          />
+          <label htmlFor="c-remember" className="text-[0.8125rem] text-muted-foreground">
+            Recordar mis datos en este dispositivo
+          </label>
+        </div>
+
+        <p className="t-small text-muted-foreground">
+          Usamos tu nombre y WhatsApp solo para enviar este pedido a {displayName}. Más info en{" "}
+          <a
+            href={LEGAL_PATHS.privacy}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="link-ink"
+          >
+            Privacidad
+          </a>
+          .
+        </p>
 
         {status === "error" && (
           <p

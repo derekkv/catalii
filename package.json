@@ -16,7 +16,8 @@
     "media:buckets": "wrangler r2 bucket create catalii-products && wrangler r2 bucket create catalii-logos && wrangler r2 bucket create catalii-banners",
     "backend:dev": "pnpm -C backend dev",
     "backend:start": "pnpm -C backend start",
-    "backend:typecheck": "pnpm -C backend typecheck"
+    "backend:typecheck": "pnpm -C backend typecheck",
+    "legal:export": "backend/node_modules/.bin/tsx scripts/export-legal.ts"
   },
   "dependencies": {
     "@paddle/paddle-js": "1.4.2",

@@ -12,9 +12,12 @@ import {
 } from "lucide-react";
 import { ThemeSwitcher } from "@/components/theme/theme-switcher";
 import { Wordmark, Monogram } from "@/components/brand/wordmark";
+import { BrandLogo } from "@/components/brand/brand-logo";
 import { Reveal } from "@/components/reveal";
 import { Badge } from "@/components/ui/badge";
 import { StatTiles } from "@/components/dashboard/stat-tiles";
+import { LegalLinks } from "@/components/legal/legal-links";
+import { COMPANY, LEGAL_PATHS } from "@/lib/legal/config";
 import { PLAN_ORDER, PLANS } from "@/lib/plans";
 import { siteConfig } from "@/lib/site";
 import { THEMES } from "@/lib/themes";
@@ -38,7 +41,7 @@ import { cn } from "@/lib/utils";
 const STEPS = [
   {
     title: "Sube la lista que ya tienes",
-    body: "Importa tu CSV o Excel exportado. Reconoce encabezados en español, así que no tienes que renombrar columnas.",
+    body: "Importa tu lista en formato CSV (si la tienes en Excel, expórtala a CSV). Reconoce encabezados en español, así que no tienes que renombrar columnas.",
   },
   {
     title: "Arma el catálogo",
@@ -84,10 +87,10 @@ const FEATURES = [
 ];
 
 const STATS = [
-  { label: "Excel → catálogo", value: "10 min", hint: "de archivo a enlace publicado" },
+  { label: "Importación", value: "CSV", hint: "desde tu lista de precios" },
   { label: "Apps que instalar", value: "0", hint: "ni tú ni tu cliente" },
   { label: "Apariencias", value: "5", hint: "elegidas según tu rubro" },
-  { label: "Recibiendo pedidos", value: "24/7", hint: "aunque tengas cerrado" },
+  { label: "Pedidos", value: "En línea", hint: "se registran en cualquier momento" },
 ];
 
 /* Clases de botón idénticas a las del panel (ver components/ui/button.tsx). */
@@ -295,7 +298,7 @@ export default function Home() {
       <header className="sticky top-0 z-40 border-b border-border bg-background/92 backdrop-blur-sm">
         <div className="mx-auto flex max-w-6xl items-center gap-4 px-5 py-2.5 lg:px-8">
           <Link href="/" aria-label={siteConfig.name}>
-            <Wordmark />
+            <BrandLogo />
           </Link>
 
           <nav aria-label="Secciones" className="ml-6 hidden gap-6 md:flex">
@@ -360,7 +363,7 @@ export default function Home() {
               </div>
 
               <p className="t-label mt-7 text-muted-foreground">
-                Gratis para siempre · Sin tarjeta
+                Plan gratis disponible
               </p>
             </div>
 
@@ -389,7 +392,7 @@ export default function Home() {
                   un precio que ya no existe.”
                 </p>
                 <footer className="t-label mt-5 text-muted-foreground">
-                  Lo que escuchamos en cada bodega que visitamos
+                  El problema que {siteConfig.name} busca resolver
                 </footer>
               </blockquote>
             </Reveal>
@@ -538,21 +541,29 @@ export default function Home() {
             </div>
 
             <p className="t-small mt-4 text-muted-foreground">
-              Los planes de pago se cobran con Paddle. Puedes cambiar o cancelar cuando
-              quieras.
+              Pagos con Paddle. La suscripción se renueva cada mes hasta que canceles; cancelas
+              desde Facturación. Consulta{" "}
+              <Link href={LEGAL_PATHS.refunds} className="link-ink">
+                Reembolsos
+              </Link>{" "}
+              y{" "}
+              <Link href={LEGAL_PATHS.terms} className="link-ink">
+                Términos
+              </Link>
+              .
             </p>
           </div>
         </section>
 
         {/* ══ Cierre ══════════════════════════════════════════════════════ */}
         <section className="bg-secondary text-on-secondary">
-          <div className="mx-auto max-w-6xl px-5 py-20 lg:px-8 lg:py-24">
-            <div className="max-w-2xl">
+          <div className="mx-auto grid max-w-6xl items-center gap-12 px-5 py-20 lg:grid-cols-12 lg:gap-10 lg:px-8 lg:py-24">
+            <div className="max-w-2xl lg:col-span-7">
               <p className="t-label opacity-70">Último paso</p>
               <h2 className="t-display mt-5">Publica tu catálogo esta tarde.</h2>
               <p className="t-lead mt-6 max-w-lg opacity-80">
-                Trae el archivo que ya usas. En diez minutos tienes un enlace que puedes
-                mandar a tus clientes.
+                Trae el archivo que ya usas y obtén un enlace que puedes mandar a tus
+                clientes.
               </p>
               <Link
                 href="/login?tab=signup"
@@ -562,18 +573,46 @@ export default function Home() {
                 <ArrowRight className="size-4" aria-hidden="true" />
               </Link>
             </div>
+
+            {/*
+              Lámina de marca. Se usa la versión reverso porque trae su propio
+              fondo azul de cubierta (#17324d) y por tanto no depende del color
+              del theme: en `noche` el `bg-secondary` de esta sección es crema,
+              así que un logo "para fondos oscuros" sin fondo propio se rompería.
+              Decorativa: el nombre ya está en el texto y en la cabecera.
+            */}
+            <div className="lg:col-span-5">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/brand/catalii-logo-v2-reverso.svg"
+                alt=""
+                aria-hidden="true"
+                width={1000}
+                height={320}
+                draggable={false}
+                className="mx-auto h-auto w-full max-w-md overflow-hidden rounded-[var(--radius-theme)] select-none"
+              />
+            </div>
           </div>
         </section>
       </main>
 
       {/* ══ Pie ═══════════════════════════════════════════════════════════ */}
       <footer className="border-t border-border">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-6 lg:px-8">
-          <Wordmark size="sm" />
-          <p className="t-label text-muted-foreground">
-            {siteConfig.domain} · {siteConfig.tagline}
-          </p>
-          <p className="t-label text-muted-foreground">© {new Date().getFullYear()}</p>
+        <div className="mx-auto max-w-6xl space-y-4 px-5 py-6 lg:px-8">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <BrandLogo size="sm" />
+            <p className="t-label text-muted-foreground">
+              {siteConfig.domain} · {siteConfig.tagline}
+            </p>
+            <p className="t-label text-muted-foreground">© {new Date().getFullYear()}</p>
+          </div>
+          <div className="flex flex-wrap items-start justify-between gap-4 rule-t pt-4">
+            <LegalLinks />
+            <p className="t-small text-muted-foreground">
+              {COMPANY.legalName} · {COMPANY.contactEmail}
+            </p>
+          </div>
         </div>
       </footer>
     </div>

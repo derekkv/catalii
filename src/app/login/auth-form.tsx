@@ -2,11 +2,13 @@
 
 import { useActionState, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Loader2, Eye, EyeOff, CheckCircle2, ArrowLeft } from "lucide-react";
 import { signInAction, signUpAction, forgotPasswordAction, type AuthState } from "./actions";
 import { Button } from "@/components/ui/button";
-import { Input, Label, FieldError, FieldHint } from "@/components/ui/input";
+import { Input, Label, FieldError } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { LEGAL_PATHS } from "@/lib/legal/config";
 
 const initial: AuthState = { ok: false };
 type Mode = "signin" | "signup" | "forgot";
@@ -129,6 +131,9 @@ function SignIn({ next, onForgot }: { next: string; onForgot: () => void }) {
 
 function SignUp({ next }: { next: string }) {
   const [state, action, pending] = useActionState(signUpAction, initial);
+  // Casilla vacía por defecto. Controlada para poder deshabilitar el botón;
+  // el servidor revalida de todos modos.
+  const [accepted, setAccepted] = useState(false);
 
   if (state.ok && state.info) return <Alert state={state} />;
 
@@ -136,12 +141,8 @@ function SignUp({ next }: { next: string }) {
     <form action={action} className="space-y-4" noValidate>
       <input type="hidden" name="next" value={next} />
       <div>
-        <Label htmlFor="su-name">Tu nombre</Label>
-        <Input id="su-name" name="name" autoComplete="name" autoFocus maxLength={120} placeholder="Nombre y apellido" />
-      </div>
-      <div>
         <Label htmlFor="su-email">Correo</Label>
-        <Input id="su-email" name="email" type="email" autoComplete="email" required placeholder="tu@negocio.com" />
+        <Input id="su-email" name="email" type="email" autoComplete="email" autoFocus required placeholder="tu@negocio.com" />
       </div>
       <div>
         <Label htmlFor="su-pass">Contraseña</Label>
@@ -151,14 +152,35 @@ function SignUp({ next }: { next: string }) {
         <Label htmlFor="su-confirm">Repite la contraseña</Label>
         <PasswordInput id="su-confirm" name="confirm" autoComplete="new-password" required minLength={8} placeholder="••••••••" />
       </div>
+      <div className="flex items-start gap-3">
+        <input
+          id="su-legal"
+          type="checkbox"
+          name="accept_legal"
+          value="yes"
+          checked={accepted}
+          onChange={(e) => setAccepted(e.target.checked)}
+          required
+          aria-required="true"
+          className="mt-0.5 size-5 shrink-0 cursor-pointer accent-[var(--primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+        />
+        <label htmlFor="su-legal" className="t-small cursor-pointer text-foreground">
+          Acepto los{" "}
+          <Link href={LEGAL_PATHS.terms} target="_blank" rel="noopener noreferrer" className="link-ink text-primary">
+            Términos
+          </Link>{" "}
+          y he leído la{" "}
+          <Link href={LEGAL_PATHS.privacy} target="_blank" rel="noopener noreferrer" className="link-ink text-primary">
+            Política de privacidad
+          </Link>
+          .
+        </label>
+      </div>
       <Alert state={state} />
-      <Button type="submit" size="lg" className="w-full" disabled={pending}>
+      <Button type="submit" size="lg" className="w-full" disabled={pending || !accepted}>
         {pending ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : null}
         Crear mi cuenta
       </Button>
-      <FieldHint className="text-center">
-        Al crear tu cuenta aceptas los términos del servicio.
-      </FieldHint>
     </form>
   );
 }

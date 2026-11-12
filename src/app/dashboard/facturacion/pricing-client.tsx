@@ -1,25 +1,42 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { initializePaddle, type Paddle } from "@paddle/paddle-js";
 import { Check, Loader2, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { PLANS, PLAN_ORDER } from "@/lib/plans";
+import { useToast } from "@/components/ui/toast";
+import { PLANS, PLAN_ORDER, PLAN_CURRENCY } from "@/lib/plans";
+import { LEGAL_PATHS } from "@/lib/legal/config";
 import { useTheme } from "@/components/theme/theme-provider";
 import { getThemeMeta } from "@/lib/themes";
 import { cn } from "@/lib/utils";
 import type { PlanTier } from "@/types/database";
+import { BillingConfirmDialog } from "./confirm-dialog";
+import { changePlanAction } from "./actions";
 
 export function PricingClient({
   email,
   currentTier,
+  hasLiveSubscription,
+  hasScheduledChange,
+  nextBilledAt,
 }: {
   email?: string;
   currentTier: PlanTier;
+  /** Hay una suscripción vigente: cambiar de plan NO abre un checkout nuevo. */
+  hasLiveSubscription: boolean;
+  hasScheduledChange: boolean;
+  nextBilledAt: string | null;
 }) {
+  const router = useRouter();
+  const { toast } = useToast();
   const [paddle, setPaddle] = useState<Paddle | null>(null);
   const [loadingTier, setLoadingTier] = useState<PlanTier | null>(null);
+  const [changeTo, setChangeTo] = useState<PlanTier | null>(null);
+  const [changing, startChange] = useTransition();
   const { theme } = useTheme();
 
   const token = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN;
@@ -49,6 +66,24 @@ export function PricingClient({
     setTimeout(() => setLoadingTier(null), 1500);
   }
 
+  function confirmChange() {
+    if (!changeTo) return;
+    const tier = changeTo;
+    startChange(async () => {
+      const res = await changePlanAction(tier);
+      setChangeTo(null);
+      if (res.ok) {
+        toast(res.message, { tone: "success" });
+        router.refresh();
+      } else {
+        toast(res.error, { tone: "error" });
+      }
+    });
+  }
+
+  const nextDate = nextBilledAt
+    ? new Date(nextBilledAt).toLocaleDateString("es-MX", { dateStyle: "long" })
+    : null;
   const paddleConfigured = Boolean(token && env);
   const currentIndex = PLAN_ORDER.indexOf(currentTier);
 
@@ -89,8 +124,15 @@ export function PricingClient({
 
               <p className="mt-4 flex items-baseline gap-1.5">
                 <span className="t-price text-3xl">{plan.priceLabel}</span>
-                {isPaid && <span className="t-label text-muted-foreground">/mes</span>}
+                {isPaid && (
+                  <span className="t-label text-muted-foreground">{PLAN_CURRENCY} / mes</span>
+                )}
               </p>
+              {isPaid && (
+                <p className="t-small mt-1 text-muted-foreground">
+                  El importe final, con impuestos si aplican, se confirma en el pago.
+                </p>
+              )}
 
               <ul className="mt-5 flex-1 space-y-2.5">
                 {plan.features.map((f) => (
@@ -105,22 +147,52 @@ export function PricingClient({
                 <Button variant="outline" disabled className="mt-6">
                   Plan activo
                 </Button>
+              ) : isPaid && hasLiveSubscription ? (
+                // Ya hay suscripción: se cambia la existente (no se abre un
+                // checkout nuevo, que crearía una segunda suscripción).
+                <Button
+                  onClick={() => setChangeTo(tier)}
+                  disabled={!plan.paddlePriceId || hasScheduledChange}
+                  variant={isDowngrade ? "outline" : "primary"}
+                  className="mt-6"
+                >
+                  Cambiar a {plan.name}
+                </Button>
               ) : isPaid ? (
                 <Button
                   onClick={() => checkout(tier, plan.paddlePriceId)}
                   disabled={!paddle || !plan.paddlePriceId || loadingTier === tier}
-                  variant={isDowngrade ? "outline" : "primary"}
+                  variant="primary"
                   className="mt-6 gap-2"
                 >
                   {loadingTier === tier && (
                     <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                   )}
-                  {isDowngrade ? "Cambiar a" : "Mejorar a"} {plan.name}
+                  Contratar {plan.name}
                 </Button>
               ) : (
                 <Button variant="outline" disabled className="mt-6">
                   Gratis para siempre
                 </Button>
+              )}
+
+              {isPaid && (
+                <p className="t-small mt-3 text-muted-foreground">
+                  Se renueva cada mes hasta que canceles. Cancela cuando quieras en
+                  Facturación.
+                  {isCurrent && nextDate && (
+                    <>
+                      {" "}
+                      Próximo cobro previsto: <span className="t-num">{nextDate}</span>.
+                    </>
+                  )}
+                </p>
+              )}
+
+              {isPaid && !isCurrent && hasLiveSubscription && hasScheduledChange && (
+                <p className="t-small mt-2 text-muted-foreground">
+                  Tienes un cambio programado; no se puede cambiar de plan hasta que se aplique.
+                </p>
               )}
 
               {!plan.paddlePriceId && isPaid && (
@@ -132,6 +204,33 @@ export function PricingClient({
           );
         })}
       </div>
+
+      <p className="t-small text-muted-foreground">
+        Antes de pagar, consulta los{" "}
+        <Link href={LEGAL_PATHS.terms} className="underline underline-offset-2">
+          Términos
+        </Link>{" "}
+        y la{" "}
+        <Link href={LEGAL_PATHS.refunds} className="underline underline-offset-2">
+          política de reembolsos
+        </Link>
+        .
+      </p>
+
+      <BillingConfirmDialog
+        open={changeTo !== null}
+        title={changeTo ? `¿Cambiar al plan ${PLANS[changeTo].name}?` : ""}
+        description={
+          changeTo
+            ? `Tu suscripción pasará a ${PLANS[changeTo].name} (${PLANS[changeTo].priceLabel} ${PLAN_CURRENCY} al mes). El cambio modifica tu plan y el importe de tus cobros: Paddle calcula un ajuste proporcional que se incluye en tu próximo cobro. El importe final, con impuestos si aplican, lo confirma Paddle en tu recibo.`
+            : ""
+        }
+        keepLabel="Mantener plan"
+        confirmLabel="Cambiar plan"
+        busy={changing}
+        onKeep={() => setChangeTo(null)}
+        onConfirm={confirmChange}
+      />
     </div>
   );
 }

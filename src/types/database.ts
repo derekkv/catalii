@@ -99,3 +99,16 @@ export interface PaddleSubscription {
   created_at: string;
   updated_at: string;
 }
+
+export type LegalAcceptanceDocument = "terms" | "privacy";
+export type LegalAcceptanceMethod = "signup_checkbox" | "reaccept_prompt";
+
+/** Fila de `legal_acceptance` (inmutable; ver supabase/migrations/0005). */
+export interface LegalAcceptance {
+  id: string;
+  user_id: string;
+  document: LegalAcceptanceDocument;
+  version: string;
+  accepted_at: string;
+  method: LegalAcceptanceMethod;
+}

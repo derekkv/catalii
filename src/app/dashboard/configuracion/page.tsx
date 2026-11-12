@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { requireBusiness } from "@/lib/auth";
+import { requireBusiness, getUser } from "@/lib/auth";
+import { DataSection } from "./data-section";
 import { SettingsForm } from "./settings-form";
 import { BusinessBrandImages } from "./brand-images";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -8,6 +9,7 @@ export const metadata: Metadata = { title: "Ajustes", robots: { index: false } }
 
 export default async function ConfiguracionPage() {
   const business = await requireBusiness();
+  const user = await getUser();
 
   return (
     <div className="mx-auto max-w-2xl space-y-7">
@@ -27,6 +29,8 @@ export default async function ConfiguracionPage() {
         </div>
         <BusinessBrandImages business={business} />
       </section>
+
+      <DataSection email={user?.email ?? ""} />
     </div>
   );
 }

@@ -6,7 +6,8 @@ import { PricingClient } from "./pricing-client";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { UsageMeter } from "@/components/dashboard/usage-meter";
 import { getPlan } from "@/lib/plans";
-import type { PaddleSubscription } from "@/types/database";
+import { getLiveSubscription, getNextBilledAt } from "@/lib/paddle/subscription";
+import { CancelSubscriptionButton } from "./cancel-subscription-button";
 
 export const metadata: Metadata = { title: "Plan y facturación", robots: { index: false } };
 
@@ -20,14 +21,8 @@ export default async function FacturacionPage({
   const user = await getUser();
   const supabase = await createClient();
 
-  const [subRes, productCount, catalogCount] = await Promise.all([
-    supabase
-      .from("paddle_subscription")
-      .select("*")
-      .eq("business_id", business.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
+  const [subscription, productCount, catalogCount] = await Promise.all([
+    getLiveSubscription(business.id),
     supabase
       .from("product")
       .select("id", { count: "exact", head: true })
@@ -38,7 +33,9 @@ export default async function FacturacionPage({
       .eq("business_id", business.id),
   ]);
 
-  const subscription = subRes.data as PaddleSubscription | null;
+  // La BD no guarda la fecha del próximo cobro: se consulta a Paddle y, si
+  // falla, simplemente no se muestra.
+  const nextBilledAt = subscription ? await getNextBilledAt(subscription.subscription_id) : null;
   const plan = getPlan(business.plan);
 
   return (
@@ -66,13 +63,16 @@ export default async function FacturacionPage({
         <p className="flex items-start gap-3 border-l-2 border-input bg-muted px-4 py-3 text-sm">
           <Clock className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
           <span>
-            Tu suscripción tiene un cambio programado para{" "}
+            {/* La BD solo guarda la fecha del cambio programado, no su tipo; en
+                esta app el único que se puede programar es la cancelación. */}
+            <span className="font-medium">Cancelación programada.</span> Tu suscripción
+            tiene un cambio programado para{" "}
             <span className="t-num">
               {new Date(subscription.scheduled_change_at).toLocaleDateString("es-MX", {
                 dateStyle: "long",
               })}
             </span>
-            .
+            ; hasta entonces conservas tu plan.
           </span>
         </p>
       )}
@@ -96,8 +96,25 @@ export default async function FacturacionPage({
 
       <section>
         <h2 className="t-h2 mb-4">Planes</h2>
-        <PricingClient email={user?.email ?? undefined} currentTier={business.plan} />
+        <PricingClient
+          email={user?.email ?? undefined}
+          currentTier={business.plan}
+          hasLiveSubscription={Boolean(subscription)}
+          hasScheduledChange={Boolean(subscription?.scheduled_change_at)}
+          nextBilledAt={nextBilledAt}
+        />
       </section>
+
+      {subscription && !subscription.scheduled_change_at && (
+        <section className="rule-t pt-5">
+          <h2 className="t-h2 mb-2">Suscripción</h2>
+          <p className="t-small mb-4 text-muted-foreground">
+            Puedes cancelar cuando quieras desde aquí, con el mismo medio con el que contrataste.
+            Conservas tu plan hasta el final del periodo ya pagado.
+          </p>
+          <CancelSubscriptionButton nextBilledAt={nextBilledAt} />
+        </section>
+      )}
 
       <p className="t-small rule-t pt-5 text-muted-foreground">
         Pagos procesados por Paddle. El estado del plan se actualiza automáticamente vía

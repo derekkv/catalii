@@ -43,7 +43,7 @@ export const PLANS: Record<PlanTier, PlanDef> = {
     priceLabel: "$49",
     paddlePriceId: process.env.NEXT_PUBLIC_PADDLE_PRICE_PRO,
     limits: { maxProducts: 5000, maxCatalogs: INF, maxOrdersPerMonth: INF },
-    features: ["Catálogos ilimitados", "5,000 productos", "Multi-lista de precios", "Analytics"],
+    features: ["Catálogos ilimitados", "5,000 productos", "Personalización", "Pedidos ilimitados"],
     highlighted: true,
   },
   business: {
@@ -52,9 +52,12 @@ export const PLANS: Record<PlanTier, PlanDef> = {
     priceLabel: "$99",
     paddlePriceId: process.env.NEXT_PUBLIC_PADDLE_PRICE_BUSINESS,
     limits: { maxProducts: INF, maxCatalogs: INF, maxOrdersPerMonth: INF },
-    features: ["Todo Pro", "Integración ERP", "API", "Marca blanca"],
+    features: ["Catálogos ilimitados", "Productos ilimitados", "Personalización", "Pedidos ilimitados"],
   },
 };
+
+/** Moneda en la que se muestran los precios de los planes de pago. */
+export const PLAN_CURRENCY = "USD";
 
 export const PLAN_ORDER: PlanTier[] = ["free", "starter", "pro", "business"];
 

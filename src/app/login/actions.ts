@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/site";
+import { recordLegalAcceptance } from "@/lib/legal/acceptance";
 
 export interface AuthState {
   ok: boolean;
@@ -43,11 +44,16 @@ export async function signInAction(_prev: AuthState, formData: FormData): Promis
 }
 
 export async function signUpAction(_prev: AuthState, formData: FormData): Promise<AuthState> {
-  const name = String(formData.get("name") ?? "").trim().slice(0, 120);
   const email = emailSchema.safeParse(formData.get("email"));
   const password = passwordSchema.safeParse(formData.get("password"));
   const confirm = String(formData.get("confirm") ?? "");
+  // Un checkbox desmarcado NO se envía en el FormData: la ausencia (null)
+  // equivale a "no aceptado". Solo se acepta el valor exacto "yes".
+  const acceptedLegal = formData.get("accept_legal") === "yes";
 
+  if (!acceptedLegal) {
+    return { ok: false, error: "Debes aceptar los Términos y la Política de privacidad para crear tu cuenta." };
+  }
   if (!email.success) return { ok: false, error: "Ingresa un correo válido." };
   if (!password.success) return { ok: false, error: password.error.issues[0]?.message };
   if (password.data !== confirm) return { ok: false, error: "Las contraseñas no coinciden." };
@@ -58,7 +64,6 @@ export async function signUpAction(_prev: AuthState, formData: FormData): Promis
     email: email.data,
     password: password.data,
     options: {
-      data: { full_name: name || null },
       emailRedirectTo: `${getSiteUrl()}/auth/confirm?next=${encodeURIComponent(next)}`,
     },
   });
@@ -86,6 +91,14 @@ export async function signUpAction(_prev: AuthState, formData: FormData): Promis
     }
     // Muestra la causa real (útil en desarrollo)
     return { ok: false, error: `No se pudo crear la cuenta: ${error.message}` };
+  }
+
+  // Registro de la aceptación (servidor, service-role). Con "Confirm email"
+  // activo y un correo ya registrado, Supabase devuelve un usuario falso sin
+  // identidades: no se registra nada para no atribuir la aceptación a otra
+  // cuenta. Si el insert falla se loguea y NO se bloquea el alta.
+  if (data.user && (data.user.identities?.length ?? 0) > 0) {
+    await recordLegalAcceptance(data.user.id, "signup_checkbox");
   }
 
   // Si el proyecto no exige confirmación de email, ya hay sesión → entrar.

@@ -3,8 +3,9 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowLeft } from "lucide-react";
 import { AuthForm } from "./auth-form";
-import { Wordmark } from "@/components/brand/wordmark";
+import { BrandLogo } from "@/components/brand/brand-logo";
 import { siteConfig } from "@/lib/site";
+import { LEGAL_PATHS } from "@/lib/legal/config";
 
 export const metadata: Metadata = {
   title: "Acceder",
@@ -25,7 +26,7 @@ export default function LoginPage() {
           <ArrowLeft className="size-3.5" aria-hidden="true" /> Volver al inicio
         </Link>
 
-        <Wordmark size="lg" className="block" />
+        <BrandLogo size="lg" className="flex" />
         <p className="t-label mt-2.5 text-muted-foreground">{siteConfig.tagline}</p>
 
         <div className="mt-9 rule-t pt-8">
@@ -36,6 +37,11 @@ export default function LoginPage() {
 
         <p className="t-small mt-9 rule-t pt-5 text-muted-foreground">
           Tus datos están protegidos. Nunca compartimos tu información ni la de tus clientes.
+        </p>
+        <p className="t-small mt-3 text-muted-foreground">
+          <Link href={LEGAL_PATHS.privacy} className="link-ink">Privacidad</Link>
+          {" · "}
+          <Link href={LEGAL_PATHS.terms} className="link-ink">Términos</Link>
         </p>
       </div>
     </main>
