@@ -22,6 +22,29 @@ interface PlaceOrderInput {
 }
 
 /**
+ * Mensajes para el comprador según el SQLSTATE con el que falla `place_order`.
+ *
+ * El RPC lanza códigos propios (ver
+ * `supabase/migrations/0007_order_limits_and_indexes.sql`) para que aquí se
+ * pueda ramificar sin leer el texto del error de Postgres. El mensaje que ve
+ * el comprador se escribe AQUÍ: nunca se reenvía `error.message`, que puede
+ * traer detalles internos (nombres de tabla, restricciones, umbrales).
+ *
+ * El backend Express traduce los mismos códigos a los mismos textos
+ * (`backend/src/services/order.service.ts`): si tocas uno, toca el otro.
+ */
+const RPC_ERROR_MESSAGES: Record<string, string> = {
+  // Límite de frecuencia: demasiados pedidos seguidos en este catálogo (#22).
+  PT429: "Estamos recibiendo demasiados pedidos en este catálogo. Espera unos minutos e intenta de nuevo.",
+  // El plan del vendedor agotó sus pedidos del mes (#29). El comprador no
+  // tiene culpa ni puede arreglarlo: se le dice a quién acudir, sin mencionar
+  // planes ni cupos del negocio.
+  PT402: "Este catálogo no puede recibir más pedidos por ahora. Contacta al vendedor.",
+};
+
+const GENERIC_ORDER_ERROR = "No se pudo enviar el pedido. Verifica los datos e intenta de nuevo.";
+
+/**
  * Crea un pedido desde el catálogo público. NO confía en precios del cliente:
  * el RPC place_order recalcula todo desde la BD. Se ejecuta con el cliente
  * anónimo (RLS + grant execute a anon).
@@ -72,7 +95,9 @@ export async function submitOrder(input: PlaceOrderInput): Promise<PlaceOrderRes
   });
 
   if (error) {
-    return { ok: false, error: "No se pudo enviar el pedido. Verifica los datos e intenta de nuevo." };
+    // `error.code` es el SQLSTATE que devuelve PostgREST. Si es uno de los
+    // nuestros, el comprador recibe el motivo; si no, mensaje genérico.
+    return { ok: false, error: RPC_ERROR_MESSAGES[error.code ?? ""] ?? GENERIC_ORDER_ERROR };
   }
 
   const result = data as { order_id: string; total_cents: number; currency: string };

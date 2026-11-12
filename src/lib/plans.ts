@@ -13,7 +13,20 @@ export interface PlanDef {
   limits: {
     maxProducts: number;
     maxCatalogs: number;
-    maxOrdersPerMonth: number; // Infinity = ilimitado
+    /**
+     * Infinity = ilimitado.
+     *
+     * OJO: este límite NO se aplica aquí. Se comprueba dentro del RPC
+     * `place_order` (`supabase/migrations/0007_order_limits_and_indexes.sql`),
+     * porque es el único camino común al front y al backend y el pedido lo
+     * envía un comprador anónimo. El valor vive por triplicado hasta que se
+     * cierre la #27 (desduplicar lógica):
+     *   · este archivo
+     *   · backend/src/config/plans.ts  -> PLAN_LIMITS[tier].maxOrdersPerMonth
+     *   · función SQL plan_max_orders_per_month(plan_tier)  (null = ilimitado)
+     * Si cambias uno, cambia los tres.
+     */
+    maxOrdersPerMonth: number;
   };
   features: string[];
   highlighted?: boolean;

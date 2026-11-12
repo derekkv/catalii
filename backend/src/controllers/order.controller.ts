@@ -10,7 +10,15 @@ function ctx(req: Request) {
 }
 
 export const orderController = {
-  /** Público: el cliente final envía su pedido. */
+  /**
+   * Público: el cliente final envía su pedido.
+   *
+   * Dos barreras antes de llegar aquí y una después: `placeOrderLimiter` por IP
+   * en el router, la validación zod, y dentro del RPC el límite de frecuencia
+   * por catálogo/teléfono y el límite mensual del plan. El servicio traduce
+   * esos fallos a 429 / 409 con un mensaje en español (sin detalles internos),
+   * y el manejador central los serializa.
+   */
   async place(req: Request, res: Response) {
     const result = await orderService.place(req.body as PlaceOrderInput);
     res.status(201).json({ data: result });
