@@ -19,6 +19,46 @@ export interface ActionState {
 const ok = (message?: string): ActionState => ({ ok: true, message });
 const fail = (error: string): ActionState => ({ ok: false, error });
 
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
+
+/**
+ * Slugs de los catálogos **públicos** donde aparece el producto.
+ *
+ * Una sola consulta, resuelta por el índice `catalog_product_product_idx`
+ * (0001_init.sql), y solo en las mutaciones de un producto concreto: no hay
+ * ninguna lectura extra en los caminos de lectura ni en la importación masiva.
+ * Hace falta porque `/c/[slug]` tiene ISR y sin revalidar a mano el cambio no
+ * se ve hasta que caduca la copia.
+ */
+async function publicCatalogSlugs(
+  supabase: SupabaseServerClient,
+  productId: string,
+): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("catalog_product")
+    .select("catalog:catalog(slug, is_public)")
+    .eq("product_id", productId);
+  if (error) {
+    // No es motivo para fallar la mutación: solo significa que la página
+    // pública tardará lo que dure su ISR en reflejar el cambio.
+    console.error("[productos] catálogos del producto:", error.code, error.message);
+    return [];
+  }
+  const rows = (data ?? []) as unknown as { catalog: { slug: string; is_public: boolean } | null }[];
+  return Array.from(
+    new Set(
+      rows
+        .map((r) => r.catalog)
+        .filter((c): c is { slug: string; is_public: boolean } => Boolean(c?.is_public))
+        .map((c) => c.slug),
+    ),
+  );
+}
+
+function revalidatePublicCatalogs(slugs: string[]): void {
+  for (const slug of slugs) revalidatePath(`/c/${slug}`);
+}
+
 function toCents(value: number): number {
   return Math.round(value * 100);
 }
@@ -113,6 +153,8 @@ export async function createProduct(_prev: ActionState, formData: FormData): Pro
     });
     if (!res.ok) return fail(res.message);
     revalidatePath("/dashboard/productos");
+    // La portada muestra el contador de productos y el setup-checklist.
+    revalidatePath("/dashboard");
     return ok("Producto agregado.");
   }
 
@@ -130,9 +172,14 @@ export async function createProduct(_prev: ActionState, formData: FormData): Pro
     images: imgs.images,
     active: p.active,
   });
-  if (error) return fail("No se pudo guardar el producto.");
+  if (error) {
+    console.error("[createProduct]", error.code, error.message);
+    return fail("No se pudo guardar el producto.");
+  }
 
   revalidatePath("/dashboard/productos");
+  // La portada muestra el contador de productos y el setup-checklist.
+  revalidatePath("/dashboard");
   return ok("Producto agregado.");
 }
 
@@ -180,6 +227,7 @@ export async function updateProduct(_prev: ActionState, formData: FormData): Pro
     await deleteMedia(previous.filter((i) => !kept.has(i.key)).map((i) => i.key));
 
     revalidatePath("/dashboard/productos");
+    revalidatePublicCatalogs(await publicCatalogSlugs(supabase, id));
     return ok("Producto actualizado.");
   }
 
@@ -201,21 +249,37 @@ export async function updateProduct(_prev: ActionState, formData: FormData): Pro
     })
     .eq("id", id)
     .eq("business_id", business.id);
-  if (error) return fail("No se pudo actualizar.");
+  if (error) {
+    console.error("[updateProduct]", error.code, error.message);
+    return fail("No se pudo actualizar.");
+  }
 
   // Solo tras guardar: las fotos quitadas se borran de R2.
   const kept = new Set(imgs.images.map((i) => i.key));
   await deleteMedia(previous.filter((i) => !kept.has(i.key)).map((i) => i.key));
 
   revalidatePath("/dashboard/productos");
+  // Nombre, precio y fotos se renderizan en cada catálogo público que lo
+  // incluya; sin esto el comprador sigue viendo los datos viejos.
+  revalidatePublicCatalogs(await publicCatalogSlugs(supabase, id));
   return ok("Producto actualizado.");
 }
 
-export async function deleteProduct(formData: FormData): Promise<void> {
+/**
+ * Borra el producto y sus imágenes de R2.
+ *
+ * Devuelve estado: antes era `void` y se tragaba el error del delete, así que
+ * un borrado rechazado por RLS se veía como éxito en la interfaz.
+ */
+export async function deleteProduct(id: string): Promise<ActionState> {
   const business = await getBusiness();
-  if (!business) return;
-  const id = String(formData.get("id") ?? "");
-  if (!id) return;
+  if (!business) return fail("No autorizado.");
+  if (!id) return fail("Producto inválido.");
+
+  const supabase = await createClient();
+  // Antes de borrar: las filas de catalog_product se van en cascada, después
+  // ya no se podría saber en qué catálogos aparecía.
+  const slugs = await publicCatalogSlugs(supabase, id);
 
   let keys: string[];
   if (backendEnabled()) {
@@ -224,22 +288,35 @@ export async function deleteProduct(formData: FormData): Promise<void> {
       `/api/products/${encodeURIComponent(id)}`,
       { method: "DELETE" },
     );
-    if (!res.ok) return;
-    keys = res.data.images.map((i) => i.key);
+    if (!res.ok) return fail(res.status === 404 ? "El producto ya no existe." : res.message);
+    keys = (res.data?.images ?? []).map((i) => i.key);
   } else {
-    const supabase = await createClient();
-    const { data: removed } = await supabase
+    const { data: removed, error } = await supabase
       .from("product")
       .delete()
       .eq("id", id)
       .eq("business_id", business.id)
       .select("images");
-    keys = ((removed ?? []) as { images: StoredImage[] | null }[]).flatMap((r) =>
+    if (error) {
+      console.error("[deleteProduct]", error.code, error.message);
+      return fail("No se pudo eliminar el producto.");
+    }
+    // Sin filas: no existe o no es del negocio (RLS). Antes pasaba por éxito.
+    if (!removed || removed.length === 0) return fail("El producto ya no existe.");
+    keys = (removed as { images: StoredImage[] | null }[]).flatMap((r) =>
       (r.images ?? []).map((i) => i.key),
     );
   }
   await deleteMedia(keys);
+
   revalidatePath("/dashboard/productos");
+  // Contador de productos y checklist de la portada.
+  revalidatePath("/dashboard");
+  // La lista de catálogos muestra cuántos productos tiene cada uno, y ese
+  // número baja al desaparecer las filas de catalog_product en cascada.
+  revalidatePath("/dashboard/catalogos");
+  revalidatePublicCatalogs(slugs);
+  return ok("Producto eliminado.");
 }
 
 /** Importación masiva desde CSV. Recalcula límites de plan y valida cada fila. */
@@ -311,8 +388,13 @@ export async function importProductsCsv(_prev: ActionState, formData: FormData):
   if (toInsert.length === 0) return fail("No se encontraron filas válidas en el CSV.");
 
   const { error } = await supabase.from("product").insert(toInsert);
-  if (error) return fail("No se pudieron importar los productos.");
+  if (error) {
+    console.error("[importProductsCsv]", error.code, error.message);
+    return fail("No se pudieron importar los productos.");
+  }
 
   revalidatePath("/dashboard/productos");
+  // Contador de productos y checklist de la portada.
+  revalidatePath("/dashboard");
   return ok(`Importados ${toInsert.length} productos${skipped ? `, ${skipped} omitidos` : ""}.`);
 }

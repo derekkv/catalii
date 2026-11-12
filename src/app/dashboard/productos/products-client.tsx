@@ -320,14 +320,18 @@ function ProductRow({
     if (!ok) return;
 
     setDeleting(true);
-    const fd = new FormData();
-    fd.set("id", p.id);
     try {
-      await deleteProduct(fd);
+      const result = await deleteProduct(p.id);
+      if (!result.ok) {
+        toast(result.error ?? "No se pudo eliminar el producto.", { tone: "error" });
+        return;
+      }
       toast(`"${p.name}" eliminado.`, { tone: "success" });
       router.refresh();
     } catch {
-      toast("No se pudo eliminar el producto.", { tone: "error" });
+      // Fallo de red o de ejecución de la acción; los errores de negocio
+      // llegan en `result.error`.
+      toast("No se pudo eliminar el producto. Revisa tu conexión.", { tone: "error" });
     } finally {
       setDeleting(false);
     }
@@ -408,8 +412,8 @@ function ProductRow({
 
 const CSV_TEMPLATE =
   "name,sku,price,stock,category,description,image_url\n" +
-  "Coca-Cola 600ml,CC600,12.50,240,Bebidas,Refresco retornable,\n" +
-  "Galletas Maria 170g,GM170,18.00,80,Abarrotes,,\n";
+  "Refresco de cola 600 ml,RC600,12.50,240,Bebidas,Retornable,\n" +
+  "Galletas surtidas 170 g,GS170,18.00,80,Abarrotes,,\n";
 
 function CsvImportModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [fileName, setFileName] = useState("");

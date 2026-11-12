@@ -73,19 +73,19 @@ export function ProductSelector({
   }
 
   function save() {
-    const fd = new FormData();
-    fd.set("catalog_id", catalogId);
-    selected.forEach((id) => fd.append("product_ids", id));
     startTransition(async () => {
       try {
-        await syncCatalogProducts(fd);
-        toast(
-          `Catálogo actualizado con ${selected.size} ${selected.size === 1 ? "producto" : "productos"}.`,
-          { tone: "success" },
-        );
+        const result = await syncCatalogProducts(catalogId, Array.from(selected));
+        if (!result.ok) {
+          // El reemplazo es transaccional: si falló, el catálogo sigue con los
+          // productos que tenía, así que no hay nada que deshacer aquí.
+          toast(result.error ?? "No se pudo guardar la selección.", { tone: "error" });
+          return;
+        }
+        toast(result.message ?? "Catálogo actualizado.", { tone: "success" });
         router.refresh();
       } catch {
-        toast("No se pudo guardar la selección.", { tone: "error" });
+        toast("No se pudo guardar la selección. Revisa tu conexión.", { tone: "error" });
       }
     });
   }

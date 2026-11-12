@@ -60,7 +60,7 @@ export function ProductForm({
           required
           autoFocus
           maxLength={200}
-          placeholder="Coca-Cola 600 ml"
+          placeholder="Refresco de cola 600 ml"
           defaultValue={product?.name}
         />
       </div>

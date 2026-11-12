@@ -33,20 +33,24 @@ export function OrderStatusSelect({ id, status }: { id: string; status: OrderSta
   function change(next: OrderStatus) {
     const previous = value;
     setValue(next);
-    const fd = new FormData();
-    fd.set("id", id);
-    fd.set("status", next);
     startTransition(async () => {
       try {
-        await updateOrderStatus(fd);
+        const result = await updateOrderStatus(id, next);
+        if (!result.ok) {
+          setValue(previous);
+          toast(result.error ?? "No se pudo cambiar el estado del pedido.", { tone: "error" });
+          return;
+        }
         toast(`Pedido marcado como “${OPTIONS.find((o) => o.value === next)?.label}”.`, {
           tone: "success",
           duration: 2500,
         });
         router.refresh();
       } catch {
+        // Solo queda aquí el fallo de red o de ejecución de la acción: los
+        // errores de negocio vienen en `result.error`.
         setValue(previous);
-        toast("No se pudo cambiar el estado del pedido.", { tone: "error" });
+        toast("No se pudo cambiar el estado del pedido. Revisa tu conexión.", { tone: "error" });
       }
     });
   }

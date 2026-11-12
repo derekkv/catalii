@@ -239,6 +239,7 @@ export function CatalogConfigForm({
 export function DeleteCatalogButton({ id, name }: { id: string; name: string }) {
   const confirm = useConfirm();
   const { toast } = useToast();
+  const router = useRouter();
   const [deleting, setDeleting] = useState(false);
 
   async function remove() {
@@ -251,15 +252,21 @@ export function DeleteCatalogButton({ id, name }: { id: string; name: string }) 
     if (!ok) return;
 
     setDeleting(true);
-    const fd = new FormData();
-    fd.set("id", id);
     try {
-      await deleteCatalog(fd);
+      const result = await deleteCatalog(id);
+      if (!result.ok) {
+        setDeleting(false);
+        toast(result.error ?? "No se pudo eliminar el catálogo.", { tone: "error" });
+        return;
+      }
+      toast(result.message ?? "Catálogo eliminado.", { tone: "success" });
+      // La navegación vive aquí y no en la acción: `redirect()` del servidor
+      // lanza una excepción por diseño, y mezclarla con el try/catch tapaba
+      // los errores reales. `replace` porque esta página ya no existe.
+      router.replace("/dashboard/catalogos");
     } catch {
-      // `deleteCatalog` termina con un redirect, que en Next se propaga como
-      // excepción: sólo avisamos si falla de verdad al volver aquí.
       setDeleting(false);
-      toast("No se pudo eliminar el catálogo.", { tone: "error" });
+      toast("No se pudo eliminar el catálogo. Revisa tu conexión.", { tone: "error" });
     }
   }
 
