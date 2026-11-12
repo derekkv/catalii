@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { requireBusiness } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { backendEnabled, backendFetch } from "@/lib/backend";
 import { OrdersClient, type OrderWithItems } from "./orders-client";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { StatTiles } from "@/components/dashboard/stat-tiles";
@@ -8,18 +9,28 @@ import { formatMoney } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Pedidos", robots: { index: false } };
 
-export default async function PedidosPage() {
-  const business = await requireBusiness();
-  const supabase = await createClient();
+async function loadOrders(businessId: string): Promise<OrderWithItems[]> {
+  if (backendEnabled()) {
+    const res = await backendFetch<OrderWithItems[]>("/api/orders");
+    // Se lanza en vez de mostrar una lista vacía: "sin pedidos" sería falso y
+    // el límite de error del panel ofrece reintentar.
+    if (!res.ok) throw new Error(`No se pudieron cargar los pedidos (${res.status}): ${res.message}`);
+    return res.data;
+  }
 
+  const supabase = await createClient();
   const { data } = await supabase
     .from("order")
     .select("*, order_item(*)")
-    .eq("business_id", business.id)
+    .eq("business_id", businessId)
     .order("created_at", { ascending: false })
     .limit(200);
+  return (data as OrderWithItems[] | null) ?? [];
+}
 
-  const orders = (data as OrderWithItems[] | null) ?? [];
+export default async function PedidosPage() {
+  const business = await requireBusiness();
+  const orders = await loadOrders(business.id);
 
   // Resumen del mes en curso: es la pregunta real ("¿cómo vamos este mes?"),
   // no el acumulado histórico.

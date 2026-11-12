@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getBusiness } from "@/lib/auth";
+import { backendEnabled, backendFetch } from "@/lib/backend";
 import { orderStatusSchema } from "@/lib/validation";
 
 export async function updateOrderStatus(formData: FormData): Promise<void> {
@@ -12,12 +13,19 @@ export async function updateOrderStatus(formData: FormData): Promise<void> {
   const status = orderStatusSchema.safeParse(formData.get("status"));
   if (!id || !status.success) return;
 
-  const supabase = await createClient();
-  await supabase
-    .from("order")
-    .update({ status: status.data })
-    .eq("id", id)
-    .eq("business_id", business.id);
+  if (backendEnabled()) {
+    await backendFetch(`/api/orders/${encodeURIComponent(id)}/status`, {
+      method: "PATCH",
+      body: { status: status.data },
+    });
+  } else {
+    const supabase = await createClient();
+    await supabase
+      .from("order")
+      .update({ status: status.data })
+      .eq("id", id)
+      .eq("business_id", business.id);
+  }
 
   revalidatePath("/dashboard/pedidos");
   revalidatePath("/dashboard");

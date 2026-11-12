@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { backendEnabled, backendFetch } from "@/lib/backend";
 import { placeOrderSchema } from "@/lib/validation";
 
 export interface PlaceOrderResult {
@@ -38,6 +39,27 @@ export async function submitOrder(input: PlaceOrderInput): Promise<PlaceOrderRes
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Datos del pedido inválidos." };
   }
   const d = parsed.data;
+
+  if (backendEnabled()) {
+    // Ruta pública: sin token. El backend vuelve a validar y recalcula precios.
+    const res = await backendFetch<{ orderId: string; totalCents: number; currency: string }>(
+      "/api/orders",
+      {
+        method: "POST",
+        auth: false,
+        body: {
+          catalog_slug: d.catalog_slug,
+          name: d.name,
+          whatsapp: d.whatsapp,
+          email: d.email || undefined,
+          notes: d.notes || undefined,
+          items: d.items,
+        },
+      },
+    );
+    if (!res.ok) return { ok: false, error: res.message };
+    return { ok: true, ...res.data };
+  }
 
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("place_order", {

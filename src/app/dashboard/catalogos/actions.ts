@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getBusiness } from "@/lib/auth";
+import { backendEnabled, backendFetch } from "@/lib/backend";
+import type { Catalog } from "@/types/database";
 import { catalogSchema, brandImageKeySchema } from "@/lib/validation";
 import { getPlan } from "@/lib/plans";
 import { slugify } from "@/lib/utils";
@@ -18,15 +20,19 @@ export interface CatalogState {
 export async function createCatalog(_prev: CatalogState, formData: FormData): Promise<CatalogState> {
   const business = await getBusiness();
   if (!business) return { ok: false, error: "No autorizado." };
+  const useBackend = backendEnabled();
   const supabase = await createClient();
 
-  const { count } = await supabase
-    .from("catalog")
-    .select("id", { count: "exact", head: true })
-    .eq("business_id", business.id);
-  const limit = getPlan(business.plan).limits.maxCatalogs;
-  if ((count ?? 0) >= limit) {
-    return { ok: false, error: `Tu plan permite ${limit} catálogo(s). Mejora tu plan para más.` };
+  // Gating por plan. Con backend lo aplica él.
+  if (!useBackend) {
+    const { count } = await supabase
+      .from("catalog")
+      .select("id", { count: "exact", head: true })
+      .eq("business_id", business.id);
+    const limit = getPlan(business.plan).limits.maxCatalogs;
+    if ((count ?? 0) >= limit) {
+      return { ok: false, error: `Tu plan permite ${limit} catálogo(s). Mejora tu plan para más.` };
+    }
   }
 
   const name = String(formData.get("name") ?? "");
@@ -41,6 +47,24 @@ export async function createCatalog(_prev: CatalogState, formData: FormData): Pr
   });
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
   const c = parsed.data;
+
+  if (useBackend) {
+    const res = await backendFetch<Catalog>("/api/catalogs", {
+      method: "POST",
+      body: {
+        name: c.name,
+        slug: c.slug,
+        description: c.description ?? "",
+        display_name: c.display_name || c.name,
+        whatsapp: c.whatsapp ?? "",
+        theme: c.theme ?? "",
+        is_public: false,
+      },
+    });
+    if (!res.ok) return { ok: false, error: res.message };
+    revalidatePath("/dashboard/catalogos");
+    redirect(`/dashboard/catalogos/${res.data.id}`);
+  }
 
   const { data: created, error } = await supabase
     .from("catalog")
@@ -86,6 +110,25 @@ export async function updateCatalog(_prev: CatalogState, formData: FormData): Pr
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
   const c = parsed.data;
 
+  if (backendEnabled()) {
+    const res = await backendFetch<Catalog>(`/api/catalogs/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      body: {
+        name: c.name,
+        slug: c.slug,
+        description: c.description ?? "",
+        display_name: c.display_name || c.name,
+        whatsapp: c.whatsapp ?? "",
+        theme: c.theme ?? "",
+        is_public: c.is_public,
+      },
+    });
+    if (!res.ok) return { ok: false, error: res.message };
+    revalidatePath("/dashboard/catalogos");
+    revalidatePath(`/dashboard/catalogos/${id}`);
+    return { ok: true, message: "Catálogo actualizado." };
+  }
+
   const supabase = await createClient();
   const { error } = await supabase
     .from("catalog")
@@ -116,14 +159,25 @@ export async function deleteCatalog(formData: FormData): Promise<void> {
   if (!business) return;
   const id = String(formData.get("id") ?? "");
   if (!id) return;
-  const supabase = await createClient();
-  const { data: removed } = await supabase
-    .from("catalog")
-    .delete()
-    .eq("id", id)
-    .eq("business_id", business.id)
-    .select("logo_key, banner_key");
-  const row = (removed?.[0] ?? null) as { logo_key: string | null; banner_key: string | null } | null;
+
+  let row: { logo_key: string | null; banner_key: string | null } | null;
+  if (backendEnabled()) {
+    // Devuelve las claves de imagen para que el front limpie R2.
+    const res = await backendFetch<{ logo_key: string | null; banner_key: string | null }>(
+      `/api/catalogs/${encodeURIComponent(id)}`,
+      { method: "DELETE" },
+    );
+    row = res.ok ? res.data : null;
+  } else {
+    const supabase = await createClient();
+    const { data: removed } = await supabase
+      .from("catalog")
+      .delete()
+      .eq("id", id)
+      .eq("business_id", business.id)
+      .select("logo_key, banner_key");
+    row = (removed?.[0] ?? null) as { logo_key: string | null; banner_key: string | null } | null;
+  }
   if (row) await deleteMedia([row.logo_key, row.banner_key]);
   revalidatePath("/dashboard/catalogos");
   redirect("/dashboard/catalogos");

@@ -4,10 +4,11 @@ import { revalidatePath } from "next/cache";
 import Papa from "papaparse";
 import { createClient } from "@/lib/supabase/server";
 import { getBusiness } from "@/lib/auth";
+import { backendEnabled, backendFetch } from "@/lib/backend";
 import { productSchema, productImagesSchema } from "@/lib/validation";
 import { getPlan } from "@/lib/plans";
 import { assertUploadedKey, deleteMedia } from "@/lib/media/server";
-import type { StoredImage } from "@/types/database";
+import type { Product, StoredImage } from "@/types/database";
 
 export interface ActionState {
   ok: boolean;
@@ -57,19 +58,45 @@ async function readImages(
   return { images: parsed.data };
 }
 
+type ParsedProduct = ReturnType<typeof productSchema.parse>;
+
+/**
+ * Cuerpo JSON que espera la API (`backend/src/schemas/product.schema.ts`).
+ * Los textos opcionales vacíos viajan como "" y el backend los guarda como
+ * NULL (en PATCH eso es lo que permite vaciar un campo).
+ */
+function productBody(p: ParsedProduct, images: StoredImage[]) {
+  return {
+    name: p.name,
+    sku: p.sku ?? "",
+    description: p.description ?? "",
+    category: p.category ?? "",
+    price_cents: toCents(p.price),
+    currency: p.currency,
+    stock: p.stock,
+    min_order_qty: p.min_order_qty,
+    image_url: p.image_url ?? "",
+    images,
+    active: p.active,
+  };
+}
+
 export async function createProduct(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const business = await getBusiness();
   if (!business) return fail("No autorizado.");
+  const useBackend = backendEnabled();
   const supabase = await createClient();
 
-  // Gating por plan
-  const { count } = await supabase
-    .from("product")
-    .select("id", { count: "exact", head: true })
-    .eq("business_id", business.id);
-  const limit = getPlan(business.plan).limits.maxProducts;
-  if ((count ?? 0) >= limit) {
-    return fail(`Alcanzaste el límite de ${limit} productos de tu plan. Mejora tu plan.`);
+  // Gating por plan. Con backend lo aplica él (src/config/plans.ts allí).
+  if (!useBackend) {
+    const { count } = await supabase
+      .from("product")
+      .select("id", { count: "exact", head: true })
+      .eq("business_id", business.id);
+    const limit = getPlan(business.plan).limits.maxProducts;
+    if ((count ?? 0) >= limit) {
+      return fail(`Alcanzaste el límite de ${limit} productos de tu plan. Mejora tu plan.`);
+    }
   }
 
   const parsed = productSchema.safeParse(Object.fromEntries(formData));
@@ -78,6 +105,16 @@ export async function createProduct(_prev: ActionState, formData: FormData): Pro
 
   const imgs = await readImages(formData, business.id);
   if ("error" in imgs) return fail(imgs.error);
+
+  if (useBackend) {
+    const res = await backendFetch<Product>("/api/products", {
+      method: "POST",
+      body: productBody(p, imgs.images),
+    });
+    if (!res.ok) return fail(res.message);
+    revalidatePath("/dashboard/productos");
+    return ok("Producto agregado.");
+  }
 
   const { error } = await supabase.from("product").insert({
     business_id: business.id,
@@ -109,19 +146,42 @@ export async function updateProduct(_prev: ActionState, formData: FormData): Pro
   if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Datos inválidos.");
   const p = parsed.data;
 
+  const useBackend = backendEnabled();
   const supabase = await createClient();
 
-  const { data: current } = await supabase
-    .from("product")
-    .select("images")
-    .eq("id", id)
-    .eq("business_id", business.id)
-    .maybeSingle();
-  if (!current) return fail("Producto no encontrado.");
-  const previous = ((current as { images: StoredImage[] | null }).images ?? []) as StoredImage[];
+  let previous: StoredImage[];
+  if (useBackend) {
+    const found = await backendFetch<Product>(`/api/products/${encodeURIComponent(id)}`);
+    if (!found.ok) return fail(found.status === 404 ? "Producto no encontrado." : found.message);
+    previous = found.data.images ?? [];
+  } else {
+    const { data: current } = await supabase
+      .from("product")
+      .select("images")
+      .eq("id", id)
+      .eq("business_id", business.id)
+      .maybeSingle();
+    if (!current) return fail("Producto no encontrado.");
+    previous = ((current as { images: StoredImage[] | null }).images ?? []) as StoredImage[];
+  }
 
   const imgs = await readImages(formData, business.id, previous);
   if ("error" in imgs) return fail(imgs.error);
+
+  if (useBackend) {
+    const res = await backendFetch<Product>(`/api/products/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      body: productBody(p, imgs.images),
+    });
+    if (!res.ok) return fail(res.message);
+
+    // Solo tras guardar: las fotos quitadas se borran de R2.
+    const kept = new Set(imgs.images.map((i) => i.key));
+    await deleteMedia(previous.filter((i) => !kept.has(i.key)).map((i) => i.key));
+
+    revalidatePath("/dashboard/productos");
+    return ok("Producto actualizado.");
+  }
 
   // La cláusula business_id + RLS garantizan que solo edite lo suyo.
   const { error } = await supabase
@@ -156,16 +216,28 @@ export async function deleteProduct(formData: FormData): Promise<void> {
   if (!business) return;
   const id = String(formData.get("id") ?? "");
   if (!id) return;
-  const supabase = await createClient();
-  const { data: removed } = await supabase
-    .from("product")
-    .delete()
-    .eq("id", id)
-    .eq("business_id", business.id)
-    .select("images");
-  const keys = ((removed ?? []) as { images: StoredImage[] | null }[]).flatMap((r) =>
-    (r.images ?? []).map((i) => i.key),
-  );
+
+  let keys: string[];
+  if (backendEnabled()) {
+    // El backend borra y devuelve las imágenes para que el front limpie R2.
+    const res = await backendFetch<{ images: StoredImage[] }>(
+      `/api/products/${encodeURIComponent(id)}`,
+      { method: "DELETE" },
+    );
+    if (!res.ok) return;
+    keys = res.data.images.map((i) => i.key);
+  } else {
+    const supabase = await createClient();
+    const { data: removed } = await supabase
+      .from("product")
+      .delete()
+      .eq("id", id)
+      .eq("business_id", business.id)
+      .select("images");
+    keys = ((removed ?? []) as { images: StoredImage[] | null }[]).flatMap((r) =>
+      (r.images ?? []).map((i) => i.key),
+    );
+  }
   await deleteMedia(keys);
   revalidatePath("/dashboard/productos");
 }
