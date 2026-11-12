@@ -1,5 +1,14 @@
 # Separación front / back / supabase — notas de entrega
 
+> ⚠️ **Documento histórico.** Describe la entrega de la separación
+> front/back/supabase tal como quedó en noviembre de 2026. **El estado actual
+> está en [`README.md`](./README.md) (cómo funciona hoy) y en
+> [`PENDIENTES.md`](./PENDIENTES.md) (lo que falta).** No añadas pendientes
+> aquí: van a `PENDIENTES.md`, que es la lista única y numerada.
+>
+> Lo que decía la sección «Pendientes» de este archivo ya no es cierto; al
+> final hay una nota fechada con las correcciones y dónde está cada cosa hoy.
+
 ## Qué se hizo (18 commits)
 
 ### Backend — 8 commits (`backend/`, Node + Express + TypeScript)
@@ -40,21 +49,36 @@ Todo pasa ESLint. Incluye dos bugs reales:
   auth por token con RLS, validación zod, errores centrales y seguridad.
 - **supabase** → `supabase/` con su README.
 
-## Pendientes / cosas que debes saber (verificación honesta)
+---
 
-1. **El backend aún no está instalado ni type-chequeado.** Es código nuevo y
-   coherente, pero no se corrió `tsc` porque faltan sus dependencias. Para
-   validarlo:
+## Qué cambió después de esta entrega (revisado el 2026-11-12, posterior)
 
-   ```bash
-   cd backend && pnpm install && pnpm typecheck && pnpm dev
-   ```
+Los tres «pendientes» que cerraban este documento quedaron obsoletos. Esto es
+lo comprobado hoy en el repo:
 
-2. **No se cambió la capa de servidor de Next.** Migrarla a Express de golpe
-   rompería el deploy de Cloudflare. El backend queda como servicio paralelo
-   para que el front lo consuma cuando quieras, sin tumbar lo que ya funciona.
-   Si prefieres empezar a conectar el front a esta API (o mover físicamente
-   `src/` dentro de `frontend/`), hay que planificarlo aparte.
+1. **El backend sí está instalado y type-chequeado.** `backend/node_modules`
+   existe y `pnpm backend:typecheck` (`tsc --noEmit` dentro de `backend/`)
+   termina sin errores. Decía lo contrario porque en su momento faltaban las
+   dependencias.
 
-3. **Nada se subió a remoto.** Sigues en `main` local; falta `git push` cuando
-   lo decidas.
+2. **El front ya consume el backend**, de forma condicional. `src/lib/backend.ts`
+   es el cliente HTTP (solo servidor): manda el access token de Supabase como
+   `Authorization: Bearer` y el backend lo revalida contra Auth. Con
+   `BACKEND_URL` vacía todo sigue yendo directo a Supabase; con `BACKEND_URL`
+   definida pasan por la API el envío de pedidos (`src/lib/actions/order-actions.ts`),
+   el listado y cambio de estado de pedidos (`src/app/dashboard/pedidos/`) y el
+   crear/editar/borrar de productos y catálogos
+   (`src/app/dashboard/productos/actions.ts`, `src/app/dashboard/catalogos/actions.ts`).
+   El detalle de qué sigue yendo directo a Supabase está en el README, sección
+   «El front consume el back (`BACKEND_URL`)».
+
+3. **El trabajo está commiteado y hay remoto.** El repo tiene historial en `main`
+   y `origin` apunta a `github.com:derekkv/catalii.git`; en el momento de
+   escribir esto quedaban 6 commits locales sin empujar (`git status -sb`). Ya
+   no es cierto que «nada se subió a remoto». Lo que falte de control de
+   versiones se sigue en `PENDIENTES.md` #1.
+
+Lo único de la lista original que sigue vigente es la decisión de fondo: la capa
+de servidor de Next no se migró entera a Express y mantener las dos rutas tiene
+coste. Esa decisión, los endpoints que faltan, la lógica duplicada y el
+despliegue del backend están como tareas **#25–#28** en `PENDIENTES.md`.

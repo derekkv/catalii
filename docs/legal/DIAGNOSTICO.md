@@ -1,12 +1,43 @@
 # Diagnóstico de las 35 órdenes — Catalii
 
+> **⚠️ Cómo leer este documento**
+>
+> Este documento está **por capas y en orden cronológico**: primero el
+> diagnóstico inicial, después lo que se implementó.
+>
+> - El [**Resumen de conteo**](#resumen-de-conteo--histórico-fase-2) y la
+>   [**Tabla de diagnóstico**](#tabla-de-diagnóstico--histórico-fase-2-antes-de-implementar)
+>   son el **diagnóstico inicial (Fase 2)**: retratan el código **antes** de
+>   implementar nada. **Sus estados ya no son los vigentes**: marcan FALTA en
+>   varios puntos que hoy están hechos. Se conservan porque son el historial y
+>   la evidencia `archivo:línea` que justificó cada cambio.
+> - El **estado vigente** está al final, en
+>   [**Estado tras la Fase 3**](#estado-tras-la-fase-3-2026-11-12) y en las
+>   actualizaciones posteriores
+>   ([textos y marca](#actualización-textos-publicados-y-marca-2026-11-12-posterior),
+>   [maqueta de la landing](#actualización-marcas-en-la-maqueta-de-la-landing-2026-11-12-posterior)).
+>   **Si solo vas a leer una cosa, lee esas.**
+> - Lo que falta por hacer, con números de tarea, está en
+>   [`PENDIENTES.md`](../../PENDIENTES.md).
+>
+> | Sección | Qué es | Vigencia |
+> |---|---|---|
+> | Resumen de conteo · Tabla de diagnóstico | Fase 2, estado inicial | **Histórico** |
+> | Contraste (punto 6) — cálculo | Cálculo WCAG de `press` y `acero`, previo a la corrección | **Histórico** → vigente en [`ACCESIBILIDAD.md`](./ACCESIBILIDAD.md) |
+> | FALTA de tipo TÉCNICO por riesgo · FALTA de TEXTO LEGAL o DECISIÓN | Plan de trabajo de la Fase 2 | **Histórico** (ya ejecutado en buena parte) |
+> | PREGUNTAR A ABOGADO | Preguntas abiertas | Vigente (salvo donde se indique) |
+> | Estado tras la Fase 3 + actualizaciones | Lo que hay hoy en el código | **Vigente** |
+
 > **No es asesoría legal.** No afirma que la app «cumpla» ni «sea legal»: dice qué existe en el código (con evidencia `archivo:línea`) y qué falta. Fase 2 de la guía «35 puntos antes de lanzar tu app». Parte del [INVENTARIO.md](./INVENTARIO.md).
 
-- Fecha: 2026-11-12 · Alcance: lectura de código en `/home/derek/Proyectos/catalii` (rama `main`). `backend/` no analizado.
+- Fecha del diagnóstico inicial: 2026-11-12 · Alcance: lectura de código en `/home/derek/Proyectos/catalii` (rama `main`). `backend/` no analizado.
 - **Lo que NO se hizo:** no se abrió la app en navegador, no se corrió Lighthouse/axe, no se probó con lector de pantalla ni con teclado real, no se hizo ninguna compra de prueba en Paddle sandbox, no se miró la pestaña Red, no se leyó ningún `.env` ni producción. Todo lo marcado «HECHO» o «NO APLICA» se apoya en lectura/búsqueda de código, y así se indica.
 - Estados: **HECHO** (existe, con evidencia) · **FALTA** · **NO APLICA** (con razón concreta) · **PREGUNTAR A ABOGADO**. Tipo: **TÉCNICO** / **TEXTO LEGAL** / **DECISIÓN**.
 
-## Resumen de conteo
+## Resumen de conteo — HISTÓRICO (Fase 2)
+
+> Conteo del estado **inicial**, antes de implementar. Para el conteo que
+> importa hoy, ve a [Estado tras la Fase 3](#estado-tras-la-fase-3-2026-11-12).
 
 | Estado | Cantidad | Órdenes |
 |---|---|---|
@@ -15,7 +46,14 @@
 | NO APLICA | 7 | 4, 10, 14, 19, 24, 27, 31 |
 | PREGUNTAR A ABOGADO | 3 | 3, 21, 34 |
 
-## Tabla de diagnóstico
+## Tabla de diagnóstico — HISTÓRICO (Fase 2, antes de implementar)
+
+> ⚠️ **Los estados de esta tabla están superados.** Es la foto del código
+> **antes** de implementar: donde dice FALTA, buena parte ya está hecha. Úsala
+> solo como historial y como índice de evidencias (`archivo:línea`). El estado
+> vigente de cada una de las 35 órdenes está en
+> [Estado tras la Fase 3](#estado-tras-la-fase-3-2026-11-12) y en las
+> actualizaciones que le siguen.
 
 | # | Orden | Bloque | Estado | Evidencia | Qué falta | Tipo |
 |---|---|---|---|---|---|---|
@@ -35,7 +73,7 @@
 | 20 | Quita las promesas que no puedes probar | HONESTIDAD | FALTA | Afirmaciones sin prueba en el repo: «10 min de archivo a enlace publicado» (`page.tsx:87`), «24/7 aunque tengas cerrado» (`:90`), «Gratis para siempre · Sin tarjeta» (`:363`), «Lo que escuchamos en cada bodega que visitamos» (`:392`), «Stock en tiempo real, precios por cliente» en la `description` SEO (`lib/site.ts:6-7`), «Importa tu CSV **o Excel**» (`page.tsx:41`; el campo solo acepta `.csv`, `products-client.tsx:472`). **Funciones de plan que no existen en el código:** Pro: «Multi-lista de precios», «Analytics»; Business: «Integración ERP», «API», «Marca blanca» (`plans.ts:46,55`; `price_list` y `customer` sin uso en `src/`; no hay analytics ni endpoint de API público). «20 pedidos/mes» del plan Gratis no se aplica (`maxOrdersPerMonth` sin comprobación) | Reescribir lo que no tenga prueba o implementarlo; mostrar solo lo que el producto hace hoy. El dueño decide qué promesas son ciertas (INVENTARIO §9 pregunta 16) | DECISIÓN |
 | 25 | No presumas SOC 2 sin tenerlo | HONESTIDAD | HECHO | Búsqueda de `SOC ?2\|ISO 27001\|certific\|GDPR\|RGPD\|cumplimos` en `src/`, `README.md`, `package.json`: ninguna mención de certificaciones ni cumplimiento | Nada hoy. Mantener; si se escribe sobre seguridad, describir medidas reales (RLS: `0002_rls_and_rpc.sql:1-11`; cabeceras: `next.config.ts:4-17`) | TEXTO LEGAL |
 | 33 | Promete una disponibilidad realista | HONESTIDAD | FALTA | La landing sugiere disponibilidad permanente: «24/7 · Recibiendo pedidos aunque tengas cerrado» (`page.tsx:90`). No hay SLA, página de estado ni monitoreo en el repo (solo `observability.enabled`, `wrangler.jsonc`) | Sustituir por texto realista («los pedidos se registran en cualquier momento») o definir un objetivo con respaldo de monitoreo. Decisión de redacción con el abogado | DECISIÓN |
-| 10 | No uses logos de clientes sin permiso | DERECHOS DE AUTOR | NO APLICA | La landing no muestra logos de clientes ni sección «confían en nosotros»: `page.tsx` sin `<img>`/`<svg>` de marcas (solo íconos `lucide-react`). Las maquetas usan nombres inventados (`Distribuidora El Sol`, `Abarrotes Lupita`) y **productos con marca real como texto** («Coca-Cola 600 ml», `page.tsx:233`) | Consultar al abogado si el uso de marcas como ejemplo en la maqueta es aceptable (lista de preguntas). Cambiar a genéricos es trivial | — |
+| 10 | No uses logos de clientes sin permiso | DERECHOS DE AUTOR | NO APLICA | La landing no muestra logos de clientes ni sección «confían en nosotros»: `page.tsx` sin `<img>`/`<svg>` de marcas (solo íconos `lucide-react`). Las maquetas usan nombres inventados (`Distribuidora El Sol`, `Abarrotes Lupita`) y **productos con marca real como texto** (un refresco y una galleta de marca conocida, `page.tsx:233`) | Consultar al abogado si el uso de marcas como ejemplo en la maqueta es aceptable (lista de preguntas). Cambiar a genéricos es trivial. **Ya hecho**, ver [actualización final](#actualización-marcas-en-la-maqueta-de-la-landing-2026-11-12-posterior) | — |
 | 11 | Verifica las licencias de imágenes, fuentes y código | DERECHOS DE AUTOR | FALTA | No hay archivo de créditos. `public/{file,globe,next,vercel,window}.svg` parecen el template `create-next-app` y no se usan en `src/` (sin referencias). `src/app/favicon.ico` de origen desconocido. Fuentes: Fraunces/Archivo/JetBrains Mono con `next/font/google` (`layout.tsx:2-27`; entiendo que son OFL, no verificado). Íconos `lucide-react` 0.469.0 (ISC). Sin `LICENSE` en el repo | Eliminar los svg sin uso; confirmar origen de `favicon.ico`; crear `CREDITS`/`THIRD_PARTY_NOTICES` con fuentes e íconos y su licencia (verificada en la fuente, no de memoria) | TÉCNICO |
 | 23 | Cumple las licencias open source | DERECHOS DE AUTOR | FALTA | `npx license-checker --production --summary` (ejecutado; `node_modules` existe en la raíz): MIT 11, Apache-2.0 2, ISC 1, UNLICENSED 1 (el propio `catalii`, `private: true`). Sin GPL/AGPL a nivel directo. **Limitación:** solo se resolvieron 15 paquetes (primer nivel); `pnpm` no está disponible aquí y las transitivas no se verificaron. No existe `THIRD_PARTY_NOTICES` | Generar el archivo de avisos con todas las dependencias (incluidas transitivas) con un verificador que entienda pnpm y revisar copyleft. Apache-2.0 de Paddle exige conservar avisos | TÉCNICO |
 | 26 | Ten un canal para reclamos de derechos de autor | DERECHOS DE AUTOR | FALTA | Los usuarios suben imágenes y textos que se publican (`api/uploads/route.ts`, `api/media/[...path]/route.ts:31-36`) y catálogos indexables (`sitemap.ts`). No hay página «Derechos de autor», correo ni formulario de reclamos | Página de reclamos con correo/formulario y procedimiento (borrador); mecanismo para retirar un catálogo/imagen. Si aplica agente DMCA en EE. UU., lo decide el abogado | TEXTO LEGAL |
@@ -55,7 +93,13 @@
 | 14 | Etiqueta el contenido hecho con IA | IA | NO APLICA | La app no genera contenido con IA: sin SDK de IA en `package.json`; sin llamadas a APIs de IA en `src/` (ver INVENTARIO §6) | Reabrir si se añade IA. PREGUNTAR AL DUEÑO si el copy/imágenes de la landing se generaron con IA | — |
 | 27 | No entrenes a la IA con datos de usuarios sin permiso | IA | NO APLICA | Sin funciones de IA ni envío de datos de usuarios a ningún proveedor de IA (mismas pruebas que 14) | Reabrir si se añade IA | — |
 
-## Contraste (punto 6) — cálculo
+## Contraste (punto 6) — cálculo — HISTÓRICO (Fase 2)
+
+> ⚠️ Cálculo **previo a la corrección** y solo de dos themes (`press` y
+> `acero`). El fallo que detecta (placeholder al 70 % → 3,16:1) **ya está
+> corregido**: se quitó la opacidad en `src/components/ui/input.tsx`. Los
+> cálculos vigentes, con los cinco themes y los valores posteriores al arreglo,
+> están en [`ACCESIBILIDAD.md`](./ACCESIBILIDAD.md).
 
 Fórmula (WCAG 2.x): canal sRGB `c = v/255`; lineal `c' = c/12,92` si `c ≤ 0,03928`, si no `((c+0,055)/1,055)^2,4`; luminancia `L = 0,2126·R' + 0,7152·G' + 0,0722·B'`; razón `(L_claro + 0,05)/(L_oscuro + 0,05)`. Umbrales: 4,5:1 texto normal, 3:1 texto grande y componentes de interfaz. Colores tomados de `src/app/globals.css` (bloques `[data-theme="press"]` y `:where(:root), [data-theme="acero"]`). Cálculo ejecutado con un script de Node (sin librerías).
 
@@ -107,7 +151,14 @@ Notas: (1) El texto `.t-label` es de 11 px (0,6875 rem, `globals.css`) y hasta 9
 
 ---
 
-## FALTA de tipo TÉCNICO, ordenados por riesgo (esfuerzo: S ≤ medio día · M ≈ 1-2 días · L > 2 días)
+## FALTA de tipo TÉCNICO, ordenados por riesgo — HISTÓRICO (plan de la Fase 2)
+
+> ⚠️ Es el **plan de trabajo** que salió del diagnóstico inicial, no una lista
+> de pendientes actual: las prioridades 1 a 7 ya se ejecutaron (ver
+> [Estado tras la Fase 3](#estado-tras-la-fase-3-2026-11-12)). Los pendientes
+> vigentes están en [`PENDIENTES.md`](../../PENDIENTES.md).
+
+Esfuerzo: S ≤ medio día · M ≈ 1-2 días · L > 2 días.
 
 Riesgo según mi criterio técnico/operativo (el abogado puede reordenar).
 
@@ -126,7 +177,12 @@ Riesgo según mi criterio técnico/operativo (el abogado puede reordenar).
 
 **Hallazgos técnicos adicionales** (no son una de las 35 órdenes pero salieron al revisar): (a) el límite `maxOrdersPerMonth` del plan Gratis no se hace cumplir (`plans.ts:29`); (b) `place_order` es invocable por `anon` sin limitación de frecuencia visible (`0002:201`) y almacena nombre/teléfono de terceros; (c) `processed_webhook` crece sin límite (`0001:168-171`); (d) no hay Content-Security-Policy (`next.config.ts:4-17`); (e) el campo `full_name` se guarda pero nunca se usa; (f) `business.email` se usa como llave para enlazar con Paddle (`process-webhook.ts:46-50`): si el mayorista cambia ese correo, deja de enlazar con su suscripción (riesgo funcional/fiscal).
 
-## FALTA / pendientes de TEXTO LEGAL o DECISIÓN (no son técnicos)
+## FALTA / pendientes de TEXTO LEGAL o DECISIÓN — HISTÓRICO (Fase 2)
+
+> ⚠️ Los seis textos de la primera lista **ya están publicados** (Fase 3). Lo
+> que sigue abierto son las decisiones del dueño y del abogado, que se siguen en
+> [`DATOS-PENDIENTES.md`](./DATOS-PENDIENTES.md) y en
+> [`PENDIENTES.md`](../../PENDIENTES.md) #2–#8.
 
 - **Textos (borrador, a redactar en Fase 3 y revisar por abogado):** 1 privacidad · 2 términos · 16 reembolsos · 26 reclamos de derechos de autor · 32 proveedores · 35 contacto · (cookies/almacenamiento si el abogado lo pide) · aviso de IA no aplica.
 - **Decisiones del dueño con su abogado:** 5 plazos de retención · 18 minimización · 20 y 33 qué promesas se mantienen · 21 menores · 30 DPAs · 34 impuestos/moneda.
@@ -150,7 +206,7 @@ Referencias a las 25 preguntas del capítulo 6 de la guía entre paréntesis.
 13. (18) ¿Qué canal de reclamos de derechos de autor necesito por el contenido que suben los mayoristas? ¿Agente DMCA en EE. UU.?
 14. (19) Con las dependencias actuales (MIT, Apache-2.0, ISC en primer nivel), ¿qué avisos de licencia debo incluir y bastan? ¿Qué licencia asigno al propio código?
 15. (21, 22, 23) Revisión de los borradores de privacidad, términos, reembolsos y cookies; datos de empresa a publicar y dónde; qué puedo decir (y qué no) sobre seguridad y disponibilidad.
-16. **Marcas en la maqueta de la landing:** ¿es aceptable usar nombres de productos con marca real («Coca-Cola 600 ml») en las vistas previas, o debo usar genéricos?
+16. **Marcas en la maqueta de la landing:** ~~¿es aceptable usar nombres de productos con marca real en las vistas previas, o debo usar genéricos?~~ **Resuelto sin consulta:** la maqueta ya usa nombres genéricos (ver [actualización final](#actualización-marcas-en-la-maqueta-de-la-landing-2026-11-12-posterior)). Queda como pregunta solo si en algún momento se quiere volver a usar marcas de terceros en material promocional.
 17. **Afirmaciones comerciales:** revisión de las promesas de la landing y de las funciones de plan que hoy no existen (Analytics, API, ERP, Marca blanca, Multi-lista, Excel) antes de publicar precios.
 18. (24) Plan de respuesta a incidentes: a quién se avisa, en qué plazo, qué preparar.
 19. (25) Mínimo imprescindible para el día del lanzamiento y qué puede esperar.
@@ -160,7 +216,8 @@ Referencias a las 25 preguntas del capítulo 6 de la guía entre paréntesis.
 
 # Estado tras la Fase 3 (2026-11-12)
 
-> Esta sección **actualiza** la tabla de arriba (que conserva el estado de la Fase 2). Sin commits todavía: no hay hash que citar; los cambios están en el árbol de trabajo de `main`. Verificación hecha: `tsc --noEmit`, `eslint .` y `next build` sin errores. **No** se probó en navegador, ni con Paddle sandbox, ni con Supabase/R2 reales; las migraciones **no** se ejecutaron.
+> **Esta es la sección vigente** (junto con las actualizaciones que la siguen).
+> **Actualiza** la tabla de arriba, que conserva el estado de la Fase 2. Cuando se escribió no había commits, por eso no se citan hashes; los cambios ya están commiteados en `main` (`git log`). Verificación hecha: `tsc --noEmit`, `eslint .` y `next build` sin errores. **No** se probó en navegador, ni con Paddle sandbox, ni con Supabase/R2 reales; las migraciones **no** se ejecutaron.
 
 | # | Orden | Estado nuevo | Evidencia (archivo) | Pendiente |
 |---|---|---|---|---|
@@ -173,7 +230,7 @@ Referencias a las 25 preguntas del capítulo 6 de la guía entre paréntesis.
 | 7 | Cuentas regresivas | HECHO | (sin cambios) | — |
 | 8 | Texto alternativo | HECHO | `media/brand-image-upload.tsx` | Prueba con lector de pantalla |
 | 9 | Teclado | HECHO (por código) | `ui/button.tsx` (anillo), selects con `--ring` | Prueba solo con teclado en navegador |
-| 10 | Logos de clientes | NO APLICA | — | Marcas como ejemplo en maqueta: abogado |
+| 10 | Logos de clientes | NO APLICA | — | Marcas como ejemplo en maqueta: resuelto después con genéricos (ver [actualización final](#actualización-marcas-en-la-maqueta-de-la-landing-2026-11-12-posterior)) |
 | 11 | Licencias de recursos | HECHO | `CREDITS.md`, 5 SVG del template eliminados | Origen de `favicon.ico`: dueño |
 | 12 | Descargar/borrar datos | HECHO (sin probar en vivo) | `api/account/export/route.ts`, `dashboard/configuracion/account-actions.ts`, `data-section.tsx` | Prueba con cuenta real; Paddle no borra clientes: abogado |
 | 13 | Patrones engañosos | HECHO (por código) | `facturacion/pricing-client.tsx`, `confirm-dialog.tsx`, casilla de registro | Prueba con una persona ajena |
@@ -214,3 +271,29 @@ Cambios respecto a la tabla de arriba:
 - **Marca:** la aplicación usa los logos V2 del dueño (`public/brand/*-v2*`) mediante `src/components/brand/brand-logo.tsx`, con imagen Open Graph real. Las fuentes editables se movieron a `docs/brand/` para no servirlas en `public/`.
 
 Verificación de esta tanda: `tsc --noEmit`, `eslint .` y `next build` sin errores (25 páginas estáticas); HTML comprobado con `next start` en `/`, `/privacidad`, `/terminos` y `/contacto` (200). Sigue sin probarse en navegador, con Paddle sandbox ni con Supabase/R2 reales, y las migraciones `0005`/`0006` siguen sin ejecutar.
+
+## Actualización: marcas en la maqueta de la landing (2026-11-12, posterior)
+
+Cierra el único pendiente que quedaba de la **orden 10** (logos y marcas de
+terceros) y la pregunta 16 de la lista del abogado.
+
+- **La landing ya no usa nombres de productos con marca real.** La vista previa
+  del catálogo (`PriceListPreview`, `src/app/page.tsx`) usa genéricos:
+  «Refresco de cola 600 ml» (SKU `RC-600`) y «Galletas surtidas 170 g» (SKU
+  `GS-170`), junto al «Aceite vegetal 1 L» que ya era genérico. Los precios, las
+  presentaciones y el total del pedido ($718.80 = 24 × 12,50 + 12 × 34,90) no
+  cambiaron. Los nombres de negocio de las maquetas (`Distribuidora El Sol`,
+  `Abarrotes Lupita`, `Tienda Don Beto`, `Minisúper La Esquina`) ya eran
+  inventados.
+- **El ejemplo de CSV del README** también pasó a un nombre genérico.
+- **Estado de la orden 10:** NO APLICA, ya sin la salvedad de las marcas en la
+  maqueta. No hace falta esperar al abogado para esto.
+- **Queda fuera de este cambio** (hay marcas reales como texto de ejemplo en
+  otros archivos, pendiente de quien los mantenga):
+  `src/app/dashboard/productos/product-form.tsx` (placeholder del campo
+  «nombre»), `src/app/dashboard/productos/products-client.tsx` (`CSV_TEMPLATE`,
+  que es la plantilla que se descarga el usuario), `CREDITS.md` §«Marcas y
+  ejemplos» e `INVENTARIO.md` §7, que siguen citando los nombres antiguos.
+
+Verificación: `eslint src/app/page.tsx` y `tsc --noEmit` sin errores. No se
+revisó en navegador.

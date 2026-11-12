@@ -230,11 +230,15 @@ function DashboardPreview() {
   );
 }
 
-/** Lo que ve el comprador: el catálogo público, con las fichas del sistema. */
+/**
+ * Lo que ve el comprador: el catálogo público, con las fichas del sistema.
+ * Los productos de ejemplo son genéricos a propósito (nada de marcas reales):
+ * la maqueta es material publicitario y no queremos usar marcas de terceros.
+ */
 function PriceListPreview() {
   const rows = [
-    { name: "Coca-Cola 600 ml", sku: "CC-600", price: "12.50", unit: "caja 24", qty: 24 },
-    { name: "Galleta María 170 g", sku: "GM-170", price: "18.00", unit: "bulto 12", qty: 0 },
+    { name: "Refresco de cola 600 ml", sku: "RC-600", price: "12.50", unit: "caja 24", qty: 24 },
+    { name: "Galletas surtidas 170 g", sku: "GS-170", price: "18.00", unit: "bulto 12", qty: 0 },
     { name: "Aceite vegetal 1 L", sku: "AV-1000", price: "34.90", unit: "caja 12", qty: 12 },
   ];
 

@@ -25,7 +25,10 @@ El repo está separado en tres partes:
 .
 ├── src/            # FRONT  → app Next.js (web + panel + catálogo público)
 ├── backend/        # BACK   → API Node.js + Express (ver backend/README.md)
-└── supabase/       # DB     → migraciones, RLS y RPC (ver supabase/README.md)
+├── supabase/       # DB     → migraciones, RLS y RPC (ver supabase/README.md)
+├── media-worker/   # Worker aparte que sirve las imágenes de R2
+├── scripts/        # utilidades (export-legal.ts)
+└── docs/           # marca (docs/brand/) y legal (docs/legal/)
 ```
 
 - **Front (`src/`)** — la app Next.js desplegada en Cloudflare Workers. Hoy su
@@ -69,7 +72,7 @@ src/
   app/
     page.tsx                # Landing de marketing
     login/                  # Acceso: correo y contraseña
-    auth/confirm/           # Verificación del enlace de email
+    auth/confirm/ auth/reset/   # Enlaces de email: verificación y recuperación
     c/[slug]/               # Catálogo PÚBLICO (comprador) + SEO + JSON-LD
     dashboard/              # Panel del mayorista (protegido)
       onboarding/           # Crear negocio
@@ -77,18 +80,41 @@ src/
       pedidos/              # Gestión de pedidos
       catalogos/[id]/       # Config, theme, selección de productos, QR
       facturacion/          # Planes + checkout Paddle
-      configuracion/        # Datos del negocio
+      configuracion/        # Datos del negocio + exportar/borrar cuenta
+    privacidad/ terminos/ reembolsos/   # Páginas legales (6, generadas
+    derechos-de-autor/ proveedores/     # desde src/lib/legal/)
+    contacto/
     api/webhook/            # Webhook de Paddle (firma verificada)
+    api/uploads/            # Subida y descarte de imágenes a R2
+    api/media/[...path]/    # Servir imágenes (fallback sin media-worker)
+    api/account/export/     # Descargar mis datos (JSON)
     sitemap.ts, robots.ts   # SEO
-  components/               # UI, theme, dashboard
+  components/
+    ui/ theme/ dashboard/ media/   # UI, themes, panel, subida de imágenes
+    legal/                  # Página y enlaces legales reutilizables
+    brand/                  # brand-logo.tsx (símbolo + wordmark) y wordmark.tsx
   lib/
-    supabase/               # clients: client / server / server-internal + proxy
-    paddle/                 # instancia, webhook, customer id
+    supabase/               # clients: client / server / server-internal +
+                            # middleware.ts (updateSession, lo llama src/middleware.ts)
+    paddle/                 # instancia, webhook, customer id, suscripción
     actions/                # server actions (auth, pedidos)
-    themes.ts plans.ts validation.ts utils.ts site.ts
-  proxy.ts                  # Sesión Supabase + protección de /dashboard
-supabase/migrations/        # 0001_init.sql, 0002_rls_and_rpc.sql
+    legal/                  # config.ts (datos), content.ts (texto), acceptance.ts
+    media/                  # claves, resize en cliente, subida y helpers R2
+    backend.ts              # cliente HTTP del backend Express (BACKEND_URL)
+    themes.ts plans.ts validation.ts utils.ts site.ts auth.ts timeout.ts
+  types/database.ts         # tipos de las tablas de Supabase
+  middleware.ts             # Sesión Supabase + protección de /dashboard
+scripts/export-legal.ts     # genera docs/legal/textos/ (pnpm legal:export)
+supabase/migrations/        # 0001_init.sql · 0002_rls_and_rpc.sql
+                            # 0003_default_theme_acero.sql · 0004_media.sql
+                            # 0005_legal_acceptance.sql
+                            # 0006_purge_processed_webhooks.sql
+                            # 0007_order_limits_and_indexes.sql
+                            # 0008_sync_catalog_products.sql
 ```
+
+> `0005`–`0008` están escritas pero **sin aplicar** (ver `PENDIENTES.md`
+> #9, #10, #12, #22, #29 y #30).
 
 ## Puesta en marcha
 
@@ -109,15 +135,19 @@ Completa `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
 
 ### 3. Base de datos (Supabase)
 
-Aplica las migraciones en orden. Con la CLI de Supabase:
+Aplica las migraciones en orden (hay ocho: `0001` … `0008`). Con la CLI de
+Supabase:
 
 ```bash
 supabase link --project-ref TU_REF
 supabase db push          # aplica supabase/migrations/*.sql
 ```
 
-O bien pega el contenido de `supabase/migrations/0001_init.sql` y luego
-`0002_rls_and_rpc.sql` en **SQL Editor** del panel de Supabase.
+O bien pega el contenido de cada archivo de `supabase/migrations/` en **SQL
+Editor** del panel de Supabase, en orden numérico (`0001_init.sql`,
+`0002_rls_and_rpc.sql`, `0003_default_theme_acero.sql`, `0004_media.sql`,
+`0005_legal_acceptance.sql`, `0006_purge_processed_webhooks.sql`,
+`0007_order_limits_and_indexes.sql`, `0008_sync_catalog_products.sql`).
 
 En **Authentication → URL Configuration** pon tu Site URL (p. ej.
 `http://localhost:3000`) y agrega `/auth/confirm` a las redirect URLs.
@@ -153,7 +183,7 @@ Encabezados aceptados (flexibles, en español/inglés):
 
 ```
 name,sku,price,stock,category,description,image_url
-Coca-Cola 600ml,CC600,12.50,240,Bebidas,Refresco,https://...
+Refresco de cola 600 ml,RC600,12.50,240,Bebidas,Retornable,https://...
 ```
 
 ## Seguridad (decisiones clave)
@@ -256,7 +286,8 @@ pnpm cf:typegen    # genera tipos de los bindings (cloudflare-env.d.ts)
   npx wrangler secret put PADDLE_PRODUCT_PRO
   npx wrangler secret put PADDLE_PRODUCT_BUSINESS
   ```
-  Para `pnpm cf:preview` en local, ponlos en `.dev.vars` (ver `.dev.vars.example`).
+  Para `pnpm cf:preview` en local, ponlos en `.dev.vars` (no versionado; no hay
+  plantilla en el repo).
 
 ### Pasos para desplegar
 ```bash
@@ -286,7 +317,8 @@ conectas en el dashboard de Cloudflare). Luego:
 - **ISR/caché** (`revalidate` en `/c/[slug]` y `sitemap`): **ya está habilitado**
   con R2 + Durable Object (ver la sección "ISR con R2" más abajo). Solo debes
   crear el bucket R2 una vez antes de desplegar.
-- El bundle del Worker pesa ~1.8 MB gzip (dentro del límite de Workers).
+- El bundle del Worker pesaba ~1.8 MB gzip en el último build medido (dentro
+  del límite de Workers); vuelve a comprobarlo tras cambios grandes.
 
 
 ## ISR con R2 (habilitado) + Despliegue continuo desde Git
@@ -402,8 +434,9 @@ caché inmutable de 1 año). Sin Next ni middleware de sesión.
 pnpm media:deploy    # despliega catalii-media
 ```
 
-Conecta un dominio (p. ej. `media.catalii.com`, ver `routes` en
-`media-worker/wrangler.jsonc`) y define en el **build** de la app
+Conecta un dominio (p. ej. `media.catalii.com`): hoy `media-worker/wrangler.jsonc`
+**no tiene `routes` ni `custom_domain`**, hay que añadirlo (`PENDIENTES.md` #41).
+Luego define en el **build** de la app
 `NEXT_PUBLIC_MEDIA_URL=https://media.catalii.com`. Sin esa variable la app las
 sirve por `/api/media/...` (fallback, también usado en `next dev`).
 

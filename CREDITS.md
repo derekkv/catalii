@@ -31,7 +31,7 @@ Texto de la licencia: https://openfontlicense.org/ (OFL-1.1). La OFL permite uso
 
 ## Marcas y ejemplos
 
-- Las maquetas de la landing usan nombres de productos con marca real como texto (p. ej. «Coca-Cola 600 ml»): ver pregunta al abogado en `docs/legal/DIAGNOSTICO.md` (orden 10).
+- Las maquetas de la landing, el placeholder del formulario de producto y la plantilla CSV usan nombres de producto **genéricos** («Refresco de cola 600 ml», «Galletas surtidas»), no marcas reales. Se cambiaron a propósito para no usar marcas de terceros como ejemplo; si vuelves a poner una marca real, consúltalo antes (orden 10 de `docs/legal/DIAGNOSTICO.md`).
 
 ## Pendiente
 

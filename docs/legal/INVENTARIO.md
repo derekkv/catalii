@@ -134,14 +134,14 @@ Resultado de buscar en `package.json`, `src/`, `public/`, `media-worker/` script
 - Fuentes: Fraunces, Archivo, JetBrains Mono vía `next/font/google`. Según Google Fonts son de licencia abierta (entiendo que SIL OFL 1.1); **confirmar en la ficha de cada fuente**, no lo he verificado aquí.
 - Dependencias de producción directas: `@paddle/paddle-js` (Apache-2.0), `@paddle/paddle-node-sdk` (Apache-2.0), `@supabase/ssr`, `@supabase/supabase-js`, `clsx`, `lodash.throttle`, `next`, `papaparse`, `qrcode`, `react`, `react-dom`, `tailwind-merge`, `zod` (MIT), `lucide-react` (ISC). Salida de `npx license-checker --production --summary`: MIT 11 · Apache-2.0 2 · ISC 1 · UNLICENSED 1 (el propio paquete `catalii`, `private: true`). **Limitación:** `pnpm` no está disponible en esta sesión y `license-checker` solo resolvió el primer nivel (15 paquetes); las dependencias transitivas **no están verificadas**.
 - No existe `LICENSE` en el repo ni archivo de créditos/avisos de terceros.
-- Ejemplos de la landing con marcas reales como texto de maqueta: «Coca-Cola 600 ml», «Galleta María» (`page.tsx`, `PriceListPreview`) → ver preguntas.
+- Ejemplos de la landing: **ya no hay marcas reales**. Las maquetas, el placeholder del formulario y la plantilla CSV usan nombres genéricos («Refresco de cola 600 ml», «Galletas surtidas»). Antes decían «Coca-Cola 600 ml» y «Galleta María»; se sustituyeron (ver `PENDIENTES.md` #36).
 
 ## 8. Otras observaciones técnicas relevantes para el abogado (no son hallazgos de cumplimiento)
 
 - Control de acceso: RLS activado en todas las tablas (`0002_rls_and_rpc.sql:1-11`); `anon` solo puede leer catálogos/productos públicos y ejecutar `place_order` (`0002:26-28,201`). `order` e `order_item` no son legibles por `anon`.
-- `place_order` está concedido a `anon` **sin límite de frecuencia visible** en el repo (posible spam de pedidos / acumulación de datos personales falsos). Es un tema técnico de abuso, no jurídico.
-- `maxOrdersPerMonth` (20 en el plan Gratis, `plans.ts:29`) está definido pero **no se aplica** en el código (`grep limits.` solo usa `maxProducts` y `maxCatalogs`; `place_order` no cuenta pedidos). Afecta a lo que promete el plan (ver diagnóstico 20).
-- El botón «Cambiar a <plan>» para bajar de plan abre un **nuevo checkout** (`pricing-client.tsx:109-119`), no una cancelación ni un cambio de plan sobre la suscripción existente.
+- `place_order` está concedido a `anon`. **Actualización:** la migración `0007` (escrita, **sin aplicar**) añade dentro del propio RPC un límite de frecuencia de 60 pedidos por catálogo y hora y 5 por teléfono cada 10 minutos. No guarda datos personales nuevos: cuenta las filas de `"order"` que ya existen. El RPC no recibe la IP, así que ese eje no se puede limitar desde SQL.
+- `maxOrdersPerMonth` (20 en el plan Gratis, `plans.ts:29`). **Actualización:** la misma migración `0007` lo hace cumplir dentro de `place_order` (mes calendario en UTC; los pedidos cancelados no cuentan). Hasta aplicarla, sigue sin efecto.
+- El botón «Cambiar a <plan>» para bajar de plan abría un **nuevo checkout**. **Actualización:** ya no; si hay una suscripción vigente se cambia el plan sobre ella (`paddle.subscriptions.update`) tras una confirmación, y existe «Cancelar suscripción». Sin probar contra Paddle.
 - Existe un aviso «en desarrollo» (`dev-banner.tsx`) controlado por variable de entorno; `wrangler.jsonc` lo deja en `"false"`.
 - Los valores de `wrangler.jsonc` (`vars`) son marcadores `REEMPLAZAR…`: la configuración real de producción **no está en el repo** y no la he consultado.
 

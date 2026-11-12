@@ -49,11 +49,6 @@ export async function updateBusiness(_prev: SettingsState, formData: FormData): 
   return { ok: true, message: "Cambios guardados." };
 }
 
-
-/**
- * Logo (foto de perfil) o banner por defecto del negocio. Los catálogos que no
- * tengan uno propio heredan estos. `key = null` lo quita.
- */
 export async function setBusinessImage(
   kind: "logo" | "banner",
   key: string | null,
@@ -79,7 +74,6 @@ export async function setBusinessImage(
 
   if (previous && previous !== parsedKey.data) await deleteMedia([previous]);
 
-  // Afecta al shell del panel (avatar) y a los catálogos que heredan.
   revalidatePath("/dashboard", "layout");
   const { data: cats } = await supabase
     .from("catalog")

@@ -29,7 +29,11 @@ interface Options {
   auth?: boolean;
 }
 
-function fail(status: number, code: string, message: string): BackendResult<never> {
+function fail(
+  status: number,
+  code: string,
+  message: string,
+): BackendResult<never> {
   return { ok: false, status, code, message };
 }
 
@@ -45,7 +49,8 @@ export async function backendFetch<T>(
   { method = "GET", body, auth = true }: Options = {},
 ): Promise<BackendResult<T>> {
   const base = process.env.BACKEND_URL?.replace(/\/+$/, "");
-  if (!base) return fail(503, "unavailable", "El servicio no está configurado.");
+  if (!base)
+    return fail(503, "unavailable", "El servicio no está configurado.");
 
   const headers: Record<string, string> = { Accept: "application/json" };
   if (body !== undefined) headers["Content-Type"] = "application/json";
@@ -54,7 +59,12 @@ export async function backendFetch<T>(
     const supabase = await createClient();
     const { data } = await supabase.auth.getSession();
     const token = data.session?.access_token;
-    if (!token) return fail(401, "unauthorized", "Tu sesión expiró. Vuelve a iniciar sesión.");
+    if (!token)
+      return fail(
+        401,
+        "unauthorized",
+        "Tu sesión expiró. Vuelve a iniciar sesión.",
+      );
     headers.Authorization = `Bearer ${token}`;
   }
 
@@ -69,10 +79,15 @@ export async function backendFetch<T>(
     });
   } catch {
     // Caído, DNS, CORS de red o plazo agotado.
-    return fail(503, "unavailable", "El servicio no responde. Intenta de nuevo en un momento.");
+    return fail(
+      503,
+      "unavailable",
+      "El servicio no responde. Intenta de nuevo en un momento.",
+    );
   }
 
-  let json: { data?: T; error?: { code?: string; message?: string } } | null = null;
+  let json: { data?: T; error?: { code?: string; message?: string } } | null =
+    null;
   try {
     json = await res.json();
   } catch {

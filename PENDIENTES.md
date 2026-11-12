@@ -11,25 +11,33 @@ algo se añade, va al final de su sección.
 - **Tipo:** `TÉC` código o infraestructura · `DATO` solo lo sabes tú · `DECIS`
   decisión de negocio o legal · `VERIF` hay que probarlo · `DOC` documentación.
 - **Esfuerzo:** `S` menos de medio día · `M` uno o dos días · `L` más.
-- Nada de esto está empezado salvo donde diga lo contrario.
+
+**Avance al 2026-11-12:** cerradas 12 tareas (#1, #12, #23, #30, #31, #32, #36,
+#46, #47, #48, #49 y, en código, #22 y #29). Todo lo escrito está commiteado y
+pasa `tsc`, `eslint` y `next build`. Lo que queda son, en su mayoría, cosas que
+**yo no puedo hacer**: datos que solo tienes tú, decisiones, y pruebas contra
+Supabase, Paddle y un navegador reales.
 
 ## Empieza por aquí (en este orden)
 
-1. **#1** proteger el trabajo con commits.
-2. **#2–#8** los datos legales: desbloquean el lanzamiento de las páginas.
-3. **#9–#10** aplicar las dos migraciones en un entorno de prueba.
-4. **#13–#16** probar con Paddle sandbox y con una cuenta real lo que ya está escrito pero nunca se ejecutó.
-5. **#21–#23** seguridad: CSP, límite de pedidos e imágenes externas.
+1. **#2–#8** los datos legales: desbloquean el lanzamiento de las páginas.
+2. **#9–#10** aplicar las cuatro migraciones pendientes (`0005`–`0008`) en un
+   entorno de prueba. Varias tareas ya cerradas en código dependen de esto.
+3. **#13–#16** probar con Paddle sandbox y con una cuenta real lo que está
+   escrito pero nunca se ha ejecutado.
+4. **#51** decidir si la CSP pasa a modo bloqueo (hoy solo observa).
+5. **#25** decidir el futuro del backend Express.
 
 ---
 
 ## 1. Control de versiones
 
-- [ ] **#1 · TÉC · S — Commitear y subir el trabajo.** Hay ~65 archivos sin
-  commit en `main` y, según `NOTAS-SEPARACION.md`, nunca se hizo `git push`.
-  Agrupación sugerida: (a) backend restaurado + typecheck, (b) front consume el
-  back, (c) legal y textos, (d) accesibilidad y licencias, (e) marca y logos v2.
-  Riesgo real de perder todo lo hecho.
+- [x] **#1 · TÉC · S — ~~Commitear el trabajo.~~** Hecho: seis commits
+  temáticos (backend restaurado, front consume el back, páginas legales,
+  accesibilidad y licencias, logos v2, lista de pendientes y MCP) más los de
+  esta ronda. El árbol queda limpio.
+  **Falta `git push`:** `main` va por delante de `origin/main` y empujar es tu
+  decisión. Remoto: `git@github.com:derekkv/catalii.git`.
 
 ## 2. Datos legales que faltan (35 campos)
 
@@ -71,23 +79,44 @@ Detalle de cada campo y formato: `docs/legal/DATOS-PENDIENTES.md`.
 
 ## 3. Base de datos
 
-- [ ] **#9 · TÉC · S — Aplicar `0005_legal_acceptance.sql`.** Está escrita y sin
-  ejecutar. Sin ella, el registro de aceptación de términos falla en silencio y
-  no hay prueba de quién aceptó qué. Primero en un entorno de prueba.
-- [ ] **#10 · TÉC · S — Aplicar `0006_purge_processed_webhooks.sql`.** Crea
-  `purge_processed_webhooks(retention)`, que hoy nadie ejecuta: `processed_webhook`
-  crece sin límite. Si activas `pg_cron`, prográmala (ver comentario en la
-  migración); si no, llámala a mano o desde un job externo.
+- [ ] **#9 · TÉC · M — Aplicar las cuatro migraciones pendientes.** `0005`,
+  `0006`, `0007` y `0008` están escritas y **ninguna se ha ejecutado**. Es ahora
+  la tarea que más cosas desbloquea, porque de ella dependen varias ya cerradas
+  en código:
+  - `0005_legal_acceptance.sql` — sin ella el registro de aceptación de términos
+    falla y no hay prueba de quién aceptó qué.
+  - `0006_purge_processed_webhooks.sql` — la purga del ledger de webhooks.
+  - `0007_order_limits_and_indexes.sql` — índices (#12), límite mensual de
+    pedidos (#29) y límite de frecuencia (#22).
+  - `0008_sync_catalog_products.sql` — RPC atómico de sincronización (#30).
+    **Ojo:** hasta aplicarla, «Guardar selección» en el editor de catálogo
+    responde con un error explícito en vez de corromper el catálogo.
+
+  Aplícalas en orden en un entorno de prueba y luego en producción. El SQL se
+  validó con el parser de Postgres (`libpg-query`) pero **no se ha ejecutado**:
+  nadie ha comprobado tipos, nombres de objetos ni permisos. Si el RPC responde
+  `PGRST202`, PostgREST necesita recargar el esquema
+  (`notify pgrst, 'reload schema'`). Comprobaciones sugeridas en
+  `supabase/README.md`.
+- [ ] **#10 · TÉC · S — Programar la purga de webhooks.** Una vez aplicada la
+  `0006` (ver #9), la función `purge_processed_webhooks(retention)` existe pero
+  **nadie la llama**. Prográmala con `pg_cron` si lo tienes activado (hay un
+  comentario con el `cron.schedule` en la migración) o desde un job externo. Sin
+  esto, `processed_webhook` sigue creciendo sin límite.
 - [ ] **#11 · TÉC · M — Borrado automático por retención.** Depende de la #3. No
   existe: solo está la purga del registro técnico de webhooks. Hay que decidir
   qué se borra o anonimiza (pedidos y datos de compradores, cuentas inactivas) y
   programarlo.
-- [ ] **#12 · TÉC · S — Índices que faltan.** `order_item(product_id)` y
-  `order(catalog_id)` son claves `on delete set null` sin índice
-  (`0001_init.sql:135,113`): cada borrado de producto o catálogo recorre la tabla
-  completa. Y `business(email)` no tiene índice ni `UNIQUE`
-  (`0001_init.sql:14-27`) aunque es la clave con la que el webhook de Paddle
-  encuentra el negocio.
+- [x] **#12 · TÉC · S — ~~Índices que faltan.~~** Escritos en
+  `0007_order_limits_and_indexes.sql`: `order_item_product_idx`,
+  `order_catalog_created_idx` (compuesto con `created_at`, que además sirve al
+  límite de frecuencia) y `business_email_idx`.
+  Decisión: `business.email` lleva índice **normal, no `unique`**, porque es
+  opcional y editable por el usuario y un `unique` convertiría un correo
+  repetido en un error de base de datos que ninguna capa traduce (y varios
+  `null` no colisionan, que es el caso ambiguo real). La consulta para detectar
+  duplicados y el `create unique index ... where email is not null` quedan
+  comentados en la migración. **Se aplica con la #9.**
 
 ## 4. Verificaciones nunca hechas
 
@@ -125,23 +154,33 @@ contra servicios reales ni en un navegador.
 
 ## 5. Seguridad
 
-- [ ] **#21 · TÉC · M — Content-Security-Policy.** No existe
-  (`next.config.ts:4-17` tiene HSTS, nosniff, X-Frame-Options y
-  Permissions-Policy, pero no CSP). Hace falta nonce para el JSON-LD de
-  `c/[slug]/page.tsx` y para `theme-script.tsx`. Es la segunda línea contra XSS
-  y lo único que limitaría las imágenes de terceros de la #23.
-- [ ] **#22 · TÉC · M — Límite de frecuencia en `place_order`.** El backend
-  Express tiene `placeOrderLimiter` (20 cada 10 min), pero el camino por defecto
-  (`BACKEND_URL` vacío) va al RPC directo, concedido a `anon` sin límite
-  (`0002_rls_and_rpc.sql:201`). Es el único endpoint escribible sin sesión:
-  cualquiera puede inundar de pedidos falsos un catálogo público. Opciones:
-  contador por IP o teléfono dentro del RPC, Turnstile, o dejar `BACKEND_URL`
-  siempre configurada.
-- [ ] **#23 · TÉC · S — Restringir `image_url` externo.** `validation.ts:38`
-  acepta cualquier URL, incluida `http://`, y se renderiza como `src` en el
-  catálogo público (`lib/media/config.ts:154`): el navegador del comprador
-  revela su IP a un host arbitrario y puede romper HTTPS por contenido mixto.
-  Mínimo: exigir `https`. Mejor: lista de dominios o proxy.
+- [x] **#21 · TÉC · M — ~~Content-Security-Policy.~~** Implementada en
+  `src/middleware.ts` con nonce por petición, propagado al script de theme y al
+  JSON-LD. Política completa y decisiones en `docs/seguridad/CSP.md`.
+  **Está en modo `Report-Only`,** así que hoy informa pero no bloquea: pasar a
+  bloqueo es la #51, y depende de confirmar los dominios del checkout de Paddle
+  (#13, #18). Verificado en el HTML servido: la cabecera sale, los dos scripts
+  inline llevan el nonce de la cabecera y cambia en cada petición.
+- [x] **#22 · TÉC · M — ~~Límite de frecuencia en `place_order`.~~** Escrito
+  dentro del propio RPC en `0007`: 60 pedidos por catálogo y hora, y 5 por
+  teléfono cada 10 minutos. Falla con SQLSTATE `PT429`, que el front y el
+  backend traducen a un mensaje en español sin filtrar detalles de Postgres.
+  No se creó tabla de intentos: un intento rechazado no se puede registrar
+  porque el `raise` revierte la transacción, así que se cuentan las filas de
+  `"order"` que ya existen. Ventaja: **no se guarda ningún dato personal
+  nuevo**. Limitación: el RPC no recibe la IP, así que durante una inundación
+  los compradores reales de ese catálogo también quedan bloqueados.
+  Complementos recomendados y no hechos: Turnstile, o dejar `BACKEND_URL`
+  siempre puesta para que entre el límite por IP del backend.
+  **Se aplica con la #9.**
+- [x] **#23 · TÉC · S — ~~Restringir `image_url` externo.~~** Ahora se exige
+  `https` y se rechazan las credenciales embebidas (`https://user:pass@host`),
+  en el front y en el backend. Se aplicó también a `logo_url` y `banner_url` del
+  catálogo, que tenían el mismo problema. Una fila de CSV con `http://` se omite
+  con el resto de filas inválidas, sin romper la importación.
+  Queda la opción «mejor» (lista de dominios o proxy) sin hacer, y los datos ya
+  guardados con `http://` seguirán mostrándose pero fallarán al editar: las
+  consultas para detectarlos están en `docs/seguridad/CSP.md`.
 - [ ] **#24 · TÉC · S — El registro de aceptación no debe perderse.** Si falla
   el insert en `legal_acceptance`, el alta continúa y el error solo queda en los
   logs del servidor, así que puede quedar un usuario sin prueba de aceptación.
@@ -175,21 +214,34 @@ catálogos.
 
 ## 7. Coherencia del producto
 
-- [ ] **#29 · TÉC · M — `maxOrdersPerMonth` no se aplica.** Está definido
-  (`plans.ts:16,29`), duplicado en el backend y **anunciado como «20 pedidos/mes»**
-  en el plan gratis, pero nadie lo comprueba: ni el RPC cuenta pedidos. O se
-  implementa o se quita de lo que se promete.
-- [ ] **#30 · TÉC · S — `syncCatalogProducts` sin transacción.** Borra todas las
-  filas de `catalog_product` y luego inserta, sin comprobar errores
-  (`catalogos/actions.ts`): si falla el insert, el catálogo se queda vacío. Y no
-  revalida `/c/[slug]`, así que el cambio no se ve en el catálogo público.
-- [ ] **#31 · TÉC · S — Errores que se tragan en silencio.**
-  `deleteProduct`, `updateOrderStatus`, `deleteCatalog` y `syncCatalogProducts`
-  devuelven `void` y no informan al usuario si la operación falla: parece que
-  funcionó.
-- [ ] **#32 · TÉC · S — `revalidatePath` que faltan.** Tras varias mutaciones no
-  se revalida `/c/[slug]` ni `/dashboard`, así que el catálogo público puede
-  seguir mostrando datos viejos hasta que caduque el ISR.
+- [x] **#29 · TÉC · M — ~~`maxOrdersPerMonth` no se aplica.~~** Implementado en
+  el RPC `place_order` (`0007`), con los límites en la función SQL
+  `plan_max_orders_per_month`. Falla con SQLSTATE `PT402` y el comprador ve un
+  mensaje que le dice que contacte al vendedor, no un error genérico.
+  Decisiones: **mes calendario en UTC** y los pedidos **cancelados no cuentan**
+  (cancelar un pedido falso no debe gastar cupo; la contrapartida es que el
+  vendedor puede cancelar para liberar cupo, pero es un límite comercial, no una
+  defensa). **Se aplica con la #9.**
+- [x] **#30 · TÉC · S — ~~`syncCatalogProducts` sin transacción.~~** Ahora llama
+  al RPC `sync_catalog_products` (`0008`), que hace el borrado y la inserción en
+  una sola transacción, comprueba la propiedad del catálogo y de los productos,
+  conserva el orden y descarta ids repetidos. Si el insert falla, el catálogo
+  conserva sus productos. **Se aplica con la #9.**
+- [x] **#31 · TÉC · S — ~~Errores que se tragan en silencio.~~** Las cuatro
+  acciones devuelven ahora un estado `{ ok, error, message }` y la interfaz lo
+  muestra; también detectan el caso de «cero filas afectadas», que antes pasaba
+  por éxito. De paso, `updateCatalog`, `createProduct`, `updateProduct` e
+  `importProductsCsv` registran el detalle del error de Postgres en el servidor.
+  El `redirect` de `deleteCatalog` se movió al cliente, porque dentro de la
+  acción el `try/catch` del componente capturaba la excepción interna de Next y
+  mostraba un error en el camino de éxito.
+- [x] **#32 · TÉC · S — ~~`revalidatePath` que faltan.~~** Cada mutación
+  revalida ahora las rutas que toca, incluidos `/dashboard` (contadores y
+  checklist) y `/c/<slug>` de los catálogos afectados. Al cambiar el slug de un
+  catálogo se revalida también el anterior, porque su copia en caché seguiría
+  sirviéndose. Los slugs de los catálogos donde aparece un producto se resuelven
+  con una sola consulta a `catalog_product`, apoyada en un índice que ya
+  existía, y solo en mutaciones de un producto concreto.
 - [ ] **#33 · DECIS · S — Tablas sin usar.** `customer` y `price_list` existen en
   la base de datos (`0001_init.sql:88-108`) y ningún código las lee. Eran para
   «multi-lista de precios», que ya se quitó de los planes. Decidir si se
@@ -205,9 +257,15 @@ catálogos.
 - [ ] **#35 · DATO · S — Confirmar la titularidad de los logos.** `CREDITS.md`
   dice que se crearon con VectorCraft según `docs/brand/README.md`, pero yo no
   puedo verificar quién es el titular. Confírmalo o corrígelo.
-- [ ] **#36 · DECIS · S — Marcas reales en la maqueta.** La landing usa
-  «Coca-Cola 600 ml» y «Galleta María» como ejemplo. Cambiarlas por genéricos es
-  trivial; hazlo si tu abogado lo pide (pregunta 16 del resumen).
+- [x] **#36 · DECIS · S — ~~Marcas reales en la maqueta.~~** Hecho: la vista
+  previa de la landing (`PriceListPreview`, `src/app/page.tsx`) usa genéricos
+  —«Refresco de cola 600 ml» (`RC-600`) y «Galletas surtidas 170 g» (`GS-170`)—
+  con los mismos precios y total ($718.80). El ejemplo de CSV del `README.md`
+  también. No hacía falta esperar al abogado (pregunta 16). **Siguen con marcas
+  reales, fuera de mi alcance:** el placeholder de
+  `dashboard/productos/product-form.tsx`, el `CSV_TEMPLATE` de
+  `dashboard/productos/products-client.tsx`, `CREDITS.md` §«Marcas y ejemplos» e
+  `docs/legal/INVENTARIO.md` §7.
 - [ ] **#37 · DECIS · S — Licencia del propio código.** No hay `LICENSE` en el
   repo y `package.json` es `private: true`. Decide si llevará licencia.
 
@@ -244,16 +302,36 @@ catálogos.
 - [x] **#46 · DOC · S — ~~El README dice «magic link» y es falso.~~** Corregido:
   el acceso es correo y contraseña (`signInWithPassword`), y así lo dice ya el
   README en las dos menciones (stack y estructura).
-- [ ] **#47 · DOC · S — Estructura del README desfasada.** Menciona `proxy.ts`
-  (hoy es `src/middleware.ts`), lista solo dos migraciones (hay seis) y no
-  refleja los archivos nuevos (`src/lib/legal/`, `src/lib/backend.ts`,
-  `scripts/`, `src/components/legal/`).
-- [ ] **#48 · DOC · S — `NOTAS-SEPARACION.md` quedó obsoleto.** Dice que el
-  backend «aún no está instalado ni type-chequeado» y que el front no lo
-  consume: ambas cosas ya cambiaron. Actualízalo o archívalo.
-- [ ] **#49 · DOC · S — `docs/legal/DIAGNOSTICO.md` arrastra una tabla vieja.**
-  La tabla de la Fase 2 está desfasada; el estado real está en las dos
-  actualizaciones del final. Quien lo lea sin llegar al final se confunde.
+- [x] **#47 · DOC · S — ~~Estructura del README desfasada.~~** Corregido contra
+  el repo real: el árbol ya dice `src/middleware.ts` (no `proxy.ts`), lista las
+  ocho migraciones (`0001`–`0008`, con nota de que `0005`–`0008` siguen sin
+  aplicar) e incluye `src/lib/legal/`, `src/lib/media/`, `src/lib/backend.ts`,
+  `src/types/`, `src/components/legal/`, `src/components/brand/`, `scripts/`,
+  `api/uploads`, `api/media`, `api/account/export` y las seis páginas legales.
+  Además se arreglaron tres afirmaciones falsas: remitía a un `.dev.vars.example`
+  que no existe, decía «ver `routes` en `media-worker/wrangler.jsonc`» cuando ese
+  archivo no tiene `routes` ni `custom_domain` (es la #41), y el paso 3 mandaba
+  pegar solo `0001` y `0002` en el SQL Editor. El peso del bundle (~1.8 MB) se
+  marcó como medición de un build anterior, no como dato actual.
+- [x] **#48 · DOC · S — ~~`NOTAS-SEPARACION.md` quedó obsoleto.~~** Convertido en
+  **nota histórica**: aviso arriba de que el estado actual está en `README.md` y
+  en este archivo, se conserva el relato de la entrega y los «Pendientes» se
+  sustituyen por una sección fechada con lo comprobado hoy: el backend sí está
+  instalado y `tsc --noEmit` pasa en `backend/`; el front ya lo consume cuando
+  `BACKEND_URL` está definida (`src/lib/backend.ts` + pedidos, productos y
+  catálogos); y sí hay commits y remoto (`origin` en GitHub, 6 commits locales
+  sin empujar), así que lo de «nada se subió a remoto» tampoco era cierto.
+  Nota: por eso la #1 de este archivo también está desfasada (dice ~65 archivos
+  sin commit; hoy el historial está commiteado).
+- [x] **#49 · DOC · S — ~~`docs/legal/DIAGNOSTICO.md` arrastra una tabla
+  vieja.~~** Reorganizado sin perder historial: aviso destacado al principio con
+  una tabla de vigencia sección por sección y enlaces internos al estado vigente;
+  el «Resumen de conteo», la «Tabla de diagnóstico», el cálculo de contraste y
+  los dos planes de trabajo quedan marcados como **HISTÓRICO (Fase 2)** con una
+  nota de qué los reemplaza (el contraste remite a `ACCESIBILIDAD.md`, que ya
+  tiene los cinco themes recalculados); se añadió al final una actualización
+  fechada por la #36. No se cambió ningún estado: los vigentes siguen siendo los
+  de «Estado tras la Fase 3» y sus actualizaciones.
 
 ## 11. Calidad
 
@@ -300,3 +378,43 @@ repo. La creas en Paddle → Developer tools → Authentication
 navegador para autorizar. Por defecto queda en solo lectura según el rol de tu
 usuario, y los permisos se gestionan en Paddle → Connectors → MCP. Lo dejé
 desactivado porque apunta a tu cuenta real de cobros.
+
+## 12. Nuevas (salieron al resolver las anteriores)
+
+- [ ] **#51 · DECIS · S — Pasar la CSP a modo bloqueo.** Hoy se envía como
+  `Content-Security-Policy-Report-Only`, así que el navegador informa de las
+  violaciones pero **no bloquea nada**: es telemetría, no una defensa. La
+  protección real llega al compilar con `CSP_MODE=enforce`. Antes hay que
+  confirmar en la pestaña Red (#18) y en el checkout de sandbox (#13) los
+  dominios que usa el overlay de Paddle, porque ahora están cubiertos con un
+  comodín `https://*.paddle.com` que convendría sustituir por la lista exacta.
+  Si falta un dominio, en modo bloqueo el pago no abre. Procedimiento en
+  `docs/seguridad/CSP.md`.
+- [ ] **#52 · DECIS · S — El nonce volvió dinámicas todas las páginas.** La CSP
+  con nonce por petición obliga a leer `headers()` en el layout raíz, así que la
+  landing y las seis páginas legales, que antes eran estáticas, ahora se
+  renderizan en cada visita (`next build` las marca con `ƒ`). Es inherente al
+  patrón: los scripts inline que Next genera para el streaming también
+  necesitan el nonce, y un HTML cacheado llevaría uno caducado. No son páginas
+  con datos de usuario, así que el coste es CPU de Worker por visita, no
+  consultas. Decide: aceptarlo, o renunciar al `script-src` estricto (con
+  `'unsafe-inline'`) para recuperar el HTML estático. Yo lo dejé en lo seguro.
+  Nota aparte: `/c/[slug]` y el panel **ya eran dinámicos antes** de esto,
+  porque `createClient()` usa `cookies()`; el `revalidate = 60` del catálogo
+  público no tenía efecto, y eso no se ha tocado.
+- [ ] **#53 · TÉC · S — Mostrar el motivo de las filas omitidas al importar
+  CSV.** `importProductsCsv` cuenta las filas inválidas pero descarta el mensaje
+  de error, así que el usuario ve «2 omitidos» sin saber por qué (ahora, por
+  ejemplo, porque la URL de imagen no es `https`). Acumular el primer motivo por
+  fila sería suficiente.
+- [ ] **#54 · TÉC · S — El webhook de Paddle no avisa si hay correos
+  duplicados.** `process-webhook.ts` busca el negocio por correo con
+  `.maybeSingle()`: si dos negocios comparten correo, Supabase devuelve error,
+  `business_id` queda en `null` y el plan no se actualiza, **sin que nadie se
+  entere**. El índice de la #12 no arregla esto. Como mínimo, registrar el
+  error.
+- [ ] **#55 · TÉC · S — El aviso de `middleware` obsoleto de Next 16.** El build
+  avisa: «The "middleware" file convention is deprecated. Please use "proxy"
+  instead». Renombrar afecta al despliegue en Workers (el README explica que se
+  usa `middleware.ts` justamente porque OpenNext no soportaba `proxy.ts` en
+  Node), así que hay que comprobar si ya lo soporta antes de tocarlo.

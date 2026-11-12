@@ -56,7 +56,9 @@ No hay `sessionStorage` ni IndexedDB en `src/` (búsqueda por texto). Ninguna de
 
 ## 5. Cabeceras (CSP)
 
-`next.config.ts` define: `X-Content-Type-Options`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-DNS-Prefetch-Control`, `Strict-Transport-Security`, `Permissions-Policy` (cámara, micrófono, geolocalización, topics desactivados). **No hay `Content-Security-Policy`** en `next.config.ts` ni en `src/` (búsqueda por texto), por lo que nada impide que se añada un script o imagen de un dominio no previsto. Añadir una CSP queda como mejora recomendada (fuera de mi lista de archivos).
+`next.config.ts` define: `X-Content-Type-Options`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-DNS-Prefetch-Control`, `Strict-Transport-Security`, `Permissions-Policy` (cámara, micrófono, geolocalización, topics desactivados).
+
+**Actualización (posterior a este análisis): ya hay CSP.** Se añadió en `src/middleware.ts` con nonce por petición, y la política completa, sus decisiones y los huecos están en [`docs/seguridad/CSP.md`](../seguridad/CSP.md). Importante: se envía como `Content-Security-Policy-Report-Only`, así que **informa pero no bloquea** hasta que se compile con `CSP_MODE=enforce` (tarea #51 de `PENDIENTES.md`). Los dominios del overlay de Paddle siguen cubiertos por el comodín `https://*.paddle.com` a falta de la prueba de red de §6.
 
 ## 6. Prueba real en la pestaña Red — NO realizada. Cómo hacerla
 
@@ -71,7 +73,7 @@ No hay `sessionStorage` ni IndexedDB en `src/` (búsqueda por texto). Ninguna de
 
 ## 7. Hallazgos para decidir
 
-- Imágenes por URL externa en catálogos públicos → fuga de IP del comprador a terceros arbitrarios y contenido mixto posible. Opciones: permitir solo URLs propias/proxificadas, o avisarlo en la política de privacidad.
-- Falta de CSP.
+- Imágenes por URL externa en catálogos públicos → fuga de IP del comprador a terceros arbitrarios y contenido mixto posible. **Mitigado en parte:** ahora solo se aceptan URLs `https` (sin credenciales embebidas) en `image_url`, `logo_url` y `banner_url`; el host sigue siendo libre, así que la fuga de IP persiste y debería mencionarse en la política de privacidad. La opción de proxificar o limitar dominios sigue abierta.
+- **CSP: ya existe**, en modo Report-Only (ver §5 y `docs/seguridad/CSP.md`).
 - Dominios de Paddle del checkout: pendientes de prueba real, necesarios para la sección de proveedores (orden 32).
 - `catalii-buyer` guarda datos personales en `localStorage` (ver orden 3 del DIAGNOSTICO).
