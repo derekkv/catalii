@@ -16,6 +16,8 @@ const eslintConfig = defineConfig([
     ".open-next/**",
     ".wrangler/**",
     "cloudflare-env.d.ts",
+    // El backend Express es otro proyecto (su propio tsconfig, alias y lint).
+    "backend/**",
   ]),
 ]);
 
