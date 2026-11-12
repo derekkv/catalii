@@ -39,6 +39,20 @@ import { ConfirmProvider } from "@/components/ui/confirm";
 import { DevBanner } from "@/components/dev-banner";
 import { siteConfig, getSiteUrl } from "@/lib/site";
 
+/*
+ * Imagen para Open Graph / Twitter: el logo horizontal V2 (2000×640, ratio
+ * 3,125:1, dentro del rango que admite `summary_large_image`). Es un archivo
+ * real de `public/brand/`, no una ruta generada. La URL se compone con
+ * `getSiteUrl()` para que sea absoluta aunque el consumidor ignore
+ * `metadataBase`.
+ */
+const OG_IMAGE = {
+  url: `${getSiteUrl()}/brand/catalii-logo-v2-principal.png`,
+  width: 2000,
+  height: 640,
+  alt: `${siteConfig.name} — ${siteConfig.tagline}`,
+} as const;
+
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
   title: {
@@ -54,11 +68,14 @@ export const metadata: Metadata = {
     siteName: siteConfig.name,
     title: `${siteConfig.name} — ${siteConfig.tagline}`,
     description: siteConfig.description,
+    url: getSiteUrl(),
+    images: [OG_IMAGE],
   },
   twitter: {
     card: "summary_large_image",
     title: `${siteConfig.name} — ${siteConfig.tagline}`,
     description: siteConfig.description,
+    images: [OG_IMAGE],
   },
   robots: { index: true, follow: true },
 };

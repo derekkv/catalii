@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ResetForm } from "./reset-form";
-import { Wordmark } from "@/components/brand/wordmark";
+import { BrandLogo } from "@/components/brand/brand-logo";
 
 export const metadata: Metadata = {
   title: "Restablecer contraseña",
@@ -16,7 +16,7 @@ export default function ResetPage() {
     >
       <div className="w-full max-w-sm">
         <Link href="/" aria-label="Catalii, ir al inicio">
-          <Wordmark size="lg" className="block" />
+          <BrandLogo size="lg" className="flex" />
         </Link>
         <p className="t-eyebrow mt-3">Restablecer acceso</p>
 

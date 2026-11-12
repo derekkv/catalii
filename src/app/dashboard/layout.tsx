@@ -3,7 +3,8 @@ import { getBusiness } from "@/lib/auth";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { SignOutButton } from "@/components/dashboard/signout-button";
 import { ThemeSwitcher } from "@/components/theme/theme-switcher";
-import { Wordmark, Monogram } from "@/components/brand/wordmark";
+import { Monogram } from "@/components/brand/wordmark";
+import { BrandLogo } from "@/components/brand/brand-logo";
 import { getPlan } from "@/lib/plans";
 import { resolveBrandImage } from "@/lib/media/config";
 
@@ -28,7 +29,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <aside className="hidden w-56 shrink-0 flex-col border-r border-border md:flex">
         <div className="rule-b px-5 py-4">
           <Link href="/dashboard" aria-label="Catalii, ir al resumen">
-            <Wordmark size="sm" />
+            <BrandLogo size="sm" />
           </Link>
         </div>
 
@@ -64,7 +65,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex items-center gap-2 border-b border-border bg-background/92 px-4 py-2.5 backdrop-blur-sm md:px-8">
           <Link href="/dashboard" className="md:hidden" aria-label="Catalii, ir al resumen">
-            <Wordmark size="sm" />
+            <BrandLogo size="sm" />
           </Link>
 
           <div className="ml-auto flex items-center gap-1.5">

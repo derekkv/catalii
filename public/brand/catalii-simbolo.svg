@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="512" height="512" viewBox="0 0 512 512">
+  <title>03 Simbolo</title>
+  <g id="Layer_1" data-name="Layer 1">
+    <polygon id="Símbolo_favicon" data-name="Símbolo favicon" points="80,80 432,80 432,140 140,140 140,372 432,372 432,432 80,432" fill="#1b3a5c"/>
+    <rect x="195" y="195" width="195" height="18" fill="#1b3a5c"/>
+    <rect x="195" y="280" width="155" height="18" fill="#1b3a5c"/>
+    <path d="M367 273 L394 273 C395.105 273 396 273.895 396 275 L396 302 C396 303.105 395.105 304 394 304 L367 304 C365.895 304 365 303.105 365 302 L365 275 C365 273.895 365.895 273 367 273 Z" fill="#b2561b"/>
+  </g>
+</svg>
