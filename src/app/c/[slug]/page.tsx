@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { MessageCircle, PackageOpen } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { resolveTheme } from "@/lib/themes";
@@ -135,6 +136,11 @@ export default async function PublicCatalogPage({
     }),
   };
 
+  // Nonce de la CSP (lo pone src/middleware.ts en la cabecera x-nonce). Sin
+  // él, con la política en modo bloqueo el navegador descarta este bloque
+  // JSON-LD y el catálogo pierde los datos estructurados para buscadores.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <div
       data-theme={theme}
@@ -145,6 +151,7 @@ export default async function PublicCatalogPage({
     >
       <script
         type="application/ld+json"
+        nonce={nonce}
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 

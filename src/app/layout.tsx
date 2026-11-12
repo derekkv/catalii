@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { Fraunces, Archivo, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -80,7 +81,19 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  /*
+   * Nonce de la Content-Security-Policy, puesto por `src/middleware.ts` en la
+   * cabecera `x-nonce` de esta petición. Lo necesita el script inline del
+   * theme (el único de este layout).
+   *
+   * Leer `headers()` aquí obliga a renderizar en dinámico TODAS las rutas: es
+   * inevitable con nonce por petición, porque un HTML cacheado llevaría un
+   * nonce viejo que ya no coincide con el de la cabecera. Ver el apartado
+   * «Coste: renderizado dinámico» de `docs/seguridad/CSP.md`.
+   */
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <html
       lang="es"
@@ -89,7 +102,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${display.variable} ${body.variable} ${mono.variable} h-full`}
     >
       <head>
-        <ThemeScript />
+        <ThemeScript nonce={nonce} />
       </head>
       <body className="min-h-full flex flex-col antialiased">
         {/* Salto al contenido: primer tabulador para usuarios de teclado/lector. */}

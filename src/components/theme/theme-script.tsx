@@ -7,9 +7,13 @@ import { DEFAULT_THEME, THEMES } from "@/lib/themes";
  * La lista de ids se deriva del registro en lugar de estar escrita a mano:
  * antes era un array literal que había que recordar actualizar, y al cambiar
  * los themes habría invalidado en silencio la preferencia de todos.
+ *
+ * `nonce`: lo genera el middleware por petición y lo pasa el layout raíz. Sin
+ * él, la Content-Security-Policy bloquea este script en modo enforce y el
+ * visitante vería el theme por defecto hasta que hidrate la página.
  */
-export function ThemeScript() {
+export function ThemeScript({ nonce }: { nonce?: string }) {
   const ids = JSON.stringify(THEMES.map((t) => t.id));
   const code = `(function(){try{var v=${ids};var t=localStorage.getItem('catalii-theme');if(!t||v.indexOf(t)===-1){t='${DEFAULT_THEME}';}document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','${DEFAULT_THEME}');}})();`;
-  return <script dangerouslySetInnerHTML={{ __html: code }} />;
+  return <script nonce={nonce} dangerouslySetInnerHTML={{ __html: code }} />;
 }

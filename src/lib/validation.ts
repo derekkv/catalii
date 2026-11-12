@@ -17,6 +17,43 @@ export const slugSchema = z
   .toLowerCase()
   .regex(/^[a-z0-9-]{2,80}$/, "Solo minúsculas, números y guiones (2-80).");
 
+/**
+ * ¿Es una URL de imagen remota aceptable para publicar?
+ *
+ * Estas URLs acaban como `src` de un `<img>` en el catálogo público
+ * (`lib/media/config.ts`), así que las pide el navegador del COMPRADOR, no el
+ * servidor. Por eso se exige:
+ *
+ *  · `https`: con `http` el navegador revelaría la petición en claro y la
+ *    página quedaría con contenido mixto (los navegadores la bloquean o la
+ *    degradan), así que una imagen `http://` ni siquiera se ve.
+ *  · sin credenciales embebidas (`https://usuario:clave@host/…`): no sirven
+ *    para una imagen pública, confunden al lector sobre cuál es el host real
+ *    y filtran la contraseña a quien vea el catálogo.
+ *
+ * Se valida con el constructor `URL` en vez de con `z.string().url()` porque
+ * ese solo comprueba la forma: acepta cualquier esquema, incluido `http`.
+ */
+function isPublishableImageUrl(value: string): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(value);
+  } catch {
+    return false;
+  }
+  if (parsed.protocol !== "https:") return false;
+  return parsed.username === "" && parsed.password === "";
+}
+
+/**
+ * URL de imagen externa: https, sin credenciales y con el mismo límite de
+ * longitud que antes (600). El mensaje es único a propósito (formato, esquema
+ * y credenciales dan el mismo texto) para que el usuario lea qué se espera y
+ * no "Invalid url".
+ */
+const imageUrlSchema = (message: string) =>
+  z.string().trim().max(600).refine(isPublishableImageUrl, message);
+
 export const businessSchema = z.object({
   name: z.string().trim().min(1, "Nombre requerido").max(120),
   slug: slugSchema.max(60),
@@ -35,7 +72,9 @@ export const productSchema = z.object({
   currency: z.string().trim().length(3).toUpperCase().default("USD"),
   stock: z.coerce.number().int().min(0).max(10_000_000).default(0),
   min_order_qty: z.coerce.number().int().min(1).max(1_000_000).default(1),
-  image_url: z.string().trim().url().max(600).optional().or(z.literal("")),
+  image_url: imageUrlSchema("La URL de la imagen debe ser https:// (sin usuario ni contraseña).")
+    .optional()
+    .or(z.literal("")),
   active: checkboxBool,
 });
 
@@ -46,9 +85,14 @@ export const catalogSchema = z.object({
   display_name: z.string().trim().max(120).optional().or(z.literal("")),
   whatsapp: z.string().trim().max(25).optional().or(z.literal("")),
   // Branding del catálogo: ya se renderizaban en /c/[slug] pero no había
-  // ningún campo en el panel para definirlos.
-  logo_url: z.string().trim().url("URL de logo inválida").max(600).optional().or(z.literal("")),
-  banner_url: z.string().trim().url("URL de banner inválida").max(600).optional().or(z.literal("")),
+  // ningún campo en el panel para definirlos. Mismo criterio que image_url:
+  // las pide el navegador del comprador, así que solo https.
+  logo_url: imageUrlSchema("URL de logo inválida: debe ser https://")
+    .optional()
+    .or(z.literal("")),
+  banner_url: imageUrlSchema("URL de banner inválida: debe ser https://")
+    .optional()
+    .or(z.literal("")),
   theme: z.enum(themeIds).optional().or(z.literal("")),
   is_public: z.coerce.boolean().default(false),
 });
