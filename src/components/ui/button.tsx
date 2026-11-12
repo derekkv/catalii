@@ -20,20 +20,22 @@ const base = [
   "inline-flex items-center justify-center gap-2 whitespace-nowrap select-none",
   "font-medium rounded-[var(--radius-theme-sm)]",
   "cursor-pointer transition-[background-color,border-color,color,translate] duration-150",
-  "focus-visible:outline-none active:translate-y-px",
+  // Anillo de foco explícito (3 px, offset 2 px, color --ring). Sin esto, quitar
+  // el outline dejaba el botón sin indicador de foco (WCAG 2.4.7 / 2.4.11).
+  "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring active:translate-y-px",
   "disabled:pointer-events-none disabled:opacity-45",
 ].join(" ");
 
 const variants: Record<Variant, string> = {
   primary:
-    "bg-primary text-on-primary hover:bg-[color-mix(in_srgb,var(--primary)_88%,black)]",
+    "bg-primary text-on-primary hover:bg-[color-mix(in_srgb,var(--primary)_88%,var(--hover-shade))]",
   accent:
-    "bg-accent text-on-accent hover:bg-[color-mix(in_srgb,var(--accent)_88%,black)]",
+    "bg-accent text-on-accent hover:bg-[color-mix(in_srgb,var(--accent)_88%,var(--hover-shade))]",
   outline:
     "border border-input bg-transparent text-foreground hover:bg-muted",
   ghost: "text-muted-foreground hover:bg-muted hover:text-foreground",
   destructive:
-    "bg-destructive text-on-destructive hover:bg-[color-mix(in_srgb,var(--destructive)_88%,black)]",
+    "bg-destructive text-on-destructive hover:bg-[color-mix(in_srgb,var(--destructive)_88%,var(--hover-shade))]",
   // Enlace con forma de botón: para acciones secundarias dentro de un texto.
   link: "text-primary underline underline-offset-[0.22em] decoration-1 hover:decoration-2 px-0",
 };

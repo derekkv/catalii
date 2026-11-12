@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 const field = [
   "w-full bg-card text-card-foreground",
   "rounded-[var(--radius-theme-sm)] border border-input",
-  "text-sm placeholder:text-muted-foreground/70",
+  "text-sm placeholder:text-muted-foreground",
   "transition-[border-color,box-shadow] duration-150",
   "focus-visible:outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-[color-mix(in_srgb,var(--ring)_28%,transparent)]",
   "disabled:cursor-not-allowed disabled:bg-muted disabled:opacity-60",

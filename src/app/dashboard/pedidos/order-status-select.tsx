@@ -63,7 +63,7 @@ export function OrderStatusSelect({ id, status }: { id: string; status: OrderSta
         onChange={(e) => change(e.target.value as OrderStatus)}
         className={cn(
           "t-label h-9 cursor-pointer appearance-none border-l-2 bg-transparent pl-2.5 pr-6",
-          "transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[color-mix(in_srgb,var(--ring)_28%,transparent)]",
+          "transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[var(--ring)]",
           "disabled:cursor-wait disabled:opacity-60",
           TONE[value],
         )}

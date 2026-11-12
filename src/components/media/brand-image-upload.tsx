@@ -105,7 +105,7 @@ export function BrandImageUpload({
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={shown}
-              alt=""
+              alt={`Vista previa: ${label}`}
               className={cn("size-full object-cover", busy === "upload" && "opacity-50")}
             />
           ) : isLogo && fallbackLetter ? (

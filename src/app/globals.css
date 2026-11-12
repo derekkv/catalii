@@ -122,7 +122,7 @@
   --muted-foreground: #b3a492;
 
   --rule: #342a20;
-  --input: #574838;
+  --input: #7a6752; /* antes #574838 (1,96:1 / 2,12:1) → ≥3:1, ver docs/legal/ACCESIBILIDAD.md */
   --ring: #e4572e;
 
   --destructive: #f4785c;
@@ -131,6 +131,10 @@
   --on-success: #052e16;
   --warning: #fbbf24;
   --on-warning: #1f1300;
+
+  /* Hover de botones: en un theme oscuro el texto es oscuro, así que el hover
+     aclara (con negro bajaba on-primary/primary a 4,04:1). */
+  --hover-shade: white;
 
   --radius: 4px;
   --grain: 0.055;
@@ -154,7 +158,7 @@
   --muted-foreground: #5c6355;
 
   --rule: #dde0d2;
-  --input: #8c9381;
+  --input: #878e7c; /* antes #8c9381 (2,96:1 sobre background) → ≥3:1 */
   --ring: #1f5c38;
 
   --destructive: #a82414;
@@ -200,6 +204,9 @@
   --on-success: #ffffff;
   --warning: #8a5a10;
   --on-warning: #ffffff;
+
+  /* Tono con el que se mezcla el hover de los botones (noche lo invierte). */
+  --hover-shade: black;
 
   --radius: 2px;
   --grain: 0.02;
