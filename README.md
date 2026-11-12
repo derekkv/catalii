@@ -9,11 +9,15 @@ facturación con **Paddle** y base de datos en **Supabase** con RLS.
 
 - **Next.js 16** (App Router, React 19) + **TypeScript**
 - **Tailwind CSS 4** — sistema de tokens por theme + escala tipográfica (`data-theme`)
-- **Supabase** — Postgres + Auth (magic link) + RLS multi-tenant
+- **Supabase** — Postgres + Auth (correo y contraseña) + RLS multi-tenant
 - **Paddle** — checkout, webhooks firmados y sincronización de suscripciones
 - **zod** para validación, **papaparse** (import CSV), **qrcode** (QR de compartir)
 
 ## Organización (front / back / supabase)
+
+> **Trabajo pendiente: [`PENDIENTES.md`](./PENDIENTES.md)** — lista única y
+> numerada de lo que falta (datos legales, migraciones sin aplicar,
+> verificaciones, seguridad, despliegue). Empieza por ahí.
 
 El repo está separado en tres partes:
 
@@ -27,10 +31,36 @@ El repo está separado en tres partes:
 - **Front (`src/`)** — la app Next.js desplegada en Cloudflare Workers. Hoy su
   lógica de servidor vive en Server Actions y Route Handlers.
 - **Back (`backend/`)** — un servicio Express independiente que habla con la
-  **misma** Supabase respetando RLS. Pensado para que el front migre a
-  consumirlo de forma incremental, sin tumbar el deploy actual.
+  **misma** Supabase respetando RLS. El front ya lo consume (ver abajo).
 - **Supabase (`supabase/`)** — única fuente de verdad de los datos; la usan
   tanto el front como el back.
+
+### El front consume el back (`BACKEND_URL`)
+
+`src/lib/backend.ts` es el cliente HTTP (solo servidor): toma el access token de
+la sesión de Supabase y lo manda como `Authorization: Bearer`; el backend lo
+revalida contra Auth en cada petición.
+
+- **`BACKEND_URL` vacía** → todo sigue como antes (Supabase directo). Es el
+  valor seguro mientras el backend no esté desplegado.
+- **`BACKEND_URL` definida** → pasan por la API: enviar pedido (público),
+  listar y cambiar estado de pedidos, y crear/editar/borrar productos y
+  catálogos (incluido el gating por plan).
+- Siguen directos a Supabase (aún sin endpoint en el back): importar CSV,
+  imágenes de catálogo, sincronizar productos de un catálogo, lecturas de
+  productos/catálogos/catálogo público, onboarding, ajustes y facturación.
+- Las imágenes (R2) siguen siendo del front: sube y valida las claves, y limpia
+  el bucket con las claves que devuelven los `DELETE` del backend.
+
+```bash
+pnpm backend:dev          # http://localhost:8787
+# en .env.local del front:
+BACKEND_URL=http://localhost:8787
+# en backend/.env: CORS_ORIGINS=http://localhost:3000
+```
+
+> `backend/` está excluido de `tsconfig.json` y de ESLint del front (usa su
+> propio alias `@/*`). Sin esa exclusión `next build` falla al tipar el backend.
 
 ## Estructura
 
@@ -38,7 +68,7 @@ El repo está separado en tres partes:
 src/
   app/
     page.tsx                # Landing de marketing
-    login/                  # Acceso por magic link
+    login/                  # Acceso: correo y contraseña
     auth/confirm/           # Verificación del enlace de email
     c/[slug]/               # Catálogo PÚBLICO (comprador) + SEO + JSON-LD
     dashboard/              # Panel del mayorista (protegido)
@@ -380,3 +410,59 @@ sirve por `/api/media/...` (fallback, también usado en `next dev`).
 En local, `next dev` usa R2 emulado (`.wrangler/state`). Para probar el Worker
 de medios: `pnpm media:dev` (comparte el mismo estado) y
 `NEXT_PUBLIC_MEDIA_URL=http://localhost:8788`.
+
+
+## Textos legales
+
+Las seis páginas públicas (`/privacidad`, `/terminos`, `/reembolsos`,
+`/derechos-de-autor`, `/proveedores`, `/contacto`) se generan desde una fuente
+única, así que no hay texto duplicado que se desincronice:
+
+```
+src/lib/legal/config.ts    # DATOS: empresa (COMPANY) y campos de los textos (LEGAL_DATA)
+src/lib/legal/content.ts   # TEXTO: secciones de cada documento
+docs/legal/textos/*.md     # copia en Markdown (generada, no se edita a mano)
+```
+
+**Solo hay que rellenar `config.ts`.** Lo que falta aparece marcado como
+`[COMPLETAR]` (dato del dueño) o `[PREGUNTAR A ABOGADO]` (decisión jurídica).
+Mientras un documento tenga marcadores, su página lo avisa arriba y se sirve con
+`noindex`; cuando no queda ninguno, el aviso desaparece y pasa a ser indexable
+sin tocar código.
+
+```bash
+pnpm legal:export   # regenera docs/legal/textos/ y lista los campos vacíos
+```
+
+> `legal:export` usa el `tsx` de `backend/`, así que necesita
+> `pnpm -C backend install` una vez.
+
+Qué falta y en qué formato: **`docs/legal/DATOS-PENDIENTES.md`**. Para la
+revisión con un abogado: `docs/legal/RESUMEN_ABOGADO.md`. Evidencias y estado de
+los 35 puntos: `docs/legal/DIAGNOSTICO.md` e `INVENTARIO.md`.
+
+Al registrarse, el usuario marca una casilla de términos y privacidad y la
+aceptación queda en la tabla `legal_acceptance` con documento, versión y fecha
+UTC (migración `0005`). **Sube `LEGAL_VERSIONS` en `config.ts` cada vez que
+cambie un texto publicado**, porque esa versión es la prueba de qué aceptó cada
+usuario.
+
+## Marca
+
+Los logos están en `public/brand/` y la aplicación usa la **versión 2** (el
+catálogo abierto, archivos con `-v2`):
+
+| Uso | Archivo |
+|---|---|
+| Cabeceras, panel, login (símbolo + wordmark) | `catalii-simbolo-v2.svg` vía `BrandLogo` |
+| Fondos oscuros (lámina completa) | `catalii-logo-v2-reverso.svg` |
+| Open Graph / redes | `catalii-logo-v2-principal.png` |
+| Favicon e iconos | `src/app/icon.svg`, `favicon.ico`, `apple-icon.png` |
+
+`src/components/brand/brand-logo.tsx` combina el símbolo con el wordmark
+tipográfico (`Wordmark`) en lugar del logo horizontal con el texto en contornos,
+porque el texto debe heredar el color de cada theme (hay uno oscuro, `noche`).
+
+Las fuentes editables (`.vectorcraft`) y las láminas de propuesta están en
+`docs/brand/`, fuera de `public/`, para no servirlas en web. Ver
+`docs/brand/README.md` y `CREDITS.md`.
