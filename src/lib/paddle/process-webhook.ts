@@ -51,14 +51,36 @@ async function upsertCustomer(event: CustomerCreatedEvent | CustomerUpdatedEvent
   if (existing && existing.email === "") return;
 
   // Enlaza el customer de Paddle con el business del usuario por email.
+  //
+  // `business.email` no es único (es opcional y lo edita el usuario), así que
+  // dos negocios pueden compartir correo. En ese caso `maybeSingle()` devuelve
+  // error y antes se ignoraba: `business_id` quedaba en null, el plan no se
+  // actualizaba y nadie se enteraba. Ahora se registra, porque es un fallo que
+  // solo se puede resolver a mano decidiendo a qué negocio pertenece el pago.
   let businessId: string | null = null;
   if (email) {
-    const { data: biz } = await supabase
+    const { data: biz, error: bizError } = await supabase
       .from("business")
       .select("id")
       .eq("email", email)
       .maybeSingle();
+
+    if (bizError) {
+      console.error(
+        "[paddle:upsertCustomer] no se pudo resolver el negocio por correo",
+        { customerId: event.data.id, code: bizError.code, message: bizError.message },
+      );
+    }
     businessId = biz?.id ?? null;
+  }
+
+  if (email && !businessId) {
+    // No es necesariamente un error: puede ser un cliente de Paddle que aún no
+    // tiene negocio creado. Pero si había suscripción, el plan se queda sin
+    // aplicar, así que conviene que quede rastro.
+    console.warn("[paddle:upsertCustomer] cliente sin negocio asociado", {
+      customerId: event.data.id,
+    });
   }
 
   const { error } = await supabase.from("paddle_customer").upsert(
@@ -80,11 +102,19 @@ async function upsertSubscription(event: SubEvent) {
   const productId = sub.items[0]?.price?.productId ?? null;
 
   // Resuelve el business a partir del customer espejado.
-  const { data: cust } = await supabase
+  const { data: cust, error: custError } = await supabase
     .from("paddle_customer")
     .select("business_id")
     .eq("customer_id", sub.customerId)
     .maybeSingle();
+  if (custError) {
+    console.error("[paddle:upsertSubscription] no se pudo leer el cliente espejado", {
+      subscriptionId: sub.id,
+      customerId: sub.customerId,
+      code: custError.code,
+      message: custError.message,
+    });
+  }
   const businessId = cust?.business_id ?? null;
 
   const { error } = await supabase.from("paddle_subscription").upsert(
@@ -106,6 +136,29 @@ async function upsertSubscription(event: SubEvent) {
   if (businessId) {
     const active = sub.status === "active" || sub.status === "trialing" || sub.status === "past_due";
     const tier: PlanTier = active ? planFromPaddleProduct(productId) ?? "free" : "free";
-    await supabase.from("business").update({ plan: tier }).eq("id", businessId);
+    const { error: planError } = await supabase
+      .from("business")
+      .update({ plan: tier })
+      .eq("id", businessId);
+    // Se registra en vez de lanzar: la suscripción ya quedó espejada arriba, y
+    // lanzar haría que Paddle reintentara el evento entero. Si esto falla, el
+    // usuario pagó y no tiene su plan, así que tiene que quedar rastro.
+    if (planError) {
+      console.error("[paddle:upsertSubscription] no se pudo aplicar el plan", {
+        subscriptionId: sub.id,
+        businessId,
+        tier,
+        code: planError.code,
+        message: planError.message,
+      });
+    }
+  } else {
+    // Suscripción sin negocio: el cobro existe pero el plan no se aplica a
+    // nadie. Pasa si el correo de Paddle no coincide con el del negocio.
+    console.error("[paddle:upsertSubscription] suscripcion sin negocio asociado", {
+      subscriptionId: sub.id,
+      customerId: sub.customerId,
+      status: sub.status,
+    });
   }
 }

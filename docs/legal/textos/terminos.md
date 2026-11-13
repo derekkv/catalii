@@ -1,74 +1,62 @@
-# Términos del servicio
+# Términos de uso
 
-Versión: 2026-11-12 · Página: `/terminos`
+Versión: 2026-11-12 (rev2) · Página: `/terminos`
 
-Condiciones para usar Catalii: planes, renovación, cancelación, contenido y responsabilidad.
+Condiciones para usar Catalii: cuenta, planes de prueba, contenido y límites.
 
 > Generado desde `src/lib/legal/content.ts` con `pnpm legal:export`. No lo edites a mano.
 
-> Pendiente: 9 dato(s) `[COMPLETAR]` y 7 decisión(es) `[PREGUNTAR A ABOGADO]`.
+> **Catalii es un proyecto escolar en desarrollo, no un servicio comercial.**
+> **Los planes de pago y el checkout están en modo de pruebas: no se cobra dinero real.**
+> **No subas datos reales de clientes ni información que no quieras compartir.**
 
-## 1. El servicio
+> Pendiente: 4 dato(s) `[COMPLETAR]`.
 
-Catalii permite a mayoristas y distribuidores importar una lista de productos, armar catálogos públicos con enlace propio y recibir pedidos de sus compradores. Lo ofrece [COMPLETAR], con domicilio en [COMPLETAR].
+## 1. Qué es Catalii
 
-Catalii no es parte de la compraventa entre el mayorista y su comprador: precios, disponibilidad, entrega y pago los acuerdan ellos.
+Catalii es un proyecto escolar que permite importar una lista de productos, armar catálogos públicos con enlace propio y recibir pedidos. Lo mantiene [COMPLETAR].
+
+Catalii no participa en la compraventa: precios, disponibilidad, entrega y pago los acuerdan el vendedor y su comprador entre ellos.
 
 ## 2. Tu cuenta
 
-- Debes dar un correo válido y mantener tu contraseña en secreto.
-- Eres responsable de lo que ocurra con tu cuenta.
-- Edad mínima y uso por menores: [PREGUNTAR A ABOGADO].
+- Usa un correo válido al que tengas acceso.
+- Tu contraseña es tuya: no la compartas.
+- Lo que se haga desde tu cuenta cuenta como hecho por ti.
 
-## 3. Planes y precios
+## 3. Planes y pagos
 
-Hay un plan gratis y planes de pago con límites distintos (productos, catálogos, etc.). Los precios y límites vigentes se muestran en la sección Precios del sitio y en Facturación dentro del panel. Los planes se cobran en USD. Impuestos incluidos o no en el precio: [COMPLETAR].
+Hay un plan gratis y planes de pago con límites distintos (productos, catálogos y pedidos). Los precios y límites que se muestran están en USD en la sección Precios y en Facturación, dentro del panel.
 
-Podemos cambiar precios y límites; los cambios aplicables a suscripciones activas: [PREGUNTAR A ABOGADO].
+El checkout está en modo de pruebas: no se cobra dinero real y no hace falta usar una tarjeta real. Los precios y los límites pueden cambiar mientras el proyecto siga en desarrollo.
 
-## 4. Renovación automática y cancelación
+## 4. Cancelar
 
-Los planes de pago se renuevan automáticamente cada mes y se cobran hasta que canceles.
+Las suscripciones de prueba se renuevan solas hasta que las canceles. Puedes cancelar desde Facturación: la cancelación se programa para el final del periodo en curso y después no se renueva.
 
-- Puedes cancelar desde Facturación, dentro del panel: la cancelación se programa para el final del periodo ya pagado y no se renueva después.
-- Qué ocurre con tu plan y tus datos al cancelar o al dejar de pagar: [COMPLETAR].
-- Los pagos los procesa Paddle. Reembolsos: consulta la política de reembolsos (/reembolsos).
+Al cancelar, la cuenta vuelve al plan gratis y se aplican sus límites. Tus datos siguen ahí hasta que borres la cuenta.
 
 ## 5. Reembolsos
 
-Las condiciones de reembolso están en /reembolsos. Nada en estos términos recorta los derechos que la ley reconozca a los consumidores: [PREGUNTAR A ABOGADO].
+Como los pagos son de prueba y no hay cobros reales, no hay reembolsos que gestionar. Si ves un cargo real en tu cuenta, escribe a [COMPLETAR] y se revisa.
 
 ## 6. Tu contenido
 
-Eres responsable del contenido que subes (productos, textos, logos e imágenes) y garantizas que tienes derecho a usarlo y publicarlo. Nos concedes el permiso necesario para almacenarlo, procesarlo y mostrarlo en tus catálogos. Alcance y duración exacta de esa licencia: [PREGUNTAR A ABOGADO].
+Lo que subes (productos, textos, logos e imágenes) sigue siendo tuyo. Sube solo contenido que puedas publicar, y date cuenta de que las imágenes de un catálogo público quedan accesibles por su enlace.
 
-Si crees que un contenido infringe tus derechos, consulta /derechos-de-autor.
+Si crees que una imagen o un texto de algún catálogo usa algo tuyo sin permiso, escribe a [COMPLETAR] indicando el enlace del catálogo y qué contenido es: se revisa y, si corresponde, se retira.
 
-## 7. Uso aceptable
+## 7. Qué no hacer
 
-- No publiques contenido ilegal o que infrinja derechos de terceros.
-- No uses el servicio para engañar a compradores ni para enviar spam.
-- No intentes acceder a datos de otras cuentas ni interrumpir el servicio.
-- Rubros prohibidos o restringidos: [COMPLETAR].
+- No publicar contenido ilegal ni contenido de otras personas sin permiso.
+- No usar los catálogos para engañar a los compradores ni para enviar spam.
+- No intentar entrar en datos de otras cuentas ni tumbar el servicio.
+- No subir datos personales reales de terceros: esto es un entorno de pruebas.
 
-Podemos suspender o retirar contenido o cuentas que incumplan estas reglas. Procedimiento: [PREGUNTAR A ABOGADO].
+Una cuenta o un contenido que incumpla esto se puede suspender o retirar.
 
-## 8. Datos personales
+## 8. Límites, cambios y contacto
 
-El tratamiento de datos personales se describe en la política de privacidad (/privacidad).
+Es un proyecto en desarrollo y se ofrece tal cual: puede fallar, estar caído o perder datos de prueba, y no hay compromiso de disponibilidad ni de soporte.
 
-## 9. Disponibilidad y responsabilidad
-
-El servicio se ofrece "tal cual", sin promesa de disponibilidad ininterrumpida. Límites y exclusiones de responsabilidad: [PREGUNTAR A ABOGADO]. Esto no limita responsabilidades que la ley no permita limitar.
-
-## 10. Cambios a los términos
-
-Podemos actualizar estos términos. La versión vigente se indica al inicio de esta página. Cómo avisaremos de cambios importantes: [COMPLETAR].
-
-## 11. Ley aplicable y jurisdicción
-
-Ley aplicable: [COMPLETAR]. Tribunales o mecanismo de resolución de disputas: [COMPLETAR]. [PREGUNTAR A ABOGADO].
-
-## 12. Contacto
-
-[COMPLETAR]. Más datos en /contacto.
+El tratamiento de datos se explica en /privacidad. Estos términos pueden cambiar; la versión vigente aparece al inicio de esta página. Contacto: [COMPLETAR].

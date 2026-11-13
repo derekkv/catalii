@@ -81,9 +81,8 @@ src/
       catalogos/[id]/       # Config, theme, selección de productos, QR
       facturacion/          # Planes + checkout Paddle
       configuracion/        # Datos del negocio + exportar/borrar cuenta
-    privacidad/ terminos/ reembolsos/   # Páginas legales (6, generadas
-    derechos-de-autor/ proveedores/     # desde src/lib/legal/)
-    contacto/
+    privacidad/ terminos/    # Páginas legales (3, generadas
+    contacto/                # desde src/lib/legal/)
     api/webhook/            # Webhook de Paddle (firma verificada)
     api/uploads/            # Subida y descarte de imágenes a R2
     api/media/[...path]/    # Servir imágenes (fallback sin media-worker)
@@ -447,32 +446,36 @@ de medios: `pnpm media:dev` (comparte el mismo estado) y
 
 ## Textos legales
 
-Las seis páginas públicas (`/privacidad`, `/terminos`, `/reembolsos`,
-`/derechos-de-autor`, `/proveedores`, `/contacto`) se generan desde una fuente
-única, así que no hay texto duplicado que se desincronice:
+Catalii es un **proyecto escolar**, así que los textos son cortos y solo afirman
+lo que el código hace de verdad: no dicen que la app cumpla ninguna normativa,
+no citan leyes ni plazos legales y no sustituyen a asesoría profesional. Las
+tres páginas públicas (`/privacidad`, `/terminos`, `/contacto`) se generan desde
+una fuente única, así que no hay texto duplicado que se desincronice:
 
 ```
-src/lib/legal/config.ts    # DATOS: empresa (COMPANY) y campos de los textos (LEGAL_DATA)
+src/lib/legal/config.ts    # DATOS: los 3 campos de COMPANY + el aviso de proyecto escolar
 src/lib/legal/content.ts   # TEXTO: secciones de cada documento
 docs/legal/textos/*.md     # copia en Markdown (generada, no se edita a mano)
 ```
 
-**Solo hay que rellenar `config.ts`.** Lo que falta aparece marcado como
-`[COMPLETAR]` (dato del dueño) o `[PREGUNTAR A ABOGADO]` (decisión jurídica).
-Mientras un documento tenga marcadores, su página lo avisa arriba y se sirve con
-`noindex`; cuando no queda ninguno, el aviso desaparece y pasa a ser indexable
-sin tocar código.
+**Solo hay que rellenar `config.ts`,** y son tres campos: `owner`,
+`contactEmail` e `institution`. Lo que falta aparece marcado como
+`[COMPLETAR]`. Mientras un documento tenga marcadores, su página lo avisa arriba
+y se sirve con `noindex`; cuando no queda ninguno, el aviso desaparece y pasa a
+ser indexable sin tocar código. Las tres páginas muestran además, arriba y
+siempre, el aviso de que es un proyecto escolar en modo de pruebas.
 
 ```bash
-pnpm legal:export   # regenera docs/legal/textos/ y lista los campos vacíos
+pnpm legal:export   # regenera docs/legal/textos/, borra los .md huérfanos
+                    # y lista los campos vacíos
 ```
 
 > `legal:export` usa el `tsx` de `backend/`, así que necesita
 > `pnpm -C backend install` una vez.
 
-Qué falta y en qué formato: **`docs/legal/DATOS-PENDIENTES.md`**. Para la
-revisión con un abogado: `docs/legal/RESUMEN_ABOGADO.md`. Evidencias y estado de
-los 35 puntos: `docs/legal/DIAGNOSTICO.md` e `INVENTARIO.md`.
+Qué falta: **`docs/legal/DATOS-PENDIENTES.md`**. `docs/legal/DIAGNOSTICO.md`,
+`INVENTARIO.md` y `RESUMEN_ABOGADO.md` quedan como material histórico del
+alcance anterior (seis páginas pensadas para un negocio real).
 
 Al registrarse, el usuario marca una casilla de términos y privacidad y la
 aceptación queda en la tabla `legal_acceptance` con documento, versión y fecha

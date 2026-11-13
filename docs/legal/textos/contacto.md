@@ -1,25 +1,22 @@
 # Contacto
 
-Versión: 2026-11-12 · Página: `/contacto`
+Versión: 2026-11-12 (rev2) · Página: `/contacto`
 
-Datos de la empresa que opera Catalii y canales de contacto.
+Quién mantiene Catalii y dónde escribir.
 
 > Generado desde `src/lib/legal/content.ts` con `pnpm legal:export`. No lo edites a mano.
 
-> Pendiente: 8 dato(s) `[COMPLETAR]` y 0 decisión(es) `[PREGUNTAR A ABOGADO]`.
+> **Catalii es un proyecto escolar en desarrollo, no un servicio comercial.**
+> **Los planes de pago y el checkout están en modo de pruebas: no se cobra dinero real.**
+> **No subas datos reales de clientes ni información que no quieras compartir.**
 
-## 1. Quién opera Catalii
+> Pendiente: 3 dato(s) `[COMPLETAR]`.
 
-- Nombre legal: [COMPLETAR]
-- Identificación fiscal: [COMPLETAR]
-- Domicilio: [COMPLETAR]
-- País: [COMPLETAR]
+## 1. Dónde escribir
+
+- Responsable del proyecto: [COMPLETAR]
+- Institución o materia: [COMPLETAR]
+- Correo: [COMPLETAR]
 - Sitio: catalii.com
 
-## 2. Canales
-
-- Contacto general y soporte: [COMPLETAR]
-- Privacidad y derechos sobre tus datos: [COMPLETAR]
-- Reclamos de derechos de autor: [COMPLETAR]
-
-Tiempo de respuesta: [COMPLETAR].
+Ese correo sirve para todo: dudas, problemas con la cuenta, datos personales y avisos sobre contenido de un catálogo. Al ser un proyecto escolar, las respuestas no son inmediatas.

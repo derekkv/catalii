@@ -206,13 +206,10 @@ export function PricingClient({
       </div>
 
       <p className="t-small text-muted-foreground">
-        Antes de pagar, consulta los{" "}
+        El checkout está en modo de pruebas: no se cobra dinero real. Antes de continuar,
+        consulta los{" "}
         <Link href={LEGAL_PATHS.terms} className="underline underline-offset-2">
           Términos
-        </Link>{" "}
-        y la{" "}
-        <Link href={LEGAL_PATHS.refunds} className="underline underline-offset-2">
-          política de reembolsos
         </Link>
         .
       </p>

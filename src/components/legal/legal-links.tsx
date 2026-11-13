@@ -5,9 +5,6 @@ import { cn } from "@/lib/utils";
 const LINKS = [
   { href: LEGAL_PATHS.privacy, label: "Privacidad" },
   { href: LEGAL_PATHS.terms, label: "Términos" },
-  { href: LEGAL_PATHS.refunds, label: "Reembolsos" },
-  { href: LEGAL_PATHS.copyright, label: "Derechos de autor" },
-  { href: LEGAL_PATHS.providers, label: "Proveedores" },
   { href: LEGAL_PATHS.contact, label: "Contacto" },
 ] as const;
 

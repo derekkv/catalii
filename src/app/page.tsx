@@ -545,12 +545,9 @@ export default function Home() {
             </div>
 
             <p className="t-small mt-4 text-muted-foreground">
-              Pagos con Paddle. La suscripción se renueva cada mes hasta que canceles; cancelas
-              desde Facturación. Consulta{" "}
-              <Link href={LEGAL_PATHS.refunds} className="link-ink">
-                Reembolsos
-              </Link>{" "}
-              y{" "}
+              Checkout de Paddle <strong className="font-semibold">en modo de pruebas</strong>: no
+              se cobra dinero real. La suscripción de prueba se renueva cada mes hasta que
+              canceles; cancelas desde Facturación. Consulta{" "}
               <Link href={LEGAL_PATHS.terms} className="link-ink">
                 Términos
               </Link>
@@ -614,7 +611,7 @@ export default function Home() {
           <div className="flex flex-wrap items-start justify-between gap-4 rule-t pt-4">
             <LegalLinks />
             <p className="t-small text-muted-foreground">
-              {COMPANY.legalName} · {COMPANY.contactEmail}
+              {COMPANY.owner} · {COMPANY.contactEmail}
             </p>
           </div>
         </div>

@@ -1,16 +1,24 @@
 import Link from "next/link";
 import { Wordmark } from "@/components/brand/wordmark";
 import { LegalLinks } from "@/components/legal/legal-links";
-import { formatVersion, pendingMarkers, type LegalDoc } from "@/lib/legal/content";
+import {
+  ACADEMIC_NOTICE,
+  formatVersion,
+  pendingMarkers,
+  type LegalDoc,
+} from "@/lib/legal/content";
 import { siteConfig } from "@/lib/site";
 
 /**
  * Plantilla de página legal. Server component estático.
  *
- * Si al documento le faltan datos o decisiones, se avisa arriba y la página no
- * se indexa (ver el `robots` de cada page.tsx). El aviso desaparece solo en
- * cuanto se rellenan `COMPANY` y `LEGAL_DATA` en src/lib/legal/config.ts: así
- * nunca se publica como definitivo un texto con huecos.
+ * Arriba va siempre el aviso de proyecto académico: es el contexto que hace
+ * honesto al resto del texto, así que no se puede cerrar ni omitir.
+ *
+ * Si al documento le faltan datos, se avisa debajo y la página no se indexa
+ * (ver el `robots` de cada page.tsx). El aviso desaparece solo en cuanto se
+ * rellena `COMPANY` en src/lib/legal/config.ts: así nunca se publica como
+ * definitivo un texto con huecos.
  */
 export function LegalPage({ doc }: { doc: LegalDoc }) {
   const pending = pendingMarkers(doc);
@@ -30,7 +38,24 @@ export function LegalPage({ doc }: { doc: LegalDoc }) {
 
       <main id="contenido" className="flex-1">
         <article className="mx-auto max-w-3xl px-5 py-10 lg:px-8 lg:py-14">
-          {pending.data + pending.legal > 0 && (
+          <div
+            role="note"
+            aria-labelledby="aviso-academico"
+            className="mb-8 border-l-2 border-primary bg-muted px-4 py-3"
+          >
+            <p id="aviso-academico" className="t-label text-foreground">
+              Proyecto escolar
+            </p>
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              {ACADEMIC_NOTICE.map((line) => (
+                <li key={line} className="t-small text-muted-foreground">
+                  {line}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {pending.data > 0 && (
             <div
               role="note"
               aria-label="Apartados pendientes"
@@ -38,8 +63,8 @@ export function LegalPage({ doc }: { doc: LegalDoc }) {
             >
               <p className="t-label text-foreground">Documento incompleto</p>
               <p className="t-small mt-1 text-muted-foreground">
-                Quedan apartados sin completar, marcados en el texto. Este documento no
-                constituye asesoría legal.
+                Quedan datos sin rellenar, marcados en el texto. Este documento no es
+                asesoría legal.
               </p>
             </div>
           )}

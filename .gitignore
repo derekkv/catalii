@@ -36,6 +36,11 @@ yarn-error.log*
 .env*
 !.env.example
 
+# Configuración local de MCP: puede contener claves de API en las cabeceras de
+# los servidores remotos (Paddle), así que no se versiona. Cada quien crea la
+# suya; ver la sección «MCP de Paddle» en PENDIENTES.md.
+.kiro/settings/mcp.json
+
 # vercel
 .vercel
 

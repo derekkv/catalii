@@ -5,9 +5,9 @@ import { hasPendingData, LEGAL_DOCS } from "@/lib/legal/content";
 const doc = LEGAL_DOCS.terms;
 
 /**
- * Mientras el documento tenga apartados sin completar no se indexa; en cuanto
- * se rellenan `COMPANY` y `LEGAL_DATA` (src/lib/legal/config.ts) pasa a ser
- * indexable sin tocar este archivo.
+ * Mientras el documento tenga datos sin rellenar no se indexa; en cuanto se
+ * rellena `COMPANY` (src/lib/legal/config.ts) pasa a ser indexable sin tocar
+ * este archivo.
  */
 export const metadata: Metadata = {
   title: doc.title,

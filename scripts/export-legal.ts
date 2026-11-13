@@ -10,9 +10,15 @@
  *
  * Usa el `tsx` instalado en backend/ porque el front no tiene runner de TS.
  */
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { LEGAL_DOCS, formatVersion, pendingMarkers, type LegalDoc } from "../src/lib/legal/content";
+import {
+  ACADEMIC_NOTICE,
+  LEGAL_DOCS,
+  formatVersion,
+  pendingMarkers,
+  type LegalDoc,
+} from "../src/lib/legal/content";
 import { missingLegalData } from "../src/lib/legal/config";
 
 const root = process.cwd();
@@ -33,14 +39,14 @@ function toMarkdown(doc: LegalDoc): string {
     "",
     "> Generado desde `src/lib/legal/content.ts` con `pnpm legal:export`. No lo edites a mano.",
     "",
+    // El aviso de proyecto escolar va arriba también aquí, igual que en la web.
+    ...ACADEMIC_NOTICE.map((line) => `> **${line}**`),
+    "",
   ];
 
-  const { data, legal } = pendingMarkers(doc);
-  if (data + legal > 0) {
-    out.push(
-      `> Pendiente: ${data} dato(s) \`[COMPLETAR]\` y ${legal} decisión(es) \`[PREGUNTAR A ABOGADO]\`.`,
-      "",
-    );
+  const { data } = pendingMarkers(doc);
+  if (data > 0) {
+    out.push(`> Pendiente: ${data} dato(s) \`[COMPLETAR]\`.`, "");
   }
 
   for (const section of doc.sections) {
@@ -58,10 +64,21 @@ function toMarkdown(doc: LegalDoc): string {
 
 mkdirSync(outDir, { recursive: true });
 
-for (const doc of Object.values(LEGAL_DOCS)) {
+const docs = Object.values(LEGAL_DOCS);
+for (const doc of docs) {
   writeFileSync(join(outDir, `${doc.file}.md`), toMarkdown(doc), "utf8");
-  const { data, legal } = pendingMarkers(doc);
-  console.log(`✓ ${doc.file}.md  (COMPLETAR: ${data}, ABOGADO: ${legal})`);
+  const { data } = pendingMarkers(doc);
+  console.log(`✓ ${doc.file}.md  (COMPLETAR: ${data})`);
+}
+
+// Al reducir el número de documentos quedan .md huérfanos de una exportación
+// anterior: se borran para que docs/legal/textos/ no contradiga a la web.
+const expected = new Set(docs.map((d) => `${d.file}.md`));
+for (const file of readdirSync(outDir)) {
+  if (file.endsWith(".md") && !expected.has(file)) {
+    unlinkSync(join(outDir, file));
+    console.log(`– ${file} (eliminado: ya no existe ese documento)`);
+  }
 }
 
 const missing = missingLegalData();

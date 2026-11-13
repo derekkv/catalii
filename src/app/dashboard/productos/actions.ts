@@ -351,8 +351,16 @@ export async function importProductsCsv(_prev: ActionState, formData: FormData):
 
   const rows = result.data.slice(0, Math.min(result.data.length, available === Infinity ? 5000 : available));
   const toInsert = [];
+  /**
+   * Motivos de las filas descartadas. Antes solo se contaban, así que el
+   * usuario leía «2 omitidos» sin saber por qué y sin forma de arreglarlo.
+   * Se guardan los primeros y se resume el resto, para no construir un mensaje
+   * enorme con un CSV malo entero.
+   */
+  const problems: string[] = [];
+  const MAX_PROBLEMS = 3;
   let skipped = 0;
-  for (const row of rows) {
+  for (const [index, row] of rows.entries()) {
     const parsed = productSchema.safeParse({
       name: pick(row, ["name", "nombre", "producto"]),
       sku: pick(row, ["sku", "codigo", "código"]),
@@ -367,6 +375,12 @@ export async function importProductsCsv(_prev: ActionState, formData: FormData):
     });
     if (!parsed.success) {
       skipped++;
+      if (problems.length < MAX_PROBLEMS) {
+        // +2: la fila 1 del archivo son los encabezados y `index` empieza en 0.
+        const line = index + 2;
+        const reason = parsed.error.issues[0]?.message ?? "datos inválidos";
+        problems.push(`fila ${line}: ${reason}`);
+      }
       continue;
     }
     const p = parsed.data;
@@ -385,7 +399,19 @@ export async function importProductsCsv(_prev: ActionState, formData: FormData):
     });
   }
 
-  if (toInsert.length === 0) return fail("No se encontraron filas válidas en el CSV.");
+  /** "fila 3: Nombre requerido; fila 8: …" y, si hay más, cuántas quedan. */
+  const problemsText = () => {
+    const rest = skipped - problems.length;
+    return problems.join("; ") + (rest > 0 ? `; y ${rest} más` : "");
+  };
+
+  if (toInsert.length === 0) {
+    return fail(
+      problems.length > 0
+        ? `No se importó ninguna fila. ${problemsText()}.`
+        : "No se encontraron filas válidas en el CSV.",
+    );
+  }
 
   const { error } = await supabase.from("product").insert(toInsert);
   if (error) {
@@ -396,5 +422,9 @@ export async function importProductsCsv(_prev: ActionState, formData: FormData):
   revalidatePath("/dashboard/productos");
   // Contador de productos y checklist de la portada.
   revalidatePath("/dashboard");
-  return ok(`Importados ${toInsert.length} productos${skipped ? `, ${skipped} omitidos` : ""}.`);
+  return ok(
+    skipped > 0
+      ? `Importados ${toInsert.length} productos. Se omitieron ${skipped}: ${problemsText()}.`
+      : `Importados ${toInsert.length} productos.`,
+  );
 }

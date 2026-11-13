@@ -16,7 +16,7 @@ import {
   Info,
 } from "lucide-react";
 import { submitOrder } from "@/lib/actions/order-actions";
-import { LEGAL_PATHS } from "@/lib/legal/config";
+import { ACADEMIC_NOTICE_SHORT, LEGAL_PATHS } from "@/lib/legal/config";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Textarea } from "@/components/ui/input";
 import { Drawer, Modal } from "@/components/ui/overlay";
@@ -968,6 +968,10 @@ function CartDrawer({
             Recordar mis datos en este dispositivo
           </label>
         </div>
+
+        <p className="t-small text-muted-foreground">
+          {ACADEMIC_NOTICE_SHORT}
+        </p>
 
         <p className="t-small text-muted-foreground">
           Usamos tu nombre y WhatsApp solo para enviar este pedido a {displayName}. Más info en{" "}

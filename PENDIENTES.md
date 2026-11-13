@@ -20,7 +20,7 @@ Supabase, Paddle y un navegador reales.
 
 ## Empieza por aquí (en este orden)
 
-1. **#2–#8** los datos legales: desbloquean el lanzamiento de las páginas.
+1. **#2** los tres datos legales (responsable, correo e institución).
 2. **#9–#10** aplicar las cuatro migraciones pendientes (`0005`–`0008`) en un
    entorno de prueba. Varias tareas ya cerradas en código dependen de esto.
 3. **#13–#16** probar con Paddle sandbox y con una cuenta real lo que está
@@ -39,65 +39,54 @@ Supabase, Paddle y un navegador reales.
   **Falta `git push`:** `main` va por delante de `origin/main` y empujar es tu
   decisión. Remoto: `git@github.com:derekkv/catalii.git`.
 
-## 2. Datos legales que faltan (35 campos)
+## 2. Datos legales que faltan (3 campos)
 
-Todos se escriben en `src/lib/legal/config.ts`. Al guardar, ejecuta
-`pnpm legal:export` para regenerar `docs/legal/textos/` y ver qué queda.
-Detalle de cada campo y formato: `docs/legal/DATOS-PENDIENTES.md`.
+**Cambio de alcance (2026-11-12):** Catalii es un proyecto escolar, no un
+negocio real, así que los textos legales pasaron de seis páginas detalladas a
+tres cortas (`/privacidad`, `/terminos`, `/contacto`) que solo afirman lo que el
+código hace. Ya no hay nada que dependa de un abogado: las 22 marcas
+`[PREGUNTAR A ABOGADO]` se eliminaron redactando algo simple y cierto o quitando
+el apartado, y los 35 campos quedaron en 3.
 
-- [ ] **#2 · DATO · S — Datos de la empresa (7 campos).** Razón social,
-  identificación fiscal, domicilio, país y tres correos (contacto, privacidad,
-  derechos de autor). Los correos deben existir y estar atendidos antes de
-  publicar, porque los textos prometen respuesta ahí. Si operas como persona
-  física, dilo y se ajusta la redacción.
-- [ ] **#3 · DECIS · S — Plazos de conservación (6 campos).** Cuentas, pedidos y
-  datos de compradores, facturación, registros técnicos, copias de seguridad y
-  registros de conexión. Los dos últimos se consultan en los paneles de Supabase
-  y Cloudflare. Bloquea la #11.
-- [ ] **#4 · DECIS · S — Atención y avisos (4 campos).** Plazo de respuesta a
-  solicitudes de datos y a soporte; cómo avisarás de cambios en la política y en
-  los términos.
-- [ ] **#5 · DECIS · S — Cobros y reembolsos (7 campos).** Si los precios llevan
-  impuestos incluidos (depende de la #13), qué pasa con catálogos y datos al
-  cancelar, y las condiciones, plazos y gestor de los reembolsos.
-- [ ] **#6 · DECIS · S — Contenido y reclamos (3 campos).** Rubros no admitidos
-  en los catálogos y plazos para atender un reclamo de derechos de autor.
-- [ ] **#7 · DATO · S — Regiones de proveedores (5 campos).** Región de
-  Supabase, Workers y R2; país y rol de Paddle; y si tienes aceptados sus
-  acuerdos de tratamiento de datos.
-- [ ] **#8 · DECIS · M — Revisión legal.** Llevar a un abogado
-  `docs/legal/RESUMEN_ABOGADO.md` (19 preguntas) y cerrar los dos campos que son
-  suyos: ley aplicable y jurisdicción. Quedan 22 marcas
-  `[PREGUNTAR A ABOGADO]` en los textos hasta que responda: roles de responsable
-  y encargado sobre los datos de los compradores, base jurídica de cada
-  tratamiento, edad mínima, transferencias internacionales, límites de
-  responsabilidad, derechos del consumidor y régimen de los avisos de autor.
+- [ ] **#2 · DATO · S — Los tres datos del proyecto.** En `COMPANY`, dentro de
+  `src/lib/legal/config.ts`: `owner` (tu nombre o el del equipo),
+  `contactEmail` (un correo que exista y leas, porque los textos dicen que ahí
+  se responde) e `institution` (institución o materia). Al guardar, ejecuta
+  `pnpm legal:export` para regenerar `docs/legal/textos/`. Detalle:
+  `docs/legal/DATOS-PENDIENTES.md`.
+- [x] **#3 · ~~Plazos de conservación.~~** Cerrada por cambio de alcance: un
+  proyecto escolar no anuncia plazos de retención que no tiene implementados.
+- [x] **#4 · ~~Atención y avisos.~~** Cerrada por cambio de alcance: los textos
+  ya no prometen plazos formales de respuesta.
+- [x] **#5 · ~~Cobros y reembolsos.~~** Cerrada por cambio de alcance: el
+  checkout está en modo de pruebas y no hay cobros reales que reembolsar; los
+  términos lo dicen en una sección corta.
+- [x] **#6 · ~~Contenido y reclamos.~~** Cerrada por cambio de alcance: los
+  términos remiten al correo de contacto en un párrafo, sin procedimiento
+  formal.
+- [x] **#7 · ~~Regiones de proveedores.~~** Cerrada por cambio de alcance:
+  privacidad solo nombra Supabase, Cloudflare y Paddle y para qué sirve cada
+  uno.
+- [x] **#8 · ~~Revisión legal.~~** Cerrada por cambio de alcance: es un trabajo
+  de clase, no se va a llevar a un abogado. `docs/legal/RESUMEN_ABOGADO.md`,
+  `DIAGNOSTICO.md` e `INVENTARIO.md` quedan como material histórico del alcance
+  anterior.
 
-> Mientras un documento tenga marcadores, su página avisa «Documento incompleto»
-> y se sirve con `noindex`. Al rellenarlo todo, deja de avisar y pasa a ser
-> indexable sin tocar código.
+> Mientras un documento tenga marcadores `[COMPLETAR]`, su página avisa
+> «Documento incompleto» y se sirve con `noindex`. Al rellenar los tres campos,
+> deja de avisar y pasa a ser indexable sin tocar código. El aviso de proyecto
+> escolar, en cambio, se queda siempre: es parte del texto.
 
 ## 3. Base de datos
 
-- [ ] **#9 · TÉC · M — Aplicar las cuatro migraciones pendientes.** `0005`,
-  `0006`, `0007` y `0008` están escritas y **ninguna se ha ejecutado**. Es ahora
-  la tarea que más cosas desbloquea, porque de ella dependen varias ya cerradas
-  en código:
-  - `0005_legal_acceptance.sql` — sin ella el registro de aceptación de términos
-    falla y no hay prueba de quién aceptó qué.
-  - `0006_purge_processed_webhooks.sql` — la purga del ledger de webhooks.
-  - `0007_order_limits_and_indexes.sql` — índices (#12), límite mensual de
-    pedidos (#29) y límite de frecuencia (#22).
-  - `0008_sync_catalog_products.sql` — RPC atómico de sincronización (#30).
-    **Ojo:** hasta aplicarla, «Guardar selección» en el editor de catálogo
-    responde con un error explícito en vez de corromper el catálogo.
+- [x] **#9 · TÉC · M — ~~Aplicar las cuatro migraciones pendientes.~~**
+  Aplicadas por el dueño: `0005` (aceptación de términos), `0006` (purga de
+  webhooks), `0007` (índices, límite mensual y límite de frecuencia) y `0008`
+  (RPC atómico de sincronización). Con esto quedan activas en la base las
+  tareas #12, #22, #29 y #30, que estaban escritas y sin efecto.
+  Si algo no respondiera, PostgREST puede necesitar recargar el esquema
+  (`notify pgrst, 'reload schema'`). Comprobaciones en `supabase/README.md`.
 
-  Aplícalas en orden en un entorno de prueba y luego en producción. El SQL se
-  validó con el parser de Postgres (`libpg-query`) pero **no se ha ejecutado**:
-  nadie ha comprobado tipos, nombres de objetos ni permisos. Si el RPC responde
-  `PGRST202`, PostgREST necesita recargar el esquema
-  (`notify pgrst, 'reload schema'`). Comprobaciones sugeridas en
-  `supabase/README.md`.
 - [ ] **#10 · TÉC · S — Programar la purga de webhooks.** Una vez aplicada la
   `0006` (ver #9), la función `purge_processed_webhooks(retention)` existe pero
   **nadie la llama**. Prográmala con `pg_cron` si lo tienes activado (hay un
@@ -145,7 +134,7 @@ contra servicios reales ni en un navegador.
   llamadas a `fonts.googleapis.com` (las fuentes deben servirse del propio
   dominio), anotar los dominios reales del checkout de Paddle y comprobar que no
   aparece analítica.
-- [ ] **#19 · VERIF · S — Revisar el aspecto de las páginas nuevas.** Las 6
+- [ ] **#19 · VERIF · S — Revisar el aspecto de las páginas nuevas.** Las 3
   páginas legales, el pie, el logo v2 en los 5 themes y la placa azul del
   reverso sobre la sección de cierre. Nada de esto se ha visto en pantalla.
 - [ ] **#20 · VERIF · S — Prueba con una persona ajena.** Que intente
@@ -194,9 +183,12 @@ Estado actual: el backend está restaurado, pasa `tsc` y arranca. El front lo us
 listar y cambiar estado de pedidos, y crear, editar y borrar productos y
 catálogos.
 
-- [ ] **#25 · DECIS · S — Decidir el futuro del backend.** O se completa la
-  migración y se despliega, o se congela. Hoy es código que duplica lógica y no
-  está en producción, así que mantener las dos rutas tiene coste.
+- [ ] **#25 · DECIS · S — ⏸ EN PAUSA por decisión del dueño — Futuro del
+  backend.** O se completa la migración y se despliega, o se congela. Mientras
+  esté en pausa, el backend sigue siendo opcional: con `BACKEND_URL` vacía todo
+  va directo a Supabase y la app funciona igual. **Las tareas #26, #27 y #28
+  quedan congeladas con esta.**
+
 - [ ] **#26 · TÉC · M — Endpoints que faltan para cerrar la migración.** Hoy
   siguen yendo directo a Supabase: importar CSV, imágenes de catálogo y de
   negocio, sincronizar los productos de un catálogo, todas las lecturas de
@@ -294,8 +286,9 @@ catálogos.
 - [ ] **#44 · TÉC · S — Webhook de Paddle al dominio real.** Apuntar el
   notification destination a `https://TU-DOMINIO/api/webhook` con los eventos
   `customer.created/updated` y `subscription.created/updated/canceled`.
-- [ ] **#45 · DATO · S — Completar el MCP de Paddle sandbox.** Ver la sección
-  final de este archivo: falta pegar el bloque con tu API key de sandbox.
+- [x] **#45 · DATO · S — ~~Completar el MCP de Paddle sandbox.~~** Configurado
+  por el dueño.
+
 
 ## 10. Documentación desactualizada
 
@@ -402,17 +395,26 @@ desactivado porque apunta a tu cuenta real de cobros.
   Nota aparte: `/c/[slug]` y el panel **ya eran dinámicos antes** de esto,
   porque `createClient()` usa `cookies()`; el `revalidate = 60` del catálogo
   público no tenía efecto, y eso no se ha tocado.
-- [ ] **#53 · TÉC · S — Mostrar el motivo de las filas omitidas al importar
-  CSV.** `importProductsCsv` cuenta las filas inválidas pero descarta el mensaje
-  de error, así que el usuario ve «2 omitidos» sin saber por qué (ahora, por
-  ejemplo, porque la URL de imagen no es `https`). Acumular el primer motivo por
-  fila sería suficiente.
-- [ ] **#54 · TÉC · S — El webhook de Paddle no avisa si hay correos
-  duplicados.** `process-webhook.ts` busca el negocio por correo con
-  `.maybeSingle()`: si dos negocios comparten correo, Supabase devuelve error,
-  `business_id` queda en `null` y el plan no se actualiza, **sin que nadie se
-  entere**. El índice de la #12 no arregla esto. Como mínimo, registrar el
-  error.
+- [x] **#53 · TÉC · S — ~~Mostrar el motivo de las filas omitidas al importar
+  CSV.~~** El mensaje ahora dice qué fila falló y por qué, con el número de
+  línea del archivo: «Importados 1 productos. Se omitieron 4: fila 2: La URL de
+  la imagen debe ser https://…; fila 3: Nombre requerido; y 1 más». Se muestran
+  los tres primeros motivos y se resume el resto, para que un CSV entero mal
+  formado no genere un mensaje enorme. Si no entra ninguna fila, el error
+  también explica por qué en vez del genérico de antes.
+  De paso, los campos numéricos (precio, stock, mínimo de pedido) dan mensajes
+  en español: con un valor no numérico, `coerce` produce NaN y zod fallaba por
+  tipo antes del `.min()`, así que salía «Expected number, received nan».
+
+- [x] **#54 · TÉC · S — ~~El webhook de Paddle no avisa de los fallos.~~**
+  `process-webhook.ts` registra ahora tres casos que antes pasaban en silencio:
+  el error al buscar el negocio por correo (que ocurre si dos negocios
+  comparten correo, porque la columna no es única), el cliente de Paddle que no
+  tiene negocio asociado, y el fallo al aplicar el plan. Este último es el
+  grave: el usuario pagó y no recibió su plan. Se registra en vez de lanzar,
+  porque lanzar haría que Paddle reintentara el evento completo cuando la
+  suscripción ya quedó guardada.
+
 - [ ] **#55 · TÉC · S — El aviso de `middleware` obsoleto de Next 16.** El build
   avisa: «The "middleware" file convention is deprecated. Please use "proxy"
   instead». Renombrar afecta al despliegue en Workers (el README explica que se

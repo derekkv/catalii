@@ -68,10 +68,27 @@ export const productSchema = z.object({
   description: z.string().trim().max(2000).optional().or(z.literal("")),
   category: z.string().trim().max(80).optional().or(z.literal("")),
   // Precio recibido como texto (input); se convierte a centavos en la acción.
-  price: z.coerce.number().min(0, "Precio inválido").max(100_000_000),
+  // `invalid_type_error` es necesario: con un valor no numérico, `coerce` da
+  // NaN y zod falla por tipo antes de llegar al `.min()`, así que sin esto el
+  // usuario veía el mensaje en inglés "Expected number, received nan" (se nota
+  // sobre todo al importar un CSV con el precio mal escrito).
+  price: z.coerce
+    .number({ invalid_type_error: "El precio debe ser un número" })
+    .min(0, "Precio inválido")
+    .max(100_000_000),
   currency: z.string().trim().length(3).toUpperCase().default("USD"),
-  stock: z.coerce.number().int().min(0).max(10_000_000).default(0),
-  min_order_qty: z.coerce.number().int().min(1).max(1_000_000).default(1),
+  stock: z.coerce
+    .number({ invalid_type_error: "El stock debe ser un número" })
+    .int()
+    .min(0)
+    .max(10_000_000)
+    .default(0),
+  min_order_qty: z.coerce
+    .number({ invalid_type_error: "El mínimo de pedido debe ser un número" })
+    .int()
+    .min(1)
+    .max(1_000_000)
+    .default(1),
   image_url: imageUrlSchema("La URL de la imagen debe ser https:// (sin usuario ni contraseña).")
     .optional()
     .or(z.literal("")),
