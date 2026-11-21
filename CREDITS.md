@@ -2,17 +2,23 @@
 
 > **No es asesoría legal.** Lista fuentes tipográficas, íconos y otros recursos que no son código propio. Las dependencias de código (con sus licencias y avisos) están en [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md).
 
-## Fuentes tipográficas (cargadas con `next/font/google`, `src/app/layout.tsx`)
+## Fuentes tipográficas (autoalojadas con `next/font/local`, archivos en `src/fonts/`)
 
-La licencia se verificó en el archivo `METADATA.pb` de cada familia en el repositorio oficial `google/fonts` (campo `license: "OFL"` → SIL Open Font License 1.1). `next/font/google` descarga los archivos en el build y los sirve desde el propio dominio; **esto último no se comprobó en un build real** (ver `docs/legal/AUDITORIA_SDKS.md`).
+Los `.woff2` **están versionados en este repositorio** (`src/fonts/`) y se cargan con `next/font/local` desde `src/app/layout.tsx`. Antes se pedían con `next/font/google` en cada build; se cambiaron porque Turbopack (Next 16.3.x) rompe el build cuando la API de Google devuelve URLs de subconjunto dinámico ([vercel/next.js#97344](https://github.com/vercel/next.js/issues/97344)). Detalle técnico y procedencia exacta de cada archivo en [`src/fonts/README.md`](./src/fonts/README.md).
 
-| Fuente | Autoría (según METADATA) | Licencia | Fuente de verificación |
-|---|---|---|---|
-| Fraunces | «Copyright 2020 The Fraunces Project Authors» (Undercase Type, Phaedra Charles, Flavia Zimbardi) · https://github.com/undercasetype/Fraunces | SIL OFL 1.1 | https://github.com/google/fonts/blob/main/ofl/fraunces/METADATA.pb |
-| Archivo | «Copyright 2020 The Archivo Project Authors» (Omnibus-Type) · https://github.com/Omnibus-Type/Archivo | SIL OFL 1.1 | https://github.com/google/fonts/blob/main/ofl/archivo/METADATA.pb |
-| JetBrains Mono | «Copyright 2020 The JetBrains Mono Project Authors» (JetBrains, Philipp Nurullin, Konstantin Bulenkov) · https://github.com/JetBrains/JetBrainsMono | SIL OFL 1.1 | https://github.com/google/fonts/blob/main/ofl/jetbrainsmono/METADATA.pb |
+Consecuencia legal del cambio: ahora **sí redistribuimos los archivos de fuente**, así que la OFL obliga a acompañarlos de su aviso de copyright y del texto de la licencia. Hecho: hay un `OFL-*.txt` íntegro por familia junto a las fuentes, descargado del repositorio oficial `google/fonts`.
 
-Texto de la licencia: https://openfontlicense.org/ (OFL-1.1). La OFL permite uso comercial e incrustación; exige conservar el aviso de copyright y la licencia si se redistribuyen los archivos de fuente, y no permite vender las fuentes por sí solas. Si se llegaran a guardar los `.woff2` en el repositorio o a distribuirse aparte, hay que incluir el texto OFL de cada familia. El texto íntegro de cada licencia no se descargó a este repositorio (**pendiente**).
+Consecuencia técnica, también comprobada en un build real (`next build` + `next start`): el HTML referencia los tres woff2 bajo `/_next/static/media/` y no se pide nada a `fonts.googleapis.com` ni a `fonts.gstatic.com`, ni en build ni en runtime (cf. `docs/legal/AUDITORIA_SDKS.md`).
+
+| Fuente | Aviso de copyright (del propio `OFL.txt`) | Licencia | Archivo en el repo | Texto de la licencia |
+|---|---|---|---|---|
+| Fraunces | «Copyright 2018 The Fraunces Project Authors» (Undercase Type, Phaedra Charles, Flavia Zimbardi) · https://github.com/undercasetype/Fraunces | SIL OFL 1.1 | `src/fonts/Fraunces-latin.woff2` (121 016 B) | [`src/fonts/OFL-Fraunces.txt`](./src/fonts/OFL-Fraunces.txt) ← https://github.com/google/fonts/blob/main/ofl/fraunces/OFL.txt |
+| Archivo | «Copyright 2020 The Archivo Project Authors» (Omnibus-Type) · https://github.com/Omnibus-Type/Archivo | SIL OFL 1.1 | `src/fonts/Archivo-latin.woff2` (34 928 B) | [`src/fonts/OFL-Archivo.txt`](./src/fonts/OFL-Archivo.txt) ← https://github.com/google/fonts/blob/main/ofl/archivo/OFL.txt |
+| JetBrains Mono | «Copyright 2020 The JetBrains Mono Project Authors» (JetBrains, Philipp Nurullin, Konstantin Bulenkov) · https://github.com/JetBrains/JetBrainsMono | SIL OFL 1.1 | `src/fonts/JetBrainsMono-latin.woff2` (40 404 B) | [`src/fonts/OFL-JetBrainsMono.txt`](./src/fonts/OFL-JetBrainsMono.txt) ← https://github.com/google/fonts/blob/main/ofl/jetbrainsmono/OFL.txt |
+
+El aviso de Fraunces se corrigió a 2018: es el año que figura en el `OFL.txt` descargado, no 2020 como decía antes esta tabla. La clasificación OFL se había verificado además en el `METADATA.pb` de cada familia en `google/fonts` (campo `license: "OFL"`).
+
+La OFL permite uso comercial e incrustación; exige conservar el aviso de copyright y la licencia al redistribuir los archivos de fuente, y no permite venderlas por sí solas. Los archivos guardados son subconjuntos (bloque `latin`) de los woff2 variables que servía Google: la OFL permite modificar y subconjuntar, con la condición de no usar los Reserved Font Names —ninguno de los tres `OFL.txt` declara ninguno— y de mantener la misma licencia, que es lo que hacen estos `OFL-*.txt`.
 
 ## Íconos
 
@@ -37,5 +43,5 @@ Texto de la licencia: https://openfontlicense.org/ (OFL-1.1). La OFL permite uso
 
 - [x] `src/app/favicon.ico` regenerado desde `catalii-simbolo-v2.png`: ya no hay iconos de origen desconocido.
 - [ ] Confirmar autoría y titularidad de los logos de `public/brand/` y `docs/brand/` **[PREGUNTAR AL DUEÑO]**.
-- [ ] Decidir si se añade el texto OFL completo de las tres fuentes.
+- [x] Texto OFL completo de las tres fuentes añadido en `src/fonts/OFL-*.txt` (obligatorio desde que los `.woff2` se versionan en el repo).
 - [ ] Revisar este archivo y `THIRD_PARTY_NOTICES.md` con el abogado.

@@ -22,7 +22,7 @@ Búsqueda de `https?://` en `src/`, `next.config.ts`, `wrangler.jsonc` y configu
 
 No se encontraron: `<iframe>`, `<script src=…>` externos, `next/script`, hojas de estilo externas, `<link rel="stylesheet">`, píxeles, ni referencias a Google Analytics, GTM, Meta Pixel, Hotjar, Sentry, Vercel Analytics o similares en `src/` ni en `package.json`. (Búsqueda por texto; no sustituye la prueba en Red.)
 
-Fuentes: `next/font/google` (`src/app/layout.tsx:2`) **debería** descargar y servir las fuentes desde el propio dominio en el build, sin pedir a `fonts.googleapis.com` desde el navegador. **No se verificó con un build** (no hay `.next` con `.woff2` ni se ejecutó `next build`). Hay que comprobarlo en la prueba de Red.
+Fuentes: **autoalojadas** con `next/font/local` (`src/app/layout.tsx`, archivos en `src/fonts/`). Verificado con un build real (`next build` + `next start -p 3151`): los tres `.woff2` salen en `.next/static/media/`, el HTML y el `Link: rel=preload` apuntan solo al propio dominio y no hay ninguna petición a `fonts.googleapis.com` / `fonts.gstatic.com` (tampoco durante el build, que ya no toca la red). Antes se usaba `next/font/google`, que sí descargaba en el build.
 
 ## 2. SDKs de `package.json` que hacen red desde el navegador
 

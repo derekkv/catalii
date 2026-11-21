@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { Fraunces, Archivo, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
 /*
@@ -12,25 +12,43 @@ import "./globals.css";
  *    tamaños pequeños y con 100–900 para construir jerarquía real.
  *  · JetBrains Mono: SKU, precios, totales y micro-etiquetas. Los datos
  *    tabulares de un catálogo mayorista piden cifras de ancho fijo.
+ *
+ * Autoalojadas con `next/font/local` desde `src/fonts/` en lugar de
+ * `next/font/google`. Motivo: en Next 16.3.x, Turbopack rompe el build cuando
+ * la API de Google Fonts responde con URLs de subconjunto dinámico (las que
+ * llevan `&` en la query), con el error «Can't resolve
+ * '@vercel/turbopack-next/internal/font/google/font'» (vercel/next.js#97344,
+ * PR #99132). Es intermitente —depende de lo que devuelva Google en ese
+ * momento—, así que compilaba en local y fallaba en Cloudflare. Con los
+ * `.woff2` versionados, el build no toca la red y el bug no puede aparecer.
+ *
+ * Los tres archivos son el subconjunto `latin` (U+0000–00FF más puntuación y
+ * €: cubre de sobra el español) del woff2 **variable** que servía la propia
+ * API de Google, con los mismos ejes que antes. Licencias en
+ * `src/fonts/OFL-*.txt`; ver `CREDITS.md`.
  */
-const display = Fraunces({
+const display = localFont({
+  src: "../fonts/Fraunces-latin.woff2",
   variable: "--font-display",
-  subsets: ["latin"],
-  axes: ["SOFT", "WONK", "opsz"],
   display: "swap",
+  weight: "100 900",
+  style: "normal",
 });
 
-const body = Archivo({
+const body = localFont({
+  src: "../fonts/Archivo-latin.woff2",
   variable: "--font-body",
-  subsets: ["latin"],
   display: "swap",
+  weight: "100 900",
+  style: "normal",
 });
 
-const mono = JetBrains_Mono({
+const mono = localFont({
+  src: "../fonts/JetBrainsMono-latin.woff2",
   variable: "--font-mono",
-  subsets: ["latin"],
-  weight: ["400", "500", "700"],
   display: "swap",
+  weight: "100 800",
+  style: "normal",
 });
 
 import { ThemeScript } from "@/components/theme/theme-script";
