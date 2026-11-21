@@ -28,7 +28,7 @@ El repo está separado en tres partes:
 ├── supabase/       # DB     → migraciones, RLS y RPC (ver supabase/README.md)
 ├── media-worker/   # Worker aparte que sirve las imágenes de R2
 ├── scripts/        # utilidades (export-legal.ts)
-└── docs/           # marca (docs/brand/) y legal (docs/legal/)
+└── docs/           # marca (docs/brand/), legal (docs/legal/) y la API de métricas
 ```
 
 - **Front (`src/`)** — la app Next.js desplegada en Cloudflare Workers. Hoy su
@@ -65,6 +65,29 @@ BACKEND_URL=http://localhost:8787
 > `backend/` está excluido de `tsconfig.json` y de ESLint del front (usa su
 > propio alias `@/*`). Sin esa exclusión `next build` falla al tipar el backend.
 
+### Las métricas ya no están en Postgres
+
+Las visitas y los clics son **eventos en MongoDB** servidos por el backend
+(`back.catalii.com`). El contrato está en `docs/METRICAS-API.md` y la migración
+`0010` retira de Supabase la tabla de contadores, su enum y su RPC.
+
+- El navegador manda el evento con `navigator.sendBeacon` a
+  `POST /api/metric` (mismo origen: sin CORS y sin tocar la CSP). Esa ruta
+  responde **204 siempre** y reenvía el evento al backend en segundo plano
+  (`waitUntil`), así que el comprador nunca espera por la analítica. El Worker
+  añade el país (`CF-IPCountry`), el host del referrer y `mobile`/`desktop`.
+- El panel lee `/api/metrics/summary` y `/api/metrics/business/:id` con el
+  access token del administrador que está viendo la pantalla
+  (`src/lib/metrics/api.ts`). Si el backend no responde, **avisa de que las
+  métricas no están disponibles en vez de mostrar ceros**, y el resto del panel
+  (negocios, pedidos, suscripciones, que siguen en Postgres) funciona igual.
+- Se guarda el evento sin IP, sin user agent, sin cookies y sin identificador
+  de visitante, así que **no hay visitantes únicos**: cinco visitas pueden ser
+  cinco personas o una recargando. El panel lo dice en cada pantalla.
+- URL del backend de métricas: `METRICS_API_URL` si está definida, y si no
+  `BACKEND_URL`. La variable aparte permite activar las métricas sin pasar
+  también pedidos y productos por el backend.
+
 ## Estructura
 
 ```
@@ -84,6 +107,7 @@ src/
     privacidad/ terminos/    # Páginas legales (3, generadas
     contacto/                # desde src/lib/legal/)
     api/webhook/            # Webhook de Paddle (firma verificada)
+    api/metric/             # Beacon de visitas y clics (204 siempre; reenvía al back)
     api/uploads/            # Subida y descarte de imágenes a R2
     api/media/[...path]/    # Servir imágenes (fallback sin media-worker)
     api/account/export/     # Descargar mis datos (JSON)
@@ -99,6 +123,7 @@ src/
     actions/                # server actions (auth, pedidos)
     legal/                  # config.ts (datos), content.ts (texto), acceptance.ts
     media/                  # claves, resize en cliente, subida y helpers R2
+    metrics/                # track.ts (beacon), api.ts (cliente del back), types.ts
     backend.ts              # cliente HTTP del backend Express (BACKEND_URL)
     themes.ts plans.ts validation.ts utils.ts site.ts auth.ts timeout.ts
   types/database.ts         # tipos de las tablas de Supabase
@@ -110,10 +135,14 @@ supabase/migrations/        # 0001_init.sql · 0002_rls_and_rpc.sql
                             # 0006_purge_processed_webhooks.sql
                             # 0007_order_limits_and_indexes.sql
                             # 0008_sync_catalog_products.sql
+                            # 0009_business_pages_and_metrics.sql
+                            # 0010_drop_postgres_metrics.sql
 ```
 
-> `0005`–`0008` están escritas pero **sin aplicar** (ver `PENDIENTES.md`
-> #9, #10, #12, #22, #29 y #30).
+> `0005`–`0010` están escritas pero **sin aplicar** (ver `PENDIENTES.md`
+> #9, #10, #12, #22, #29, #30 y #56). La `0010` retira las métricas de
+> Postgres: el código del front ya está escrito contra MongoDB, así que esa
+> tabla no se usa ni aunque exista.
 
 ## Puesta en marcha
 

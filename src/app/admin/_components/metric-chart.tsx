@@ -1,5 +1,5 @@
 import type { MetricDay } from "@/lib/admin-stats";
-import { DataTable, Td, Th, Tr } from "./ui";
+import { DataTable, EmptyState, Td, Th, Tr } from "./ui";
 import { formatCount, formatDayShort } from "./format";
 
 /**
@@ -13,11 +13,18 @@ import { formatCount, formatDayShort } from "./format";
  * un resumen) y debajo va la tabla con las cifras exactas dentro de un
  * `<details>`. Así la información no depende de ver colores ni alturas. El
  * `title` de cada columna sirve de apoyo con el ratón, no como único camino.
+ *
+ * Con `days` vacío no se dibuja nada: una serie vacía significa que no se
+ * pudieron leer las métricas, y un gráfico plano de ceros se leería como «no
+ * hubo visitas».
  */
 export function MetricChart({ days }: { days: MetricDay[] }) {
+  if (days.length === 0) {
+    return <EmptyState>No hay serie que mostrar: no se pudieron leer las métricas.</EmptyState>;
+  }
+
   const totalViews = days.reduce((s, d) => s + d.views, 0);
   const totalClicks = days.reduce((s, d) => s + d.whatsappClicks, 0);
-  const totalOrders = days.reduce((s, d) => s + d.ordersSent, 0);
   const max = Math.max(...days.map((d) => d.views + d.whatsappClicks), 1);
 
   const first = days[0];
@@ -38,10 +45,6 @@ export function MetricChart({ days }: { days: MetricDay[] }) {
         <p className="t-small text-muted-foreground">
           <span className="t-num text-foreground">{formatCount(totalClicks)}</span> clics en
           WhatsApp
-        </p>
-        <p className="t-small text-muted-foreground">
-          <span className="t-num text-foreground">{formatCount(totalOrders)}</span> pedidos
-          enviados
         </p>
       </div>
 
@@ -92,7 +95,7 @@ export function MetricChart({ days }: { days: MetricDay[] }) {
         <summary className="t-label cursor-pointer text-primary">Ver las cifras por día</summary>
         <div className="mt-3">
           <DataTable
-            caption={`Visitas y clics por día (${days.length} días, fechas UTC). Dato real: contadores de la tabla page_metric.`}
+            caption={`Visitas y clics por día (${days.length} días, fechas UTC). Dato real: eventos de MongoDB agrupados por el backend.`}
             minWidth="30rem"
           >
             <thead>
@@ -101,14 +104,11 @@ export function MetricChart({ days }: { days: MetricDay[] }) {
                 <Th numeric>Página del negocio</Th>
                 <Th numeric>Catálogos</Th>
                 <Th numeric>Clics WhatsApp</Th>
-                <Th numeric>Pedidos enviados</Th>
               </tr>
             </thead>
             <tbody>
               {days
-                .filter(
-                  (d) => d.views + d.whatsappClicks + d.ordersSent > 0,
-                )
+                .filter((d) => d.views + d.whatsappClicks > 0)
                 .reverse()
                 .map((d) => (
                   <Tr key={d.day}>
@@ -118,14 +118,13 @@ export function MetricChart({ days }: { days: MetricDay[] }) {
                     <Td numeric>{formatCount(d.businessViews)}</Td>
                     <Td numeric>{formatCount(d.catalogViews)}</Td>
                     <Td numeric>{formatCount(d.whatsappClicks)}</Td>
-                    <Td numeric>{formatCount(d.ordersSent)}</Td>
                   </Tr>
                 ))}
             </tbody>
           </DataTable>
-          {totalViews + totalClicks + totalOrders === 0 && (
+          {totalViews + totalClicks === 0 && (
             <p className="t-small mt-3 text-muted-foreground">
-              Ningún día de la ventana tiene datos.
+              Ningún día de la ventana tiene eventos.
             </p>
           )}
         </div>

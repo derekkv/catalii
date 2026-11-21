@@ -7,7 +7,7 @@ import { PLAN_ORDER } from "@/lib/plans";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { StatTiles } from "@/components/dashboard/stat-tiles";
 import { Badge } from "@/components/ui/badge";
-import { DataNotes, DataTable, EmptyState, SectionHeading, SourceNote, Td, Th, Tr } from "./_components/ui";
+import { DataNotes, DataTable, EmptyState, MetricsUnavailable, SectionHeading, SourceNote, Td, Th, Tr } from "./_components/ui";
 import { MetricChart } from "./_components/metric-chart";
 import {
   formatCount,
@@ -41,8 +41,8 @@ export default async function AdminOverviewPage() {
         description={
           <>
             Cifras de toda la plataforma. Las fechas y los cortes de día están en{" "}
-            <strong className="font-medium text-foreground">UTC</strong>, igual que los contadores
-            de métricas. Ninguna pantalla de este panel escribe en la base de datos.
+            <strong className="font-medium text-foreground">UTC</strong>, igual que los días de la
+            serie de métricas. Ninguna pantalla de este panel escribe en la base de datos.
           </>
         }
       />
@@ -371,21 +371,14 @@ export default async function AdminOverviewPage() {
           <>
             <MetricChart days={metrics.daily} />
             <SourceNote className="mt-4">
-              Son <strong className="font-medium text-foreground">contadores por día</strong> de la
-              tabla <code className="t-num">page_metric</code>: no hay visitantes únicos, ni
-              sesiones, ni origen del tráfico, porque no se guarda nada que identifique a quien
-              visita. Una misma persona que abre el catálogo cinco veces cuenta cinco visitas.
+              Son <strong className="font-medium text-foreground">eventos sueltos</strong>
+              {" "}guardados en MongoDB y servidos por el backend: no hay visitantes únicos, ni
+              sesiones, porque no se guarda nada que identifique a quien visita. Una misma persona
+              que abre el catálogo cinco veces cuenta cinco visitas.
             </SourceNote>
           </>
         ) : (
-          <div className="border-l-2 border-warning bg-muted/60 px-4 py-3">
-            <p className="t-label text-warning">Métricas todavía no disponibles</p>
-            <p className="t-small mt-2 text-muted-foreground">
-              La tabla <code className="t-num">page_metric</code> no existe en la base de datos.
-              Aplica <code className="t-num">supabase/migrations/0009_business_pages_and_metrics.sql</code>{" "}
-              y las visitas empezarán a contarse desde ese momento (no hay histórico anterior).
-            </p>
-          </div>
+          <MetricsUnavailable problem={metrics.problem} />
         )}
       </section>
     </div>

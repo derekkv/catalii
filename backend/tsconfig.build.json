@@ -1,0 +1,19 @@
+{
+  // Compilación real para producción: emite JavaScript en dist/ y así el
+  // contenedor no necesita `tsx` (ni recompilar en cada arranque).
+  //
+  // Los imports del código ya llevan la extensión `.js` (`@/lib/mongo.js`), que
+  // es lo que Node ESM exige. Lo único que tsc no resuelve es el alias `@/*`:
+  // de eso se encarga `tsc-alias` después, reescribiéndolo a rutas relativas
+  // (ver el script `build` en package.json).
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "dist",
+    "rootDir": "src",
+    "declaration": false,
+    "sourceMap": true,
+    "removeComments": false
+  },
+  "include": ["src"]
+}

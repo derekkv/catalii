@@ -78,17 +78,13 @@ export type PublicBusiness = Pick<
 export const PUBLIC_BUSINESS_COLUMNS =
   "id, name, slug, tagline, description, category, whatsapp, phone, address, city, country, website, instagram, facebook, hours, theme, logo_url, logo_key, banner_key, is_public, show_products, created_at";
 
-export type MetricKind = "business_view" | "catalog_view" | "whatsapp_click" | "order_sent";
-
-export interface PageMetric {
-  id: string;
-  business_id: string;
-  catalog_id: string | null;
-  kind: MetricKind;
-  /** Fecha (UTC) en formato YYYY-MM-DD. */
-  day: string;
-  count: number;
-}
+/*
+ * Las métricas ya no están en Postgres. La migración `0010` borró la tabla de
+ * contadores, su enum y su RPC: las visitas y los clics son documentos en
+ * MongoDB que sirve el backend. Sus tipos viven en
+ * `src/lib/metrics/types.ts`, porque este archivo describe el esquema de
+ * Supabase y aquello ya no forma parte de él.
+ */
 
 export interface Product {
   id: string;

@@ -4,6 +4,7 @@ import { productRouter } from "@/routes/product.route.js";
 import { catalogRouter } from "@/routes/catalog.route.js";
 import { storefrontRouter } from "@/routes/storefront.route.js";
 import { orderRouter } from "@/routes/order.route.js";
+import { metricsRouter } from "@/routes/metrics.route.js";
 import { notFound, errorHandler } from "@/middlewares/error.js";
 import { securityMiddlewares, apiLimiter } from "@/middlewares/security.js";
 
@@ -29,6 +30,7 @@ export function createApp(): Express {
   app.use("/api/catalogs", catalogRouter);
   app.use("/api/storefront", storefrontRouter);
   app.use("/api/orders", orderRouter);
+  app.use("/api/metrics", metricsRouter);
 
   // 404 y manejador de errores: SIEMPRE al final.
   app.use(notFound);

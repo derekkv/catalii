@@ -1,0 +1,10 @@
+# Lo que no debe entrar en el contexto de build (ni, por error, en la imagen).
+node_modules
+dist
+.env
+.env.*
+!.env.example
+*.log
+*.tsbuildinfo
+.git
+README.md

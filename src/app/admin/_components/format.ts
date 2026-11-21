@@ -1,15 +1,16 @@
 import { formatMoney } from "@/lib/utils";
 import { getPlan } from "@/lib/plans";
-import type { MetricKind, OrderStatus, PlanTier } from "@/types/database";
+import type { MetricKind } from "@/lib/metrics/types";
+import type { OrderStatus, PlanTier } from "@/types/database";
 
 /**
  * Formato de los datos del panel de administración.
  *
- * Todas las fechas se muestran en **UTC**, no en la zona del navegador:
- * `page_metric.day` es una fecha UTC y mezclar husos haría que una visita del
- * día 1 apareciera en el 31. Para que no haya dos criterios en la misma
- * pantalla, también los `timestamptz` (altas, pedidos, cambios programados) se
- * imprimen en UTC, y cada pantalla lo dice.
+ * Todas las fechas se muestran en **UTC**, no en la zona del navegador: el
+ * backend de métricas agrupa los eventos por día UTC y mezclar husos haría que
+ * una visita del día 1 apareciera en el 31. Para que no haya dos criterios en
+ * la misma pantalla, también los `timestamptz` (altas, pedidos, cambios
+ * programados) se imprimen en UTC, y cada pantalla lo dice.
  */
 
 const DATE = new Intl.DateTimeFormat("es-EC", {
@@ -50,7 +51,7 @@ export function formatDateTime(iso: string | null | undefined): string {
   return DATE_TIME.format(d);
 }
 
-/** `2026-01-12` (fecha UTC de `page_metric.day`) → «12 ene». */
+/** `2026-01-12` (día UTC de la serie de métricas) → «12 ene». */
 export function formatDayShort(day: string): string {
   // `T00:00:00Z` explícito: `new Date("2026-01-12")` ya se interpreta como
   // UTC, pero dejarlo escrito evita depender de ese detalle.
@@ -152,8 +153,20 @@ export const METRIC_KIND_LABEL: Record<MetricKind, string> = {
   business_view: "Visitas a la página del negocio",
   catalog_view: "Visitas a catálogos",
   whatsapp_click: "Clics en WhatsApp",
-  order_sent: "Pedidos enviados",
 };
+
+/** Nombre del país a partir del ISO de dos letras que da `CF-IPCountry`. */
+const REGION = new Intl.DisplayNames(["es"], { type: "region" });
+
+export function formatCountry(code: string | null): string {
+  if (!code) return "Sin país";
+  try {
+    return REGION.of(code) ?? code;
+  } catch {
+    // Código que no es una región válida (p. ej. `ZZ`): se muestra tal cual.
+    return code;
+  }
+}
 
 /**
  * Texto de una columna que puede no existir todavía.

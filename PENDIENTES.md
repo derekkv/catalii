@@ -420,3 +420,38 @@ desactivado porque apunta a tu cuenta real de cobros.
   instead». Renombrar afecta al despliegue en Workers (el README explica que se
   usa `middleware.ts` justamente porque OpenNext no soportaba `proxy.ts` en
   Node), así que hay que comprobar si ya lo soporta antes de tocarlo.
+
+## 13. Métricas en MongoDB (front ya migrado)
+
+El front ya no lee ni escribe métricas en Postgres: el beacon reenvía el evento
+al backend y el panel lee `/api/metrics/*` con el token del administrador
+(`src/lib/metrics/api.ts`, contrato en `docs/METRICAS-API.md`). Mientras lo de
+abajo no esté hecho, el panel muestra el aviso «Métricas no disponibles» con el
+motivo —nunca ceros— y el resto de las pantallas sigue funcionando con Postgres.
+
+- [ ] **#56 · TÉC · S — Aplicar la migración `0010`.**
+  `supabase/migrations/0010_drop_postgres_metrics.sql` borra la tabla de
+  contadores, su enum y su RPC. **Es destructiva:** si ya se registraron
+  visitas y te importan, exporta antes el CSV que indica la cabecera del
+  archivo. Ya no hay nada en `src/` que use esa tabla, así que aplicarla no
+  rompe el front; dejarla sin aplicar tampoco, solo deja basura en la base.
+  Va junto con la #9 (las demás migraciones pendientes).
+- [ ] **#57 · TÉC · M — Desplegar el backend de métricas y crear los índices.**
+  Hace falta el servicio Node con Mongo arriba y los tres índices del contrato,
+  incluido el **TTL sobre `at`**, que es lo que borra los eventos viejos sin
+  cron. Hasta entonces no hay métricas en el panel. Depende de la #28
+  (desplegar el backend) y, por tanto, de la decisión #25.
+- [ ] **#58 · TÉC · S — Configurar la URL del backend en producción.** El Worker
+  la lee de `METRICS_API_URL` y, si no está, de `BACKEND_URL`; hoy ninguna de
+  las dos está en el `vars` de `wrangler.jsonc`, así que en producción las
+  métricas salen como «no disponibles». En producción el valor es
+  `https://back.catalii.com`. **Decide cuál pones:** `BACKEND_URL` activa de
+  golpe también pedidos, productos y catálogos contra el backend (#25, en
+  pausa); `METRICS_API_URL` activa solo las métricas. Y el backend necesita su
+  propia `ADMIN_EMAILS` con tu correo, porque la lista del front no la ve.
+- [ ] **#59 · VERIF · S — Comprobar el camino completo del evento.** Con el
+  backend arriba: abrir un catálogo público, ver el documento en la colección
+  `events` con `country`, `referrerHost` y `device`, y luego verlo sumado en
+  `/admin/metricas` (incluido el desglose por país, que es nuevo). Ninguna de
+  estas dos cosas se ha podido probar todavía: hasta ahora solo se ha
+  verificado que el beacon devuelve 204 con el backend caído.

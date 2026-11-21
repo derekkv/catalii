@@ -1,4 +1,4 @@
-import type { MetricKind } from "@/types/database";
+import type { MetricKind } from "./types";
 
 /**
  * Envío de métricas desde el navegador.
@@ -13,16 +13,16 @@ import type { MetricKind } from "@/types/database";
  *    árbol de React.
  *  · **Nunca lanza.** Todo va dentro de `try`, y el `fetch` de reserva se
  *    ignora con `.catch()`. Si la métrica falla, el comprador no se entera.
- *  · **No cuenta en desarrollo.** `.env.local` suele apuntar a la misma
- *    Supabase que producción: sin este corte, cada recarga mientras se trabaja
- *    sumaría visitas falsas al panel del mayorista. `NODE_ENV` se incrusta al
+ *  · **No cuenta en desarrollo.** `.env.local` suele apuntar al mismo backend
+ *    que producción: sin este corte, cada recarga mientras se trabaja sumaría
+ *    visitas falsas al panel del mayorista. `NODE_ENV` se incrusta al
  *    compilar, así que en el bundle de producción esta rama desaparece.
  *
- * `order_sent` no se manda desde aquí: ya queda registrado como fila en
- * `order`, y contarlo otra vez daría dos cifras que se contradicen en cuanto
- * un pedido falle a medias.
+ * `order_sent` no se manda desde aquí (ni existe como `MetricKind`): ya queda
+ * registrado como fila en `order`, y contarlo otra vez daría dos cifras que se
+ * contradicen en cuanto un pedido falle a medias.
  */
-export type TrackableMetric = Exclude<MetricKind, "order_sent">;
+export type TrackableMetric = MetricKind;
 
 const ENDPOINT = "/api/metric";
 
@@ -41,6 +41,10 @@ export function sendMetric(kind: TrackableMetric, target: MetricTarget): void {
     kind,
     catalogSlug: target.catalogSlug ?? null,
     businessSlug: target.businessSlug ?? null,
+    // De dónde llegó la visita. El servidor lo reduce al host (nunca guarda la
+    // URL completa) y descarta la navegación dentro del propio sitio. Va en el
+    // cuerpo porque el `Referer` del beacon es esta misma página.
+    referrer: typeof document === "undefined" ? null : document.referrer || null,
   });
 
   try {

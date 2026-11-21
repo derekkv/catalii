@@ -1,10 +1,17 @@
 import "server-only";
 import type { PostgrestError, User } from "@supabase/supabase-js";
 import { createServiceClient } from "@/lib/supabase/server-internal";
+import { fetchBusinessMetrics, fetchMetricsSummary, type MetricsResult } from "@/lib/metrics/api";
+import {
+  ZERO_TOTALS,
+  type MetricCountryTotal,
+  type MetricCatalogTotals,
+  type MetricSeriesDay,
+  type MetricTotals,
+} from "@/lib/metrics/types";
 import type {
   Business,
   Catalog,
-  MetricKind,
   Order,
   OrderStatus,
   PaddleSubscription,
@@ -15,8 +22,8 @@ import type {
 /**
  * Consultas del panel de administración (/admin).
  *
- * ⚠ TODO lo de este archivo consulta con el cliente de SERVICE ROLE, que salta
- * RLS. Es `server-only` y **asume que quien llama ya pasó por
+ * ⚠ TODO lo que este archivo consulta en Postgres usa el cliente de SERVICE
+ * ROLE, que salta RLS. Es `server-only` y **asume que quien llama ya pasó por
  * `requireAdmin()`**: no hay ninguna otra comprobación de permisos aquí
  * dentro. Cada página de /admin llama a `requireAdmin()` como primera
  * instrucción; si añades una página nueva, hazlo también.
@@ -25,6 +32,14 @@ import type {
  * negocio, suscripción, pedido y métricas. Los identificadores de Paddle
  * (`sub_…`, `ctm_…`, `pri_…`) son referencias, no credenciales.
  *
+ * ── Dos orígenes ───────────────────────────────────────────────────────────
+ * Negocios, catálogos, productos, pedidos y suscripciones salen de Postgres
+ * (Supabase). Las visitas y los clics salen de MongoDB a través del backend
+ * (`src/lib/metrics/api.ts`), porque la migración `0010` los sacó de Postgres.
+ * Son independientes: si el backend de métricas no responde, el resto de la
+ * pantalla sigue siendo correcto y las métricas se marcan como no disponibles
+ * con el motivo, nunca como ceros.
+ *
  * ── Cómo se evita el N+1 ───────────────────────────────────────────────────
  * Ninguna función consulta "por negocio". Se hace una lectura por TABLA y los
  * desgloses se agrupan en memoria con `Map`. PostgREST no sabe agrupar, así
@@ -32,6 +47,10 @@ import type {
  * vista SQL con `group by`. Se eligió agrupar en memoria porque el volumen hoy
  * es pequeño, las filas que se traen son estrechas (`business_id` y poco más)
  * y así el panel no depende de una migración más por aplicar.
+ *
+ * Las métricas del listado de negocios son **una sola** llamada al backend:
+ * `/api/metrics/summary` ya trae `byBusiness` agrupado por Mongo, así que
+ * tampoco hay N+1 ahí.
  *
  * Los TOTALES de plataforma sí se piden al servidor con `count: "exact"` y
  * `head: true` (una consulta, cero filas transferidas), así que son exactos
@@ -103,9 +122,13 @@ export interface BusinessStats {
   pendingOrders: number;
   /** Valor de los pedidos no cancelados, por moneda. */
   orderValue: MoneyByCurrency;
-  /** `business_view` + `catalog_view`, histórico. */
-  views: number;
-  whatsappClicks: number;
+  /**
+   * `business_view` + `catalog_view` de los últimos `METRIC_DAYS` días.
+   * `null` si el backend de métricas no respondió: no es cero, es «no se sabe».
+   */
+  views: number | null;
+  /** Clics en WhatsApp en la misma ventana. `null` = no se pudo leer. */
+  whatsappClicks: number | null;
   subscription: PaddleSubscription | null;
 }
 
@@ -129,18 +152,27 @@ export interface MetricDay {
   businessViews: number;
   catalogViews: number;
   whatsappClicks: number;
-  ordersSent: number;
   /** `businessViews + catalogViews`. */
   views: number;
 }
 
-export interface MetricsSummary {
-  /** `false` si `page_metric` todavía no existe (migración 0009 sin aplicar). */
+/**
+ * Métricas listas para pintar.
+ *
+ * `available: false` significa que el backend no dio una respuesta usable, y
+ * entonces `daily` está vacío y `byKind` a cero **solo** porque no hay nada
+ * que pintar: la interfaz tiene que mirar `available` y mostrar `problem`, no
+ * los ceros.
+ */
+export interface PanelMetrics {
   available: boolean;
-  byKind: Record<MetricKind, number>;
-  /** Serie completa de `METRIC_DAYS` días, con los días sin datos a cero. */
+  /** Motivo en español cuando `available` es false; `null` si todo fue bien. */
+  problem: string | null;
+  /** Totales de la ventana, tal como los agrega Mongo. */
+  byKind: MetricTotals;
+  /** Serie de `METRIC_DAYS` días, con los días sin eventos a cero. Vacía si no hay datos. */
   daily: MetricDay[];
-  /** Primer y último día (UTC) de la serie. */
+  /** Primer y último día (UTC) de la ventana. */
   from: string;
   to: string;
 }
@@ -179,7 +211,7 @@ export interface AdminOverview {
     /** Valor de los pedidos no cancelados leídos (ver `notes`), por moneda. */
     readValue: MoneyByCurrency;
   };
-  metrics: MetricsSummary;
+  metrics: PanelMetrics;
   /** Inicio del mes en curso, en UTC (ISO). */
   monthStart: string;
   notes: string[];
@@ -197,7 +229,9 @@ export interface BusinessDetail {
     recent: Order[];
   };
   subscriptions: SubscriptionRow[];
-  metrics: MetricsSummary;
+  metrics: PanelMetrics;
+  /** Desglose por catálogo de la ventana, tal como lo da el backend. */
+  metricsByCatalog: MetricCatalogTotals[];
   notes: string[];
 }
 
@@ -205,7 +239,7 @@ export interface BusinessDetail {
 // Utilidades
 // ───────────────────────────────────────────────────────────────────────────
 
-/** Fecha en UTC con formato `YYYY-MM-DD`, igual que `page_metric.day`. */
+/** Fecha en UTC con formato `YYYY-MM-DD`, igual que los días de la serie. */
 export function utcDay(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
@@ -303,58 +337,48 @@ function isLiveStatus(status: string): boolean {
   return status === "active" || status === "trialing" || status === "past_due" || status === "paused";
 }
 
-const EMPTY_KIND_TOTALS: Record<MetricKind, number> = {
-  business_view: 0,
-  catalog_view: 0,
-  whatsapp_click: 0,
-  order_sent: 0,
-};
-
-/** Serie vacía, para cuando `page_metric` no existe o no hay datos. */
-function emptyMetrics(available: boolean): MetricsSummary {
+/**
+ * Convierte la respuesta del backend en lo que pinta el panel.
+ *
+ * Sirve para el resumen de plataforma y para el de un negocio: las dos
+ * respuestas traen `totals` y `series` con la misma forma.
+ *
+ * Cuando la lectura falló se devuelve `available: false` con el motivo y la
+ * serie **vacía**, no una serie de ceros: así es imposible pintar por
+ * descuido un gráfico plano que parezca «no hubo visitas».
+ */
+function toPanelMetrics(
+  result: MetricsResult<{ totals: MetricTotals; series: MetricSeriesDay[] }>,
+  notes: string[],
+): PanelMetrics {
   const days = lastUtcDays(METRIC_DAYS);
-  return {
-    available,
-    byKind: { ...EMPTY_KIND_TOTALS },
-    daily: days.map((day) => ({
-      day,
-      businessViews: 0,
-      catalogViews: 0,
-      whatsappClicks: 0,
-      ordersSent: 0,
-      views: 0,
-    })),
-    from: days[0],
-    to: days[days.length - 1],
-  };
-}
+  const from = days[0];
+  const to = days[days.length - 1];
 
-interface MetricRow {
-  business_id: string;
-  kind: MetricKind;
-  day: string;
-  count: number;
-}
+  if (!result.ok) {
+    notes.push(result.message);
+    return { available: false, problem: result.message, byKind: { ...ZERO_TOTALS }, daily: [], from, to };
+  }
 
-/** Agrupa filas de `page_metric` en totales por tipo y serie por día. */
-function buildMetrics(rows: MetricRow[]): MetricsSummary {
-  const summary = emptyMetrics(true);
-  const index = new Map(summary.daily.map((d) => [d.day, d]));
+  const daily: MetricDay[] = days.map((day) => ({
+    day,
+    businessViews: 0,
+    catalogViews: 0,
+    whatsappClicks: 0,
+    views: 0,
+  }));
+  const index = new Map(daily.map((d) => [d.day, d]));
 
-  for (const row of rows) {
-    const count = row.count ?? 0;
-    summary.byKind[row.kind] = (summary.byKind[row.kind] ?? 0) + count;
-
+  for (const row of result.data.series) {
     const day = index.get(row.day);
     if (!day) continue; // fuera de la ventana de METRIC_DAYS
-    if (row.kind === "business_view") day.businessViews += count;
-    else if (row.kind === "catalog_view") day.catalogViews += count;
-    else if (row.kind === "whatsapp_click") day.whatsappClicks += count;
-    else if (row.kind === "order_sent") day.ordersSent += count;
+    day.businessViews += row.business_view;
+    day.catalogViews += row.catalog_view;
+    day.whatsappClicks += row.whatsapp_click;
     day.views = day.businessViews + day.catalogViews;
   }
 
-  return summary;
+  return { available: true, problem: null, byKind: result.data.totals, daily, from, to };
 }
 
 /**
@@ -422,7 +446,6 @@ export async function loadOverview(): Promise<AdminOverview> {
   const monthStart = utcMonthStart();
   const since7 = utcDaysAgo(7);
   const since30 = utcDaysAgo(30);
-  const metricsFrom = lastUtcDays(METRIC_DAYS)[0];
 
   const [
     businessesRes,
@@ -455,11 +478,9 @@ export async function loadOverview(): Promise<AdminOverview> {
       .order("created_at", { ascending: false })
       .limit(ROW_LIMIT),
     db.from("paddle_subscription").select("*", { count: "exact" }).limit(ROW_LIMIT),
-    db
-      .from("page_metric")
-      .select("business_id, kind, day, count")
-      .gte("day", metricsFrom)
-      .limit(ROW_LIMIT),
+    // Mongo vía backend. No es una consulta a Postgres, pero va en el mismo
+    // `Promise.all` para que no sume latencia a la página.
+    fetchMetricsSummary(METRIC_DAYS),
   ]);
 
   const businesses = take(businessesRes, "Negocios", notes) as AdminBusiness[];
@@ -469,21 +490,9 @@ export async function loadOverview(): Promise<AdminOverview> {
   >)[];
   const subscriptions = take(subscriptionsRes, "Suscripciones", notes) as PaddleSubscription[];
 
-  // Métricas: si la 0009 no está aplicada, la tabla no existe. Se degrada a
-  // «sin datos» con el aviso, en vez de tumbar la página entera.
-  const metricRows = metricsRes.error ? [] : ((metricsRes.data as MetricRow[] | null) ?? []);
-  let metrics: MetricsSummary;
-  if (metricsRes.error) {
-    notes.push(describeError("Métricas (page_metric)", metricsRes.error));
-    metrics = emptyMetrics(false);
-  } else {
-    metrics = buildMetrics(metricRows);
-    if (metricRows.length >= ROW_LIMIT) {
-      notes.push(
-        `Métricas: se leyeron las primeras ${ROW_LIMIT.toLocaleString("es-EC")} filas de los últimos ${METRIC_DAYS} días; la serie puede estar incompleta.`,
-      );
-    }
-  }
+  // Si el backend de métricas no responde, se avisa y se marca como no
+  // disponible; lo de Postgres de esta misma pantalla sigue siendo correcto.
+  const metrics = toPanelMetrics(metricsRes, notes);
 
   // ── Negocios: altas y reparto por plan ──
   const plans: Record<PlanTier, number> = { free: 0, starter: 0, pro: 0, business: 0 };
@@ -595,9 +604,10 @@ export async function loadOverview(): Promise<AdminOverview> {
 /**
  * Un negocio por fila con todas sus cifras.
  *
- * Seis lecturas en total (negocios, catálogos, productos, pedidos, métricas,
- * suscripciones) más la de cuentas de Auth, independientemente de cuántos
- * negocios haya. El cruce se hace con `Map` en memoria.
+ * Cinco lecturas de Postgres (negocios, catálogos, productos, pedidos,
+ * suscripciones), la de cuentas de Auth y **una** llamada al backend de
+ * métricas, independientemente de cuántos negocios haya. El cruce se hace con
+ * `Map` en memoria.
  */
 export async function loadBusinessList(): Promise<{ rows: BusinessStats[]; notes: string[] }> {
   const db = createServiceClient();
@@ -609,7 +619,9 @@ export async function loadBusinessList(): Promise<{ rows: BusinessStats[]; notes
       db.from("catalog").select("business_id, is_public").limit(ROW_LIMIT),
       db.from("product").select("business_id").limit(ROW_LIMIT),
       db.from("order").select("business_id, status, total_cents, currency").limit(ROW_LIMIT),
-      db.from("page_metric").select("business_id, kind, count").limit(ROW_LIMIT),
+      // Una sola llamada para todos los negocios: `byBusiness` ya viene
+      // agrupado por Mongo, así que aquí no hay una petición por fila.
+      fetchMetricsSummary(METRIC_DAYS),
       db.from("paddle_subscription").select("*").limit(ROW_LIMIT),
       loadOwnerAccounts(notes),
     ]);
@@ -626,12 +638,7 @@ export async function loadBusinessList(): Promise<{ rows: BusinessStats[]; notes
   >[];
   const subs = take(subsRes, "Suscripciones", notes) as PaddleSubscription[];
 
-  let metrics: { business_id: string; kind: MetricKind; count: number }[] = [];
-  if (metricsRes.error) {
-    notes.push(describeError("Métricas (page_metric)", metricsRes.error));
-  } else {
-    metrics = take(metricsRes, "Métricas", notes) as typeof metrics;
-  }
+  if (!metricsRes.ok) notes.push(metricsRes.message);
 
   // ── Índices por negocio ──
   const catalogCount = new Map<string, number>();
@@ -662,13 +669,15 @@ export async function loadBusinessList(): Promise<{ rows: BusinessStats[]; notes
     }
   }
 
+  // Métricas de la ventana, por negocio. Si el backend no respondió, las dos
+  // cifras quedan en `null` y la tabla muestra «—»: cero significaría que no
+  // hubo visitas, que es otra cosa.
   const views = new Map<string, number>();
   const clicks = new Map<string, number>();
-  for (const m of metrics) {
-    if (m.kind === "business_view" || m.kind === "catalog_view") {
-      views.set(m.business_id, (views.get(m.business_id) ?? 0) + (m.count ?? 0));
-    } else if (m.kind === "whatsapp_click") {
-      clicks.set(m.business_id, (clicks.get(m.business_id) ?? 0) + (m.count ?? 0));
+  if (metricsRes.ok) {
+    for (const row of metricsRes.data.byBusiness) {
+      views.set(row.businessId, row.business_view + row.catalog_view);
+      clicks.set(row.businessId, row.whatsapp_click);
     }
   }
 
@@ -700,8 +709,8 @@ export async function loadBusinessList(): Promise<{ rows: BusinessStats[]; notes
       orders: orderCount.get(business.id) ?? 0,
       pendingOrders: pendingCount.get(business.id) ?? 0,
       orderValue: orderValue.get(business.id) ?? {},
-      views: views.get(business.id) ?? 0,
-      whatsappClicks: clicks.get(business.id) ?? 0,
+      views: metricsRes.ok ? (views.get(business.id) ?? 0) : null,
+      whatsappClicks: metricsRes.ok ? (clicks.get(business.id) ?? 0) : null,
       subscription: subByBusiness.get(business.id) ?? null,
     };
   });
@@ -786,25 +795,30 @@ export async function loadRecentOrders(
 /** Totales de un negocio en la ventana de métricas. */
 export interface BusinessMetricRow {
   businessId: string;
+  /** Nombre del slug que guardó el evento; `null` si el negocio ya no existe. */
+  businessSlug: string | null;
   business: AdminBusiness | null;
   views: number;
   clicks: number;
-  ordersSent: number;
 }
 
 export interface MetricsPage {
-  metrics: MetricsSummary;
+  metrics: PanelMetrics;
   /** Negocios con actividad en la ventana, de más visitas a menos. */
   byBusiness: BusinessMetricRow[];
+  /** Reparto por país (cabecera `CF-IPCountry`), de más eventos a menos. */
+  byCountry: MetricCountryTotal[];
   from: string;
   to: string;
   notes: string[];
 }
 
 /**
- * Visitas y clics de los últimos `METRIC_DAYS` días, en total y por negocio.
+ * Visitas y clics de los últimos `METRIC_DAYS` días, en total, por negocio y
+ * por país.
  *
- * Dos lecturas: `page_metric` filtrada por fecha y `business` para los
+ * Dos lecturas: `/api/metrics/summary` del backend (que ya devuelve los
+ * desgloses agregados por Mongo) y la tabla `business` de Postgres para los
  * nombres. El cruce es un `Map`, no una consulta por negocio.
  */
 export async function loadMetrics(): Promise<MetricsPage> {
@@ -815,48 +829,30 @@ export async function loadMetrics(): Promise<MetricsPage> {
   const to = days[days.length - 1];
 
   const [metricsRes, businessesRes] = await Promise.all([
-    db
-      .from("page_metric")
-      .select("business_id, kind, day, count")
-      .gte("day", from)
-      .limit(ROW_LIMIT),
+    fetchMetricsSummary(METRIC_DAYS),
     db.from("business").select("*").limit(ROW_LIMIT),
   ]);
 
   const businesses = take(businessesRes, "Negocios", notes) as AdminBusiness[];
   const businessById = new Map(businesses.map((b) => [b.id, b]));
 
-  if (metricsRes.error) {
-    notes.push(describeError("Métricas (page_metric)", metricsRes.error));
-    return { metrics: emptyMetrics(false), byBusiness: [], from, to, notes };
+  const metrics = toPanelMetrics(metricsRes, notes);
+  if (!metricsRes.ok) {
+    return { metrics, byBusiness: [], byCountry: [], from, to, notes };
   }
 
-  const rows = take(metricsRes, "Métricas", notes) as MetricRow[];
-  const metrics = buildMetrics(rows);
+  const byBusiness: BusinessMetricRow[] = metricsRes.data.byBusiness
+    .map((row) => ({
+      businessId: row.businessId,
+      businessSlug: row.businessSlug,
+      business: businessById.get(row.businessId) ?? null,
+      views: row.business_view + row.catalog_view,
+      clicks: row.whatsapp_click,
+    }))
+    .filter((row) => row.views > 0 || row.clicks > 0)
+    .sort((a, b) => b.views - a.views || b.clicks - a.clicks);
 
-  const totals = new Map<string, BusinessMetricRow>();
-  for (const row of rows) {
-    const entry =
-      totals.get(row.business_id) ??
-      ({
-        businessId: row.business_id,
-        business: businessById.get(row.business_id) ?? null,
-        views: 0,
-        clicks: 0,
-        ordersSent: 0,
-      } satisfies BusinessMetricRow);
-    const count = row.count ?? 0;
-    if (row.kind === "business_view" || row.kind === "catalog_view") entry.views += count;
-    else if (row.kind === "whatsapp_click") entry.clicks += count;
-    else if (row.kind === "order_sent") entry.ordersSent += count;
-    totals.set(row.business_id, entry);
-  }
-
-  const byBusiness = [...totals.values()].sort(
-    (a, b) => b.views - a.views || b.clicks - a.clicks,
-  );
-
-  return { metrics, byBusiness, from, to, notes };
+  return { metrics, byBusiness, byCountry: metricsRes.data.byCountry, from, to, notes };
 }
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -883,8 +879,6 @@ export async function loadBusinessDetail(id: string): Promise<BusinessDetail | n
   }
   const business = businessRes.data as AdminBusiness | null;
   if (!business) return null;
-
-  const metricsFrom = lastUtcDays(METRIC_DAYS)[0];
 
   const [
     catalogsRes,
@@ -935,12 +929,7 @@ export async function loadBusinessDetail(id: string): Promise<BusinessDetail | n
       .eq("business_id", id)
       .order("updated_at", { ascending: false }),
     db.from("paddle_customer").select("customer_id, email").eq("business_id", id),
-    db
-      .from("page_metric")
-      .select("business_id, kind, day, count")
-      .eq("business_id", id)
-      .gte("day", metricsFrom)
-      .limit(ROW_LIMIT),
+    fetchBusinessMetrics(id, METRIC_DAYS),
     loadOwnerAccounts(notes),
   ]);
 
@@ -952,13 +941,12 @@ export async function loadBusinessDetail(id: string): Promise<BusinessDetail | n
   }[];
   const emailByCustomer = new Map(customers.map((c) => [c.customer_id, c.email]));
 
-  let metrics: MetricsSummary;
-  if (metricsRes.error) {
-    notes.push(describeError("Métricas (page_metric)", metricsRes.error));
-    metrics = emptyMetrics(false);
-  } else {
-    metrics = buildMetrics((metricsRes.data as MetricRow[] | null) ?? []);
-  }
+  const metrics = toPanelMetrics(metricsRes, notes);
+  const metricsByCatalog = metricsRes.ok
+    ? metricsRes.data.byCatalog
+        .filter((c) => c.business_view + c.catalog_view + c.whatsapp_click > 0)
+        .sort((a, b) => b.catalog_view - a.catalog_view || b.whatsapp_click - a.whatsapp_click)
+    : [];
 
   return {
     business,
@@ -981,6 +969,7 @@ export async function loadBusinessDetail(id: string): Promise<BusinessDetail | n
       customerEmail: emailByCustomer.get(subscription.customer_id) ?? null,
     })),
     metrics,
+    metricsByCatalog,
     notes,
   };
 }

@@ -165,6 +165,33 @@ export function EmptyState({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * Aviso de que las visitas y los clics no se pudieron leer.
+ *
+ * Las métricas viven en MongoDB, detrás del backend; el resto del panel sigue
+ * en Postgres y funciona igual. Aquí se dice el motivo y **no se muestra
+ * ninguna cifra**: un cero se leería como «no hubo visitas», que es otra cosa.
+ * Lleva icono y texto, no solo el color del borde.
+ */
+export function MetricsUnavailable({ problem }: { problem?: string | null }) {
+  return (
+    <div className="border-l-2 border-warning bg-muted/60 px-4 py-3">
+      <p className="t-label flex items-center gap-2 text-warning">
+        <AlertTriangle className="size-3.5 shrink-0" aria-hidden="true" />
+        Métricas no disponibles
+      </p>
+      <p className="t-small mt-2 text-muted-foreground">
+        {problem ??
+          "El backend de métricas no respondió, así que no hay visitas ni clics que mostrar."}
+      </p>
+      <p className="t-small mt-2 text-muted-foreground">
+        No se muestran ceros a propósito: cero querría decir «nadie visitó», y lo que pasa es que
+        no se pudo preguntar. Las demás cifras de esta pantalla salen de Postgres y son correctas.
+      </p>
+    </div>
+  );
+}
+
 /** Par rótulo/valor para las fichas de detalle. */
 export function Field({
   label,

@@ -4,6 +4,8 @@ import type { Business } from "@/types/database.js";
 /** Datos de sesión que el middleware de auth cuelga de la petición. */
 export interface AuthContext {
   userId: string;
+  /** Correo verificado por Supabase Auth. Es lo que compara `requireAdmin`. */
+  email: string | null;
   token: string;
   /** Cliente Supabase que actúa como este usuario (RLS aplicada). */
   supabase: SupabaseClient;

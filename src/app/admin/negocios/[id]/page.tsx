@@ -13,6 +13,7 @@ import {
   DataTable,
   EmptyState,
   Field,
+  MetricsUnavailable,
   SectionHeading,
   SourceNote,
   Td,
@@ -20,6 +21,7 @@ import {
   Tr,
 } from "../../_components/ui";
 import { MetricChart } from "../../_components/metric-chart";
+import { METRIC_KINDS } from "@/lib/metrics/types";
 import {
   formatCount,
   formatDate,
@@ -56,7 +58,8 @@ export default async function AdminBusinessDetailPage({
   const detail = await loadBusinessDetail(id);
   if (!detail) notFound();
 
-  const { business: b, owner, catalogs, products, orders, subscriptions, metrics } = detail;
+  const { business: b, owner, catalogs, products, orders, subscriptions, metrics, metricsByCatalog } =
+    detail;
   const published = catalogs.filter((c) => c.is_public).length;
 
   return (
@@ -113,12 +116,12 @@ export default async function AdminBusinessDetailPage({
           },
           {
             label: "Visitas (30 días)",
-            value: formatCount(
-              metrics.byKind.business_view + metrics.byKind.catalog_view,
-            ),
+            value: metrics.available
+              ? formatCount(metrics.byKind.business_view + metrics.byKind.catalog_view)
+              : "—",
             hint: metrics.available
               ? `${formatCount(metrics.byKind.whatsapp_click)} clics en WhatsApp`
-              : "Sin datos: falta la migración 0009",
+              : "No se pudieron leer las métricas",
           },
         ]}
       />
@@ -390,15 +393,8 @@ export default async function AdminBusinessDetailPage({
         />
         {metrics.available ? (
           <>
-            <dl className="grid-ruled mb-5 grid grid-cols-2 lg:grid-cols-4">
-              {(
-                [
-                  "business_view",
-                  "catalog_view",
-                  "whatsapp_click",
-                  "order_sent",
-                ] as const
-              ).map((kind) => (
+            <dl className="grid-ruled mb-5 grid grid-cols-2 lg:grid-cols-3">
+              {METRIC_KINDS.map((kind) => (
                 <div key={kind} className="p-4">
                   <dt className="t-label text-muted-foreground">{METRIC_KIND_LABEL[kind]}</dt>
                   <dd className="t-num mt-2 text-xl">{formatCount(metrics.byKind[kind])}</dd>
@@ -406,21 +402,46 @@ export default async function AdminBusinessDetailPage({
               ))}
             </dl>
             <MetricChart days={metrics.daily} />
+
+            {metricsByCatalog.length > 0 && (
+              <div className="mt-6">
+                <DataTable
+                  caption={`Visitas y clics por catálogo en los últimos ${METRIC_DAYS} días. Dato real: el backend agrupa los eventos de este negocio por catálogo.`}
+                  minWidth="32rem"
+                >
+                  <thead>
+                    <tr>
+                      <Th>Catálogo</Th>
+                      <Th numeric>Visitas</Th>
+                      <Th numeric>Clics WhatsApp</Th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {metricsByCatalog.map((row) => (
+                      <Tr key={row.catalogId ?? row.catalogSlug ?? "sin-catalogo"}>
+                        <Th scope="row" className="normal-case tracking-normal">
+                          <span className="text-sm font-normal text-foreground">
+                            {row.catalogSlug ? `/c/${row.catalogSlug}` : "Sin catálogo"}
+                          </span>
+                        </Th>
+                        <Td numeric>{formatCount(row.catalog_view + row.business_view)}</Td>
+                        <Td numeric>{formatCount(row.whatsapp_click)}</Td>
+                      </Tr>
+                    ))}
+                  </tbody>
+                </DataTable>
+              </div>
+            )}
+
             <SourceNote className="mt-4">
-              Contadores por día de <code className="t-num">page_metric</code>, sin visitantes
-              únicos ni origen del tráfico. Los pedidos enviados se cuentan también en la tabla{" "}
-              <code className="t-num">order</code>, así que las dos cifras pueden no cuadrar si
-              alguien repite el envío.
+              Eventos de MongoDB servidos por el backend, sin visitantes únicos: no se guarda nada
+              que identifique a quien visita, así que cinco visitas pueden ser cinco personas o una
+              misma recargando. Los pedidos enviados no se cuentan aquí: eso sale de la tabla{" "}
+              <code className="t-num">order</code> de Postgres, que es la cifra de arriba.
             </SourceNote>
           </>
         ) : (
-          <div className="border-l-2 border-warning bg-muted/60 px-4 py-3">
-            <p className="t-label text-warning">Métricas todavía no disponibles</p>
-            <p className="t-small mt-2 text-muted-foreground">
-              Falta aplicar{" "}
-              <code className="t-num">supabase/migrations/0009_business_pages_and_metrics.sql</code>.
-            </p>
-          </div>
+          <MetricsUnavailable problem={metrics.problem} />
         )}
       </section>
     </div>

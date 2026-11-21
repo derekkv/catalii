@@ -6,7 +6,14 @@ import type { RequestHandler } from "express";
 import { env } from "@/config/env.js";
 
 /** CORS: solo los orígenes de CORS_ORIGINS. Permite peticiones sin Origin
- *  (curl, health checks) para no romper monitoreo. */
+ *  (curl, health checks) para no romper monitoreo.
+ *
+ *  Nota sobre las métricas: el navegador NUNCA llama a este backend. El beacon
+ *  va a `/api/metric` del Worker (mismo origen) y el Worker reenvía al backend
+ *  desde el servidor, sin cabecera `Origin`. Lo mismo hacen las lecturas del
+ *  panel (`backendFetch` corre en el servidor). Por eso `/api/metrics/*` NO
+ *  necesita que se abra CORS, y `CORS_ORIGINS` en producción puede quedarse con
+ *  los dominios del front como simple defensa en profundidad. */
 const corsOptions: CorsOptions = {
   origin(origin, cb) {
     if (!origin || env.corsOrigins.includes(origin)) return cb(null, true);
@@ -41,4 +48,23 @@ export const placeOrderLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: { code: "rate_limited", message: "Demasiados pedidos seguidos. Intenta más tarde." } },
+});
+
+/**
+ * Límite de los eventos de métricas. Más estricto que `apiLimiter` en ritmo
+ * (60 eventos cada 5 minutos por IP): un comprador real genera unos pocos por
+ * visita, y quien pase de ahí es un bucle o un bot.
+ *
+ * Al pasarse del límite responde **204, no 429**: es un beacon, nadie lee la
+ * respuesta, y así el endpoint se comporta siempre igual (el evento sobrante se
+ * descarta sin escribir nada).
+ */
+export const metricEventLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (_req, res) => {
+    res.set("Cache-Control", "no-store").status(204).end();
+  },
 });

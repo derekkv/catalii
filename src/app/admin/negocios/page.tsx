@@ -34,7 +34,7 @@ const SORTS = {
   nombre: "Nombre (A-Z)",
   pedidos: "Más pedidos",
   productos: "Más productos",
-  visitas: "Más visitas",
+  visitas: "Más visitas (30 días)",
   plan: "Plan (de pago primero)",
 } as const;
 
@@ -53,7 +53,9 @@ function comparator(sort: SortKey): (a: BusinessStats, b: BusinessStats) => numb
     case "productos":
       return (a, b) => b.products - a.products;
     case "visitas":
-      return (a, b) => b.views - a.views;
+      // `null` = métricas no disponibles; esas filas se van al final en vez de
+      // competir como si tuvieran cero visitas.
+      return (a, b) => (b.views ?? -1) - (a.views ?? -1);
     case "plan":
       return (a, b) =>
         PLAN_WEIGHT[b.business.plan] - PLAN_WEIGHT[a.business.plan] ||
@@ -157,7 +159,7 @@ export default async function AdminBusinessesPage({
         </EmptyState>
       ) : (
         <DataTable
-          caption="Negocios de la plataforma. Cifras reales: catálogos, productos y pedidos se cuentan sobre sus tablas; las visitas son la suma histórica de los contadores de page_metric."
+          caption="Negocios de la plataforma. Cifras reales: catálogos, productos y pedidos se cuentan sobre sus tablas de Postgres; las visitas y los clics son los eventos de los últimos 30 días que devuelve el backend de métricas (MongoDB)."
           minWidth="68rem"
         >
           <thead>
@@ -168,7 +170,7 @@ export default async function AdminBusinessesPage({
               <Th numeric>Catálogos</Th>
               <Th numeric>Productos</Th>
               <Th numeric>Pedidos</Th>
-              <Th numeric>Visitas</Th>
+              <Th numeric>Visitas (30 d)</Th>
               <Th numeric>Valor pedidos</Th>
               <Th>Alta (UTC)</Th>
               <Th>Página</Th>
@@ -215,11 +217,17 @@ export default async function AdminBusinessesPage({
                     )}
                   </Td>
                   <Td numeric>
-                    {formatCount(row.views)}
-                    {row.whatsappClicks > 0 && (
-                      <span className="t-small block text-muted-foreground">
-                        {formatCount(row.whatsappClicks)} clics
-                      </span>
+                    {row.views === null ? (
+                      <span className="t-small text-muted-foreground">Sin datos</span>
+                    ) : (
+                      <>
+                        {formatCount(row.views)}
+                        {row.whatsappClicks !== null && row.whatsappClicks > 0 && (
+                          <span className="t-small block text-muted-foreground">
+                            {formatCount(row.whatsappClicks)} clics
+                          </span>
+                        )}
+                      </>
                     )}
                   </Td>
                   <Td numeric className="t-price">
@@ -243,7 +251,9 @@ export default async function AdminBusinessesPage({
         responde se muestra el correo de contacto del negocio. «Página» es la columna{" "}
         <code className="t-num">business.is_public</code> de la migración 0009: mientras no esté
         aplicada aparece «Desconocido». Los enlaces <code className="t-num">/n/…</code> solo
-        funcionan si la página está publicada.
+        funcionan si la página está publicada. «Visitas (30 d)» son eventos de MongoDB, no
+        visitantes únicos; cuando dice «Sin datos» es que el backend de métricas no respondió (lo
+        verás también en los avisos de arriba), no que nadie haya visitado.
       </SourceNote>
     </div>
   );
