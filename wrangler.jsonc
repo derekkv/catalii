@@ -5,15 +5,25 @@
 	"compatibility_flags": [
 		"nodejs_compat"
 	],
+	// Variables de ejecución del Worker. Las NEXT_PUBLIC_* se incrustan además
+	// en el build (desde el entorno de Workers Builds), pero el código de
+	// servidor las lee en ejecución de aquí, así que tienen que estar.
+	//
+	// Todas estas son públicas por diseño: viajan al navegador. Los secretos
+	// (SUPABASE_SERVICE_ROLE_KEY, PADDLE_API_KEY,
+	// PADDLE_NOTIFICATION_WEBHOOK_SECRET, PADDLE_PRODUCT_*) NO van aquí: se
+	// cargan con `npx wrangler secret put` o en los ajustes del proyecto.
 	"vars": {
 		"NEXT_PUBLIC_SITE_URL": "https://catalii.com",
+		// FALTA: pon la URL y la clave anon de tu proyecto (Supabase > Project
+		// Settings > API). Sin esto la app desplegada no conecta con la base.
 		"NEXT_PUBLIC_SUPABASE_URL": "REEMPLAZAR_CON_URL_SUPABASE",
 		"NEXT_PUBLIC_SUPABASE_ANON_KEY": "REEMPLAZAR_CON_ANON_KEY_SUPABASE",
 		"NEXT_PUBLIC_PADDLE_ENV": "sandbox",
-		"NEXT_PUBLIC_PADDLE_CLIENT_TOKEN": "REEMPLAZAR",
-		"NEXT_PUBLIC_PADDLE_PRICE_STARTER": "pri_REEMPLAZAR",
-		"NEXT_PUBLIC_PADDLE_PRICE_PRO": "pri_REEMPLAZAR",
-		"NEXT_PUBLIC_PADDLE_PRICE_BUSINESS": "pri_REEMPLAZAR",
+		"NEXT_PUBLIC_PADDLE_CLIENT_TOKEN": "test_ebb1130b591d3bb938200f052ee",
+		"NEXT_PUBLIC_PADDLE_PRICE_STARTER": "pri_01m7y5we9fj95dsyj4pvyy97z1",
+		"NEXT_PUBLIC_PADDLE_PRICE_PRO": "pri_01m7y5wetzgvtftfan75sw4y6v",
+		"NEXT_PUBLIC_PADDLE_PRICE_BUSINESS": "pri_01m7y5wf4j2xj3be9q7v49y0e7",
 		"NEXT_PUBLIC_MEDIA_URL": "",
 		"NEXT_PUBLIC_SHOW_DEV_NOTICE": "false"
 	},
@@ -26,10 +36,6 @@
 	},
 	"r2_buckets": [
 		{
-			"binding": "NEXT_INC_CACHE_R2_BUCKET",
-			"bucket_name": "catalii-cache"
-		},
-		{
 			"binding": "MEDIA_PRODUCTS",
 			"bucket_name": "catalii-products"
 		},
@@ -40,22 +46,6 @@
 		{
 			"binding": "MEDIA_BANNERS",
 			"bucket_name": "catalii-banners"
-		}
-	],
-	"durable_objects": {
-		"bindings": [
-			{
-				"name": "NEXT_CACHE_DO_QUEUE",
-				"class_name": "DOQueueHandler"
-			}
-		]
-	},
-	"migrations": [
-		{
-			"tag": "v1",
-			"new_sqlite_classes": [
-				"DOQueueHandler"
-			]
 		}
 	]
 }
