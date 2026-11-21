@@ -18,6 +18,10 @@ facturación con **Paddle** y base de datos en **Supabase** con RLS.
 > **Trabajo pendiente: [`PENDIENTES.md`](./PENDIENTES.md)** — lista única y
 > numerada de lo que falta (datos legales, migraciones sin aplicar,
 > verificaciones, seguridad, despliegue). Empieza por ahí.
+>
+> **Cómo encaja todo: [`docs/ARQUITECTURA.md`](./docs/ARQUITECTURA.md)** —
+> diagramas del sistema, de los flujos (pedido, cobro, métricas), del modelo de
+> datos y del despliegue.
 
 El repo está separado en tres partes:
 
