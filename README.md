@@ -11,7 +11,10 @@ facturación con **Paddle** y base de datos en **Supabase** con RLS.
 - **Tailwind CSS 4** — sistema de tokens por theme + escala tipográfica (`data-theme`)
 - **Supabase** — Postgres + Auth (correo y contraseña) + RLS multi-tenant
 - **Paddle** — checkout, webhooks firmados y sincronización de suscripciones
-- **zod** para validación, **papaparse** (import CSV), **qrcode** (QR de compartir)
+- **zod** para validación, **papaparse** (CSV) y **SheetJS/xlsx** (Excel) para
+  importar listas de precios, **qrcode** (QR de compartir)
+- **@google/genai** — Gemini propone el mapeo de columnas al importar productos
+  (opcional: sin clave se reconocen por nombre)
 
 ## Organización (front / back / supabase)
 
@@ -104,7 +107,7 @@ src/
     c/[slug]/               # Catálogo PÚBLICO (comprador) + SEO + JSON-LD
     dashboard/              # Panel del mayorista (protegido)
       onboarding/           # Crear negocio
-      productos/            # CRUD + import CSV
+      productos/            # CRUD + importación (CSV/Excel con mapeo asistido)
       pedidos/              # Gestión de pedidos
       catalogos/[id]/       # Config, theme, selección de productos, QR
       facturacion/          # Planes + checkout Paddle
@@ -128,6 +131,9 @@ src/
     actions/                # server actions (auth, pedidos)
     legal/                  # config.ts (datos), content.ts (texto), acceptance.ts
     media/                  # claves, resize en cliente, subida y helpers R2
+    import/                 # importación de productos: lectura del archivo,
+                            # propuesta de mapeo (gemini.ts / heuristic.ts),
+                            # conversión y validación (mapping.ts, numbers.ts)
     metrics/                # track.ts (beacon), api.ts (cliente del back), types.ts
     backend.ts              # cliente HTTP del backend Express (BACKEND_URL)
     themes.ts plans.ts validation.ts utils.ts site.ts auth.ts timeout.ts
@@ -203,16 +209,83 @@ pnpm lint
 
 ## Flujos principales
 
-- **Mayorista:** login → onboarding → cargar productos (manual o CSV) → crear
+- **Mayorista:** login → onboarding → cargar productos (manual, CSV o Excel) → crear
   catálogo, elegir theme y publicar → compartir link/QR por WhatsApp.
 - **Comprador:** abre el link (sin cuenta) → busca/filtra → arma carrito →
   envía pedido (nombre + WhatsApp) → puede reenviarlo por WhatsApp al mayorista.
 - **Pagos:** el mayorista mejora su plan desde *Facturación* (checkout Paddle);
   el webhook actualiza `plan` y la app aplica los límites.
 
-## Formato del CSV de productos
+## Importación de productos (CSV y Excel)
 
-Encabezados aceptados (flexibles, en español/inglés):
+Acepta **cualquier lista de precios**: CSV, TSV y hojas de cálculo (`.xlsx`,
+`.xlsm`, `.xls`, `.ods`). No hace falta que las columnas se llamen de una forma
+concreta. Máximo **2 MB** por archivo (un `.xlsx` pesa más que el CSV
+equivalente) y 5.000 filas.
+
+### Cómo funciona
+
+Son dos pasos y dos server actions (`src/app/dashboard/productos/actions.ts`):
+
+1. **`analyzeImportFile`** lee el archivo (`src/lib/import/read-file.ts`), saca
+   los encabezados y hasta 5 filas de muestra y propone a qué campo del
+   producto corresponde cada columna. No escribe nada.
+2. **`importProducts`** recibe el archivo otra vez junto con el mapeo que el
+   usuario confirmó o corrigió, convierte los datos y los valida con
+   `productSchema` antes de insertar.
+
+El archivo se vuelve a enviar en el paso 2 en vez de guardarse entre pasos: no
+hay estado de servidor ni almacenamiento temporal de listas de precios.
+
+**El mapeo siempre lo revisa el usuario.** La pantalla de revisión muestra, por
+cada columna del archivo, su nombre, valores de ejemplo, el campo propuesto, la
+confianza y en qué se basó la propuesta, más una vista previa de las primeras
+filas ya interpretadas. La vista previa usa el mismo `parseRows` que el
+servidor, así que lo que se ve es lo que se guarda. El único campo obligatorio
+es el nombre: sin él no se puede importar.
+
+### Qué hace la IA (y qué no)
+
+Con `GEMINI_API_KEY` configurada se le pide a Gemini (`interactions.create` del
+SDK `@google/genai`, con salida estructurada) que **decida qué columna es qué**:
+el campo de destino, la confianza, si la primera fila son encabezados y qué
+separador decimal parece usar el archivo.
+
+La IA **no transforma datos y no devuelve valores de las filas**. Convertir
+`1.234,56` a `1234.56`, recortar textos y validar es cosa del código
+(`src/lib/import/numbers.ts` y `mapping.ts`).
+
+Lo único que sale hacia Google son **los nombres de las columnas y hasta 5
+filas de ejemplo**, con las celdas recortadas a 120 caracteres: ni el archivo
+completo, ni el nombre del archivo, ni nada de la cuenta o del negocio. Se pide
+`store: false` para que la interacción no quede guardada. El aviso está en la
+pantalla de subida y el payload exacto se puede desplegar en el paso de
+revisión.
+
+### Respaldo (el camino que más corre)
+
+Si no hay clave, si la API falla, si tarda más de 10 s (un solo intento, sin
+reintentos) o si devuelve algo que no encaja con el esquema esperado, el mapeo
+se propone por el **nombre de las columnas** (`src/lib/import/heuristic.ts`),
+que reconoce nombres en español e inglés con acentos y puntuación ("Artículo",
+"P.V.P.", "Existencias", "Mínimo de pedido"). La interfaz avisa de que se usó
+el respaldo. **Importar nunca depende de que Gemini responda.**
+
+Si ni la IA ni los nombres reconocen nada, todas las columnas quedan en "No
+importar" y el usuario las elige a mano: adivinar por posición sería peor.
+
+### Detalles
+
+- Si el archivo tiene varias hojas se usa **la primera** y la interfaz lo dice.
+- Las celdas numéricas de Excel se usan tal cual, sin reinterpretar separadores.
+- Los errores por fila siguen siendo «fila 3: Nombre requerido», con el número
+  de fila del archivo.
+- Moneda: se acepta un código de tres letras (o € / £); si no se puede leer se
+  usa USD, y la vista previa muestra con qué moneda va a quedar cada fila.
+
+### Formato de la plantilla
+
+La plantilla que se descarga desde el panel sigue siendo la más simple:
 
 ```
 name,sku,price,stock,category,description,image_url
@@ -235,7 +308,14 @@ Refresco de cola 600 ml,RC600,12.50,240,Bebidas,Retornable,https://...
   fallos para que Paddle reintente.
 - **Cabeceras de seguridad** (HSTS, nosniff, X-Frame-Options, Permissions-Policy)
   en `next.config.ts`. `poweredByHeader` desactivado.
-- **Validación con zod** en cada server action y en el RPC.
+- **Validación con zod** en cada server action y en el RPC. El mapeo de columnas
+  que el navegador devuelve al importar también se valida (`mappingPlanSchema`):
+  es entrada de usuario.
+- **Lo que sale hacia terceros al importar está acotado y avisado.** A Gemini
+  van sólo los nombres de las columnas y hasta 5 filas de ejemplo, con
+  `store: false`, nunca el archivo completo ni datos de la cuenta. El aviso
+  está en la pantalla de subida y el payload exacto es visible en el paso de
+  revisión. Sin `GEMINI_API_KEY` no se contacta a Google en absoluto.
 
 ## Themes
 
@@ -309,8 +389,8 @@ pnpm cf:typegen    # genera tipos de los bindings (cloudflare-env.d.ts)
   Deben existir como variables de entorno del build (localmente se leen de
   `.env.local`; en CI, configúralas en el entorno de build).
 - **Secretos de runtime** (`SUPABASE_SERVICE_ROLE_KEY`, `PADDLE_API_KEY`,
-  `PADDLE_NOTIFICATION_WEBHOOK_SECRET`, `PADDLE_PRODUCT_*`) → se cargan como
-  **secrets del Worker** (no se inyectan en el bundle):
+  `PADDLE_NOTIFICATION_WEBHOOK_SECRET`, `PADDLE_PRODUCT_*`, `GEMINI_API_KEY`) →
+  se cargan como **secrets del Worker** (no se inyectan en el bundle):
   ```bash
   npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY
   npx wrangler secret put PADDLE_API_KEY
@@ -318,7 +398,14 @@ pnpm cf:typegen    # genera tipos de los bindings (cloudflare-env.d.ts)
   npx wrangler secret put PADDLE_PRODUCT_STARTER
   npx wrangler secret put PADDLE_PRODUCT_PRO
   npx wrangler secret put PADDLE_PRODUCT_BUSINESS
+  # Opcional: mapeo de columnas con IA al importar productos. Sin este secreto
+  # la importación sigue funcionando con el reconocimiento por nombre de
+  # columna (ver "Importación de productos").
+  npx wrangler secret put GEMINI_API_KEY
   ```
+  `GEMINI_MODEL` no es secreto: si quieres cambiar de modelo, ponlo en `vars`
+  de `wrangler.jsonc` (por defecto `gemini-3.8-flash`).
+
   Para `pnpm cf:preview` en local, ponlos en `.dev.vars` (no versionado; no hay
   plantilla en el repo).
 

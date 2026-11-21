@@ -48,7 +48,7 @@ export type LegalDocument = "terms" | "privacy";
  */
 export const LEGAL_VERSIONS: Record<LegalDocument, string> = {
   terms: "2026-11-12-rev2",
-  privacy: "2026-11-12-rev2",
+  privacy: "2026-11-21-rev3",
 };
 
 /** Moneda en la que se cobran los planes (coincide con `PLAN_CURRENCY`). */

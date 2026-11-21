@@ -96,7 +96,7 @@ const privacy: LegalDoc = {
           "Gestionar la suscripción de prueba de los planes de pago.",
         ),
         p(
-          "No hay publicidad, ni analítica, ni píxeles de terceros, y los datos no se venden a nadie.",
+          "No hay publicidad, ni píxeles de terceros, y los datos no se venden a nadie. Sí se cuentan visitas a las páginas públicas, pero de forma anónima: ver el punto 6.",
         ),
       ],
     },
@@ -124,6 +124,7 @@ const privacy: LegalDoc = {
           "Supabase: base de datos y cuentas (ahí viven negocios, productos, catálogos y pedidos).",
           "Cloudflare: aloja la aplicación y guarda las imágenes que se suben. Las imágenes son públicas por su enlace.",
           "Paddle: checkout y suscripciones, en modo de pruebas.",
+          "Google (Gemini): solo si el vendedor importa un archivo de productos. Ver el punto 7.",
         ),
         p(
           "WhatsApp solo interviene si alguien pulsa el enlace para avisar por WhatsApp: el mensaje lo envía esa persona desde su propia cuenta.",
@@ -131,8 +132,50 @@ const privacy: LegalDoc = {
       ],
     },
     {
+      id: "visitas",
+      title: "6. Contador de visitas",
+      blocks: [
+        p(
+          "Cuando alguien abre la página de un negocio o un catálogo se guarda un registro de esa visita para que el vendedor y el administrador vean cuántas hubo.",
+        ),
+        p("De cada visita se guarda:"),
+        ul(
+          "Qué se vio (negocio o catálogo) y cuándo.",
+          "El país, que lo deduce el hosting de la conexión.",
+          "Si el enlace venía de otro sitio web, solo el nombre de ese sitio, nunca la dirección completa.",
+          "Si el dispositivo es móvil o de escritorio.",
+        ),
+        p(
+          "No se guarda la dirección IP, ni el navegador concreto, ni ninguna cookie o identificador que permita seguir a una misma persona entre visitas: por eso el contador dice visitas y no personas. Los registros se borran solos a los 180 días.",
+        ),
+      ],
+    },
+    {
+      id: "ia",
+      title: "7. Ayuda de IA al importar productos",
+      blocks: [
+        p(
+          "Al importar un archivo de productos (Excel o CSV), el vendedor puede pedir ayuda para adivinar qué columna es el nombre, qué columna es el precio y así con el resto. Esa parte la propone Gemini, de Google.",
+        ),
+        p("Qué se envía a Google en ese momento:"),
+        ul(
+          "Los nombres de las columnas del archivo.",
+          "Hasta cinco filas de ejemplo, recortadas a 120 caracteres por celda.",
+        ),
+        p(
+          "No se envía el archivo completo, ni su nombre, ni nada de la cuenta, el negocio o los pedidos. La IA solo dice a qué campo corresponde cada columna; no cambia ni rellena ningún dato, y el vendedor confirma la correspondencia antes de que se guarde nada.",
+        ),
+        p(
+          "Es opcional: si no hay clave de Google configurada o la petición falla, la importación sigue funcionando adivinando las columnas por su nombre, sin salir de Catalii. Un archivo con datos de personas (clientes, proveedores) no debería importarse como lista de productos.",
+        ),
+        p(
+          "Según los términos de la API de Gemini, en el nivel gratuito Google puede usar lo enviado para mejorar sus productos y revisores humanos pueden llegar a leerlo; en el nivel de pago, no. Esta versión usa el nivel configurado por quien despliega la aplicación, y por eso en las filas de ejemplo no debe haber nada confidencial.",
+        ),
+      ],
+    },
+    {
       id: "quien-ve",
-      title: "6. Quién puede ver un pedido",
+      title: "8. Quién puede ver un pedido",
       blocks: [
         p(
           "El vendedor dueño del catálogo ve los pedidos de su catálogo y solo los suyos: la base de datos lo limita por cuenta.",
@@ -144,7 +187,7 @@ const privacy: LegalDoc = {
     },
     {
       id: "borrar",
-      title: "7. Descargar o borrar tus datos",
+      title: "9. Descargar o borrar tus datos",
       blocks: [
         ul(
           "En Configuración, dentro del panel, puedes descargar tus datos en un archivo JSON.",
@@ -155,7 +198,7 @@ const privacy: LegalDoc = {
     },
     {
       id: "seguridad",
-      title: "8. Seguridad y cambios",
+      title: "10. Seguridad y cambios",
       blocks: [
         p(
           "Las conexiones van cifradas y la base de datos restringe el acceso para que cada cuenta vea solo sus datos. Aun así es un proyecto en desarrollo: no se puede prometer seguridad absoluta.",

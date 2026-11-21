@@ -1,5 +1,10 @@
 allowBuilds:
   esbuild: true
+  # Dependencia transitiva de @google/genai (tokenizador local, que la app no
+  # usa: la importación habla con la API por HTTP). Su postinstall sólo avisa
+  # de esquemas de versión, así que no se ejecuta. Si no queda declarado,
+  # `pnpm install` falla con ERR_PNPM_IGNORED_BUILDS y rompe `pnpm cf:build`.
+  protobufjs: false
   unrs-resolver: true
   workerd: true
 onlyBuiltDependencies:

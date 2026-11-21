@@ -17,7 +17,7 @@
 | ¿Menores? | NO SÉ. Producto B2B; en ningún formulario se pregunta la edad |
 | Cobros / suscripciones | Sí, vía Paddle. Planes Gratis/Starter/Pro/Business en `src/lib/plans.ts:24-57` (nota: el plan «Gratis» también existe en el código) |
 | Usuarios suben contenido | Sí: fotos de producto, logo y banner (R2) y textos públicos de catálogo (`src/app/api/uploads/route.ts`, `src/lib/validation.ts:28-54`) |
-| IA generativa | **No encontrada** en el código (ver §6) |
+| IA generativa | **Sí, solo en la importación de productos**: Gemini propone el mapeo de columnas (ver §6) |
 | Stack | Next.js 16.3.1, React 19.2.8, Tailwind 4, Supabase (Postgres/Auth/RLS), Paddle, Cloudflare Workers + R2 vía OpenNext (`package.json`, `wrangler.jsonc`) |
 | Servicio paralelo | `backend/` (Node + Express) — según `NOTAS-SEPARACION.md` habla con la misma Supabase; **no analizado**. Hay que revisarlo aparte antes de ponerlo en producción: añadiría logs, CORS, rate-limit y posiblemente otro proveedor de hosting |
 
@@ -104,6 +104,7 @@ Resultado de buscar en `package.json`, `src/`, `public/`, `media-worker/` script
 | Proveedor SMTP propio | No hay en el repo. El mensaje de error `login/actions.ts:82` menciona «configura un SMTP propio» → **PREGUNTAR AL DUEÑO** qué remitente usa Supabase en producción | Correo del usuario | **PREGUNTAR AL DUEÑO** | **PREGUNTAR AL DUEÑO** | — |
 | WhatsApp / Meta | Solo cuando el usuario pulsa `wa.me` | Número y texto | — | No aplica (enlace del usuario) | **PREGUNTAR A ABOGADO** |
 | Google Fonts | Solo en build | Ninguno de usuarios | — | No aplica | — |
+| Google (Gemini API) | Propone el mapeo de columnas al importar productos (`src/lib/import/gemini.ts`) | Encabezados y hasta 5 filas de muestra del archivo importado, celdas recortadas a 120 caracteres. Nada de cuentas, negocio ni pedidos | EE. UU./global | **PREGUNTAR AL DUEÑO** | **Sí en el nivel gratuito, no en el de pago** (ver §6) |
 | Hosting de `backend/` (Express) | **No decidido / no analizado** | — | — | — | — |
 
 ## 5. Consentimientos y aceptaciones
@@ -122,9 +123,13 @@ Resultado de buscar en `package.json`, `src/`, `public/`, `media-worker/` script
 
 | Pregunta | Resultado |
 |---|---|
-| ¿Contenido generado por IA? | **No encontrado.** Sin SDK de IA en `package.json` (no `openai`, `@anthropic-ai/*`, `ai`, `@google/*`, etc.) ni llamadas a APIs de IA en `src/`. Búsqueda por `openai|anthropic|gemini|llm|generative` sin coincidencias de código relevantes |
-| ¿Dónde se muestra / etiqueta? | n/a |
-| ¿El proveedor puede entrenar con datos? | n/a. **PREGUNTAR AL DUEÑO**: ¿se usó IA para generar imágenes, textos o la identidad visual (favicon, copy de la landing)? Eso afecta a licencias/etiquetado (guía punto 11) |
+| ¿Contenido generado por IA? | **No**, el producto no genera contenido. Lo que hay es **asistencia de mapeo** en la importación de productos: `src/lib/import/gemini.ts` llama a la API de Gemini (`@google/genai` 3.6.1, `interactions.create`, modelo `gemini-3.8-flash` por defecto, configurable con `GEMINI_MODEL`) para proponer a qué campo del producto corresponde cada columna de un Excel/CSV |
+| ¿Qué se envía? | Solo lo que arma `analysisPayload()`: nombres de columnas y hasta 5 filas de muestra, con las celdas recortadas a 120 caracteres. **No** el archivo completo, **no** su nombre, **no** datos de cuenta, negocio ni pedidos. `store: false`, timeout 10 s, un solo intento |
+| ¿Qué devuelve y quién decide? | Devuelve el **mapeo** (columna → campo, confianza, si hay fila de encabezados, separador decimal); **no transforma ni devuelve datos de productos**. La conversión la hace `src/lib/import/mapping.ts` y el usuario confirma el mapeo antes de insertar |
+| ¿Es obligatoria? | No. Sin `GEMINI_API_KEY`, o si la llamada falla, se usa la heurística local de `src/lib/import/heuristic.ts` y la importación sigue funcionando |
+| ¿Dónde se muestra / etiqueta? | En el modal de importación (`src/app/dashboard/productos/import-modal.tsx`) y en la política de privacidad, §5 (proveedores) y §7 (sección dedicada) |
+| ¿El proveedor puede entrenar con datos? | **Depende del nivel de la clave.** [Facturación de Gemini API](https://ai.google.dev/gemini-api/docs/billing): en el **nivel gratuito** Google usa los prompts para mejorar sus productos y revisores humanos pueden leerlos; el **nivel de pago** no lo hace (los usuarios del EEE, Suiza y RU reciben los términos de nivel de pago siempre). → **DECISIÓN DEL DUEÑO**: usar clave de nivel de pago o aceptar el nivel gratuito. Mitigación aplicada: solo salen encabezados y 5 filas de muestra, y la privacidad lo advierte |
+| ¿Se usó IA para la identidad visual? | **PREGUNTAR AL DUEÑO**: ¿se usó IA para generar imágenes, textos o la identidad visual (favicon, copy de la landing)? Eso afecta a licencias/etiquetado (guía punto 11) |
 
 ## 7. Recursos de terceros (para los puntos 11 y 23)
 

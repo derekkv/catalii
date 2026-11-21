@@ -1,13 +1,16 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import Papa from "papaparse";
 import { createClient } from "@/lib/supabase/server";
 import { getBusiness } from "@/lib/auth";
 import { backendEnabled, backendFetch } from "@/lib/backend";
 import { productSchema, productImagesSchema } from "@/lib/validation";
 import { getPlan } from "@/lib/plans";
 import { assertUploadedKey, deleteMedia } from "@/lib/media/server";
+import { analyzeFile } from "@/lib/import/analyze";
+import { readTable } from "@/lib/import/read-file";
+import { parseRows, problemsText } from "@/lib/import/mapping";
+import { MAX_IMPORT_BYTES, mappingPlanSchema, type Analysis } from "@/lib/import/types";
 import type { Product, StoredImage } from "@/types/database";
 
 export interface ActionState {
@@ -319,21 +322,78 @@ export async function deleteProduct(id: string): Promise<ActionState> {
   return ok("Producto eliminado.");
 }
 
-/** Importación masiva desde CSV. Recalcula límites de plan y valida cada fila. */
-export async function importProductsCsv(_prev: ActionState, formData: FormData): Promise<ActionState> {
+/* ── Importación masiva ─────────────────────────────────────────────────────
+ *
+ * Son dos pasos y dos acciones, a propósito:
+ *
+ *   1. `analyzeImportFile`: lee el archivo (CSV o hoja de cálculo), propone un
+ *      mapeo de columnas (Gemini, o la heurística de nombres si la IA no está
+ *      disponible) y devuelve una muestra. NO escribe nada.
+ *   2. `importProducts`: recibe el archivo otra vez junto con el mapeo que el
+ *      usuario confirmó o corrigió, y recién ahí inserta.
+ *
+ * El archivo se vuelve a enviar en el paso 2 en vez de guardarse entre pasos:
+ * no hace falta estado de servidor ni almacenamiento temporal, y el Worker no
+ * conserva listas de precios de nadie.
+ */
+
+export interface AnalyzeState {
+  ok: boolean;
+  error?: string;
+  analysis?: Analysis;
+}
+
+/** Paso 1: analiza el archivo y propone el mapeo. No guarda nada. */
+export async function analyzeImportFile(formData: FormData): Promise<AnalyzeState> {
+  const business = await getBusiness();
+  if (!business) return { ok: false, error: "No autorizado." };
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    return { ok: false, error: "Selecciona un archivo." };
+  }
+  if (file.size > MAX_IMPORT_BYTES) {
+    return { ok: false, error: "El archivo excede 2 MB." };
+  }
+
+  const result = await analyzeFile(file);
+  if (!result.ok) return { ok: false, error: result.error };
+  return { ok: true, analysis: result.analysis };
+}
+
+/**
+ * Paso 2: importa con el mapeo confirmado.
+ *
+ * Recalcula el límite del plan y valida cada fila con `productSchema`, igual
+ * que la versión que sólo leía CSV. Los mensajes por fila siguen siendo
+ * «fila 3: Nombre requerido», con el número de fila del archivo.
+ */
+export async function importProducts(formData: FormData): Promise<ActionState> {
   const business = await getBusiness();
   if (!business) return fail("No autorizado.");
-  const file = formData.get("file");
-  if (!(file instanceof File) || file.size === 0) return fail("Selecciona un archivo CSV.");
-  if (file.size > 2 * 1024 * 1024) return fail("El archivo excede 2 MB.");
 
-  const text = await file.text();
-  const result = Papa.parse<Record<string, string>>(text, {
-    header: true,
-    skipEmptyLines: true,
-    transformHeader: (h) => h.trim().toLowerCase(),
-  });
-  if (result.errors.length > 0) return fail("El CSV tiene errores de formato.");
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) return fail("Selecciona un archivo.");
+  if (file.size > MAX_IMPORT_BYTES) return fail("El archivo excede 2 MB.");
+
+  // El mapeo llega del navegador: es entrada de usuario y se valida como tal.
+  let planJson: unknown;
+  try {
+    planJson = JSON.parse(String(formData.get("plan") ?? ""));
+  } catch {
+    return fail("El mapeo de columnas no se pudo leer. Vuelve a elegir el archivo.");
+  }
+  const planParsed = mappingPlanSchema.safeParse(planJson);
+  if (!planParsed.success) {
+    return fail("El mapeo de columnas no es válido. Vuelve a elegir el archivo.");
+  }
+  const plan = planParsed.data;
+  if (!plan.columns.some((c) => c.field === "name")) {
+    return fail("Indica qué columna tiene el nombre del producto.");
+  }
+
+  const read = await readTable(file);
+  if (!read.ok) return fail(read.error);
 
   const supabase = await createClient();
   const { count } = await supabase
@@ -344,78 +404,39 @@ export async function importProductsCsv(_prev: ActionState, formData: FormData):
   const available = Number.isFinite(limit) ? limit - (count ?? 0) : Number.POSITIVE_INFINITY;
   if (available <= 0) return fail("Ya alcanzaste el límite de productos de tu plan.");
 
-  const pick = (row: Record<string, string>, keys: string[]) => {
-    for (const k of keys) if (row[k] != null && row[k] !== "") return row[k];
-    return "";
-  };
-
-  const rows = result.data.slice(0, Math.min(result.data.length, available === Infinity ? 5000 : available));
-  const toInsert = [];
-  /**
-   * Motivos de las filas descartadas. Antes solo se contaban, así que el
-   * usuario leía «2 omitidos» sin saber por qué y sin forma de arreglarlo.
-   * Se guardan los primeros y se resume el resto, para no construir un mensaje
-   * enorme con un CSV malo entero.
-   */
-  const problems: string[] = [];
-  const MAX_PROBLEMS = 3;
-  let skipped = 0;
-  for (const [index, row] of rows.entries()) {
-    const parsed = productSchema.safeParse({
-      name: pick(row, ["name", "nombre", "producto"]),
-      sku: pick(row, ["sku", "codigo", "código"]),
-      description: pick(row, ["description", "descripcion", "descripción"]),
-      category: pick(row, ["category", "categoria", "categoría"]),
-      price: pick(row, ["price", "precio"]) || "0",
-      currency: pick(row, ["currency", "moneda"]) || "USD",
-      stock: pick(row, ["stock", "existencia", "cantidad"]) || "0",
-      min_order_qty: pick(row, ["min_order_qty", "minimo", "mínimo"]) || "1",
-      image_url: pick(row, ["image_url", "imagen", "image"]),
-      active: "true",
+  const results = parseRows(read.table.rows, plan, available);
+  const toInsert = results
+    .filter((r) => r.product)
+    .map((r) => {
+      const p = r.product as ParsedProduct;
+      return {
+        business_id: business.id,
+        name: p.name,
+        sku: p.sku || null,
+        description: p.description || null,
+        category: p.category || null,
+        price_cents: toCents(p.price),
+        currency: p.currency,
+        stock: p.stock,
+        min_order_qty: p.min_order_qty,
+        image_url: p.image_url || null,
+        active: true,
+      };
     });
-    if (!parsed.success) {
-      skipped++;
-      if (problems.length < MAX_PROBLEMS) {
-        // +2: la fila 1 del archivo son los encabezados y `index` empieza en 0.
-        const line = index + 2;
-        const reason = parsed.error.issues[0]?.message ?? "datos inválidos";
-        problems.push(`fila ${line}: ${reason}`);
-      }
-      continue;
-    }
-    const p = parsed.data;
-    toInsert.push({
-      business_id: business.id,
-      name: p.name,
-      sku: p.sku || null,
-      description: p.description || null,
-      category: p.category || null,
-      price_cents: toCents(p.price),
-      currency: p.currency,
-      stock: p.stock,
-      min_order_qty: p.min_order_qty,
-      image_url: p.image_url || null,
-      active: true,
-    });
-  }
-
-  /** "fila 3: Nombre requerido; fila 8: …" y, si hay más, cuántas quedan. */
-  const problemsText = () => {
-    const rest = skipped - problems.length;
-    return problems.join("; ") + (rest > 0 ? `; y ${rest} más` : "");
-  };
+  const skipped = results.filter((r) => r.error).length;
+  const problems = problemsText(results);
 
   if (toInsert.length === 0) {
     return fail(
-      problems.length > 0
-        ? `No se importó ninguna fila. ${problemsText()}.`
-        : "No se encontraron filas válidas en el CSV.",
+      skipped > 0
+        ? `No se importó ninguna fila. ${problems}.`
+        : "No se encontraron filas con datos en el archivo.",
     );
   }
 
   const { error } = await supabase.from("product").insert(toInsert);
   if (error) {
-    console.error("[importProductsCsv]", error.code, error.message);
+    console.error("[importProducts]", error.code, error.message);
     return fail("No se pudieron importar los productos.");
   }
 
@@ -424,7 +445,7 @@ export async function importProductsCsv(_prev: ActionState, formData: FormData):
   revalidatePath("/dashboard");
   return ok(
     skipped > 0
-      ? `Importados ${toInsert.length} productos. Se omitieron ${skipped}: ${problemsText()}.`
+      ? `Importados ${toInsert.length} productos. Se omitieron ${skipped}: ${problems}.`
       : `Importados ${toInsert.length} productos.`,
   );
 }
