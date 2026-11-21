@@ -21,7 +21,8 @@ facturación con **Paddle** y base de datos en **Supabase** con RLS.
 >
 > **Cómo encaja todo: [`docs/ARQUITECTURA.md`](./docs/ARQUITECTURA.md)** —
 > diagramas del sistema, de los flujos (pedido, cobro, métricas), del modelo de
-> datos y del despliegue.
+> datos y del despliegue. Para pizarra:
+> [`docs/ARQUITECTURA-EXCALIDRAW.md`](./docs/ARQUITECTURA-EXCALIDRAW.md).
 
 El repo está separado en tres partes:
 
