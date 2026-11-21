@@ -12,7 +12,7 @@
 |---|---|
 | Nombre de la app | Catalii (`src/lib/site.ts:3-4`, dominio `catalii.com`) |
 | Empresa / responsable (razón social, domicilio, ID fiscal) | **PREGUNTAR AL DUEÑO** (no aparece en ningún archivo del repo; el autor git es `derekkv`, no es un dato legal) |
-| País de la empresa | **PREGUNTAR AL DUEÑO** (no se asume). Indicios no concluyentes: copy en español, `locale: "es_MX"` (`src/lib/site.ts:8`), precios en USD (`supabase/migrations/0001_init.sql`: `currency default 'USD'`), ejemplos con `+52` y `es-MX` (`onboarding-form.tsx:68`, `facturacion/page.tsx:71`), zona horaria de commits −0500 |
+| País de la empresa | **Ecuador** (confirmado por el dueño). Coherente con el resto: `locale: "es_EC"` (`src/lib/site.ts:8`), precios en USD, que es la moneda de Ecuador (`0001_init.sql`: `currency default 'USD'`), ejemplos con `+593` y formato `es-EC`, y zona horaria de commits −0500 |
 | Países de los usuarios | **PREGUNTAR AL DUEÑO** |
 | ¿Menores? | NO SÉ. Producto B2B; en ningún formulario se pregunta la edad |
 | Cobros / suscripciones | Sí, vía Paddle. Planes Gratis/Starter/Pro/Business en `src/lib/plans.ts:24-57` (nota: el plan «Gratis» también existe en el código) |
@@ -151,7 +151,7 @@ Resultado de buscar en `package.json`, `src/`, `public/`, `media-worker/` script
 
 **Identidad y alcance**
 1. ¿Cuál es la razón social, el domicilio, el número de identificación fiscal y el correo de contacto legal de la empresa (o eres persona física)? ¿En qué país está constituida?
-2. ¿En qué países tienes o tendrás **mayoristas** y **compradores**? ¿Hay UE/EE. UU./California? ¿Solo México/LatAm?
+2. ¿En qué países tienes o tendrás **mayoristas** y **compradores**? ¿Hay UE/EE. UU./California? ¿Solo Ecuador/LatAm?
 3. ¿Aceptas que Catalii sea solo B2B (con una declaración de «uso solo para mayores de edad/empresas»), o puede haber minoristas o menores? ¿Quieres una edad mínima?
 4. ¿Qué rubros están permitidos o prohibidos en los catálogos (alcohol, tabaco, medicamentos, adultos…)?
 

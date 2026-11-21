@@ -348,7 +348,7 @@ export default async function AdminOverviewPage() {
         <SourceNote className="mt-3">
           Los totales y el recuento del mes son exactos (<code className="t-num">count</code> en el
           servidor). Los importes se suman sobre las filas leídas y se separan por moneda: nunca se
-          mezclan USD y MXN en una sola cifra.
+          mezclan USD y COP en una sola cifra.
         </SourceNote>
       </section>
 

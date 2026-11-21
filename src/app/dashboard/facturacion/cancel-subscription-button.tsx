@@ -14,7 +14,7 @@ export function CancelSubscriptionButton({ nextBilledAt }: { nextBilledAt: strin
   const [pending, startTransition] = useTransition();
 
   const until = nextBilledAt
-    ? new Date(nextBilledAt).toLocaleDateString("es-MX", { dateStyle: "long" })
+    ? new Date(nextBilledAt).toLocaleDateString("es-EC", { dateStyle: "long" })
     : null;
 
   function confirm() {

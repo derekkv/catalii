@@ -137,7 +137,7 @@ export default async function DashboardPage() {
         }
         description={
           pending > 0
-            ? "Responde pronto: en mayoreo el primero que contesta se lleva el pedido."
+            ? "Responde pronto: al por mayor, el primero que contesta se lleva el pedido."
             : "Sin pendientes. Este es el pulso de tu negocio."
         }
         actions={
@@ -242,7 +242,7 @@ export default async function DashboardPage() {
                   className="flex items-center gap-4 px-1 py-3 transition-colors hover:bg-muted"
                 >
                   <span className="t-num w-16 shrink-0 text-xs text-muted-foreground">
-                    {new Date(o.created_at).toLocaleDateString("es-MX", {
+                    {new Date(o.created_at).toLocaleDateString("es-EC", {
                       day: "2-digit",
                       month: "short",
                     })}

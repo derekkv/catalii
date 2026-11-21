@@ -245,7 +245,7 @@ function OrderCard({ order: o }: { order: OrderWithItems }) {
         <div className="min-w-0">
           <p className="t-label text-muted-foreground">
             Folio {o.id.slice(0, 8)} ·{" "}
-            {new Date(o.created_at).toLocaleString("es-MX", {
+            {new Date(o.created_at).toLocaleString("es-EC", {
               dateStyle: "medium",
               timeStyle: "short",
             })}

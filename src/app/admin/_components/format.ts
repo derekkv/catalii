@@ -12,14 +12,14 @@ import type { MetricKind, OrderStatus, PlanTier } from "@/types/database";
  * imprimen en UTC, y cada pantalla lo dice.
  */
 
-const DATE = new Intl.DateTimeFormat("es-MX", {
+const DATE = new Intl.DateTimeFormat("es-EC", {
   day: "2-digit",
   month: "short",
   year: "numeric",
   timeZone: "UTC",
 });
 
-const DATE_TIME = new Intl.DateTimeFormat("es-MX", {
+const DATE_TIME = new Intl.DateTimeFormat("es-EC", {
   day: "2-digit",
   month: "short",
   year: "numeric",
@@ -28,7 +28,7 @@ const DATE_TIME = new Intl.DateTimeFormat("es-MX", {
   timeZone: "UTC",
 });
 
-const DAY_SHORT = new Intl.DateTimeFormat("es-MX", {
+const DAY_SHORT = new Intl.DateTimeFormat("es-EC", {
   day: "2-digit",
   month: "short",
   timeZone: "UTC",
@@ -59,13 +59,13 @@ export function formatDayShort(day: string): string {
 
 /** Entero con separador de miles. */
 export function formatCount(value: number): string {
-  return value.toLocaleString("es-MX");
+  return value.toLocaleString("es-EC");
 }
 
 /**
  * Importes por moneda.
  *
- * No se suman monedas distintas: si hay pedidos en USD y en MXN se imprimen
+ * No se suman monedas distintas: si hay pedidos en USD y en COP se imprimen
  * los dos importes separados por un punto medio. Un único número sería una
  * cifra inventada.
  */

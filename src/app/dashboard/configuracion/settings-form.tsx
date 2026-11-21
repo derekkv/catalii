@@ -85,7 +85,7 @@ export function SettingsForm({
             id="category"
             label="Rubro"
             maxLength={80}
-            placeholder="Abarrotes al mayoreo"
+            placeholder="Abarrotes al por mayor"
             defaultValue={business.category ?? ""}
             error={fields.category}
             hint="Qué vendes, en dos o tres palabras."
@@ -131,7 +131,7 @@ export function SettingsForm({
           label="Descripción"
           maxLength={2000}
           rows={5}
-          placeholder="A qué se dedica tu negocio, a quién le vendes, condiciones de mayoreo, zonas de entrega…"
+          placeholder="A qué se dedica tu negocio, a quién le vendes, condiciones al por mayor, zonas de entrega…"
           defaultValue={business.description ?? ""}
           error={fields.description}
           hint="El texto largo de tu página. Puedes escribir varios párrafos."
@@ -186,7 +186,7 @@ export function SettingsForm({
             type="tel"
             inputMode="tel"
             maxLength={25}
-            placeholder="+52 55 1234 5678"
+            placeholder="+593 99 123 4567"
             defaultValue={business.whatsapp ?? ""}
             error={fields.whatsapp}
             hint="Es el número que heredan los catálogos nuevos, y el del botón de WhatsApp de tu página."
@@ -209,7 +209,7 @@ export function SettingsForm({
             type="tel"
             inputMode="tel"
             maxLength={25}
-            placeholder="+52 55 1234 5678"
+            placeholder="+593 4 123 4567"
             defaultValue={business.phone ?? ""}
             error={fields.phone}
             hint="Este sí se muestra en tu página."
@@ -272,7 +272,7 @@ export function SettingsForm({
             id="city"
             label="Ciudad"
             maxLength={120}
-            placeholder="Guadalajara"
+            placeholder="Guayaquil"
             defaultValue={business.city ?? ""}
             error={fields.city}
           />
@@ -280,7 +280,7 @@ export function SettingsForm({
             id="country"
             label="País"
             maxLength={80}
-            placeholder="México"
+            placeholder="Ecuador"
             defaultValue={business.country ?? ""}
             error={fields.country}
           />

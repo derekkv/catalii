@@ -79,7 +79,7 @@ export type AdminBusiness = Pick<
 > &
   Partial<Business>;
 
-/** Importes agrupados por moneda: sumar USD con MXN daría una cifra falsa. */
+/** Importes agrupados por moneda: sumar USD con COP daría una cifra falsa. */
 export type MoneyByCurrency = Record<string, number>;
 
 /** Cuenta de Auth del dueño de un negocio. */
@@ -266,7 +266,7 @@ function take<T>(
   const rows = res.data ?? [];
   if (rows.length >= ROW_LIMIT) {
     notes.push(
-      `${label}: se leyeron las primeras ${ROW_LIMIT.toLocaleString("es-MX")} filas, así que los desgloses por negocio son parciales (los totales de arriba siguen siendo exactos).`,
+      `${label}: se leyeron las primeras ${ROW_LIMIT.toLocaleString("es-EC")} filas, así que los desgloses por negocio son parciales (los totales de arriba siguen siendo exactos).`,
     );
   }
   return rows;
@@ -396,7 +396,7 @@ async function loadOwnerAccounts(notes: string[]): Promise<Map<string, OwnerAcco
       if (users.length < AUTH_PAGE_SIZE) break;
       if (page === AUTH_MAX_PAGES) {
         notes.push(
-          `Hay más de ${(AUTH_PAGE_SIZE * AUTH_MAX_PAGES).toLocaleString("es-MX")} cuentas en Auth: algunos correos de dueño pueden salir vacíos.`,
+          `Hay más de ${(AUTH_PAGE_SIZE * AUTH_MAX_PAGES).toLocaleString("es-EC")} cuentas en Auth: algunos correos de dueño pueden salir vacíos.`,
         );
       }
     } catch (error) {
@@ -480,7 +480,7 @@ export async function loadOverview(): Promise<AdminOverview> {
     metrics = buildMetrics(metricRows);
     if (metricRows.length >= ROW_LIMIT) {
       notes.push(
-        `Métricas: se leyeron las primeras ${ROW_LIMIT.toLocaleString("es-MX")} filas de los últimos ${METRIC_DAYS} días; la serie puede estar incompleta.`,
+        `Métricas: se leyeron las primeras ${ROW_LIMIT.toLocaleString("es-EC")} filas de los últimos ${METRIC_DAYS} días; la serie puede estar incompleta.`,
       );
     }
   }

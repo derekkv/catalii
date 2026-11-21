@@ -68,7 +68,7 @@ export default async function FacturacionPage({
             <span className="font-medium">Cancelación programada.</span> Tu suscripción
             tiene un cambio programado para{" "}
             <span className="t-num">
-              {new Date(subscription.scheduled_change_at).toLocaleDateString("es-MX", {
+              {new Date(subscription.scheduled_change_at).toLocaleDateString("es-EC", {
                 dateStyle: "long",
               })}
             </span>

@@ -976,7 +976,7 @@ function CartDrawer({
             autoComplete="tel"
             minLength={5}
             maxLength={25}
-            placeholder="+52 55 1234 5678"
+            placeholder="+593 99 123 4567"
             value={phone}
             onChange={(e) => setBuyer((b) => ({ ...b, phone: e.target.value }))}
           />

@@ -141,9 +141,9 @@ function DashboardPreview() {
     { label: "Ajustes", icon: Settings },
   ];
   const orders = [
-    { date: "07 oct", name: "Abarrotes Lupita", tone: "warning", status: "Pendiente", total: "$718.80" },
-    { date: "07 oct", name: "Tienda Don Beto", tone: "primary", status: "Confirmado", total: "$1,240.00" },
-    { date: "06 oct", name: "Minisúper La Esquina", tone: "success", status: "Enviado", total: "$2,315.50" },
+    { date: "07 oct", name: "Comercial Zambrano", tone: "warning", status: "Pendiente", total: "$718.80" },
+    { date: "07 oct", name: "Tienda Don Segundo", tone: "primary", status: "Confirmado", total: "$1,240.00" },
+    { date: "06 oct", name: "Despensa La Esquina", tone: "success", status: "Enviado", total: "$2,315.50" },
   ] as const;
 
   return (

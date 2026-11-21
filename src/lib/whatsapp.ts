@@ -1,7 +1,7 @@
 /**
  * Enlaces de WhatsApp.
  *
- * El número se guarda como lo escribió el mayorista ("+52 55 1234 5678"),
+ * El número se guarda como lo escribió el mayorista ("+593 99 123 4567"),
  * pero `wa.me` solo acepta dígitos. La normalización estaba repetida en cada
  * sitio que pintaba un botón de WhatsApp; aquí queda en un lugar.
  */

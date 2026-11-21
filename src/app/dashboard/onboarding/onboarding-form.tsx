@@ -84,7 +84,7 @@ export function OnboardingForm({ defaultEmail }: { defaultEmail?: string }) {
             id="category"
             label="Rubro"
             maxLength={80}
-            placeholder="Abarrotes al mayoreo"
+            placeholder="Abarrotes al por mayor"
             error={fields.category}
             hint="Qué vendes, en dos o tres palabras."
           />
@@ -92,7 +92,7 @@ export function OnboardingForm({ defaultEmail }: { defaultEmail?: string }) {
             id="city"
             label="Ciudad"
             maxLength={120}
-            placeholder="Guadalajara"
+            placeholder="Guayaquil"
             error={fields.city}
           />
         </div>
@@ -119,7 +119,7 @@ export function OnboardingForm({ defaultEmail }: { defaultEmail?: string }) {
             type="tel"
             inputMode="tel"
             maxLength={25}
-            placeholder="+52 55 1234 5678"
+            placeholder="+593 99 123 4567"
             error={fields.whatsapp}
             hint="Por aquí te llegan los pedidos de tus catálogos, y es el botón de WhatsApp de tu página."
           />
@@ -129,7 +129,7 @@ export function OnboardingForm({ defaultEmail }: { defaultEmail?: string }) {
             type="tel"
             inputMode="tel"
             maxLength={25}
-            placeholder="+52 55 1234 5678"
+            placeholder="+593 4 123 4567"
             error={fields.phone}
             hint="El número que se muestra en tu página."
           />
@@ -176,7 +176,7 @@ export function OnboardingForm({ defaultEmail }: { defaultEmail?: string }) {
             label="Descripción"
             maxLength={2000}
             rows={4}
-            placeholder="A qué se dedica tu negocio, a quién le vendes, condiciones de mayoreo, zonas de entrega…"
+            placeholder="A qué se dedica tu negocio, a quién le vendes, condiciones al por mayor, zonas de entrega…"
             error={fields.description}
           />
           <div className="grid gap-4 sm:grid-cols-2">
@@ -191,7 +191,7 @@ export function OnboardingForm({ defaultEmail }: { defaultEmail?: string }) {
               id="country"
               label="País"
               maxLength={80}
-              placeholder="México"
+              placeholder="Ecuador"
               error={fields.country}
             />
           </div>

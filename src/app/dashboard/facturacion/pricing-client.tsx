@@ -82,7 +82,7 @@ export function PricingClient({
   }
 
   const nextDate = nextBilledAt
-    ? new Date(nextBilledAt).toLocaleDateString("es-MX", { dateStyle: "long" })
+    ? new Date(nextBilledAt).toLocaleDateString("es-EC", { dateStyle: "long" })
     : null;
   const paddleConfigured = Boolean(token && env);
   const currentIndex = PLAN_ORDER.indexOf(currentTier);

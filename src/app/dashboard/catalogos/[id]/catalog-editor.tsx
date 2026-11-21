@@ -103,7 +103,7 @@ export function CatalogConfigForm({
           id="whatsapp"
           name="whatsapp"
           inputMode="tel"
-          placeholder="+52 55 1234 5678"
+          placeholder="+593 99 123 4567"
           defaultValue={catalog.whatsapp ?? ""}
         />
         <FieldHint>
@@ -117,7 +117,7 @@ export function CatalogConfigForm({
           id="description"
           name="description"
           maxLength={500}
-          placeholder="Mayoreo de abarrotes · Entregas en CDMX"
+          placeholder="Mayoreo de abarrotes · Entregas en Guayaquil"
           defaultValue={catalog.description ?? ""}
         />
       </div>
