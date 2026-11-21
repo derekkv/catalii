@@ -51,7 +51,7 @@ import {
  *
  * Se usa el alias `-latest` y no una versión fija porque los modelos concretos
  * se retiran cada pocos meses (`gemini-2.5-flash` desaparece el 1-dic-2026) y
- * esto es un proyecto escolar que nadie va a estar actualizando. Si algún día
+ * nadie va a estar vigilando este archivo. Si algún día
  * el alias se vuelve lento, se fija uno concreto con `GEMINI_MODEL`.
  */
 const DEFAULT_MODEL = "gemini-flash-lite-latest";

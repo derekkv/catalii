@@ -5,11 +5,10 @@
  * `docs/legal/textos/` leen de aquí, así que al sustituir un `COMPLETAR` por el
  * dato real se actualiza todo.
  *
- * Catalii es un proyecto escolar, no un servicio comercial: los textos son
- * breves y solo afirman lo que el código hace de verdad. No son asesoría legal
- * y no pretenden serlo. Por eso aquí solo quedan tres datos (quién lo hace,
- * dónde escribirle y en qué contexto académico), y nada se inventa: mientras un
- * dato falte, su página lo avisa y no se indexa (ver `hasPendingData` en
+ * Los textos son breves y solo afirman lo que el código hace de verdad. No son
+ * asesoría legal y no pretenden serlo. Por eso aquí solo quedan dos datos
+ * (quién responde y dónde escribirle), y nada se inventa: mientras un dato
+ * falte, su página lo avisa y no se indexa (ver `hasPendingData` en
  * content.ts).
  */
 
@@ -17,7 +16,7 @@
 export const COMPLETAR = "JC";
 
 /**
- * Los tres únicos datos pendientes.
+ * Datos del responsable.
  *
  * `brand` y `site` no son datos del dueño: ya se conocen y no se rellenan.
  */
@@ -27,8 +26,6 @@ export const COMPANY = {
   owner: "Derek Palacios",
   /** Correo de contacto. Debe existir y estar atendido. */
   contactEmail: "palacios.derek.ismael@gmail.com",
-  /** Institución o materia en la que se presenta el proyecto. */
-  institution: COMPLETAR,
   site: "catalii.com",
 } as const;
 
@@ -47,7 +44,7 @@ export type LegalDocument = "terms" | "privacy";
  * de QUÉ aceptó cada usuario.
  */
 export const LEGAL_VERSIONS: Record<LegalDocument, string> = {
-  terms: "2026-11-12-rev2",
+  terms: "2026-11-21-rev3",
   privacy: "2026-11-21-rev3",
 };
 
@@ -55,27 +52,17 @@ export const LEGAL_VERSIONS: Record<LegalDocument, string> = {
 export const BILLING_CURRENCY = "USD";
 
 /**
- * Aviso de proyecto académico. Se muestra arriba en las tres páginas legales y
- * es lo más importante que dicen: explica el contexto real en lugar de prometer
- * garantías que un trabajo de clase no puede dar.
+ * Campos de `COMPANY` que siguen sin rellenar.
  *
- * Vive aquí, y no en `content.ts`, porque también lo usan componentes de
- * cliente que ya importan este archivo (el formulario del comprador).
+ * Hoy no queda ninguno, pero la comprobación se mantiene: si mañana se añade
+ * un dato con `COMPLETAR`, su página vuelve a avisar y a no indexarse sola.
+ * El `as` ensancha el tipo porque con `as const` TypeScript ya sabe que
+ * ninguno de los valores actuales es el marcador.
  */
-export const ACADEMIC_NOTICE = [
-  `${COMPANY.brand}.`,
-  "",
-  "",
-] as const;
-
-/** Versión en una línea, para avisos cortos dentro de la app. */
-export const ACADEMIC_NOTICE_SHORT = `${COMPANY.brand} `;
-
-/** Campos de `COMPANY` que siguen sin rellenar. */
 export function missingLegalData(): string[] {
   const missing: string[] = [];
-  for (const [key, value] of Object.entries(COMPANY)) {
-    if (value === COMPLETAR) missing.push(`COMPANY.${key}`);
+  for (const [key, value] of Object.entries(COMPANY) as [string, string][]) {
+    if (value === (COMPLETAR as string)) missing.push(`COMPANY.${key}`);
   }
   return missing;
 }

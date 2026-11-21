@@ -6,17 +6,11 @@ Qué datos guarda Catalii, dónde quedan y cómo borrarlos.
 
 > Generado desde `src/lib/legal/content.ts` con `pnpm legal:export`. No lo edites a mano.
 
-> **Catalii es un proyecto escolar en desarrollo, no un servicio comercial.**
-> **Los planes de pago y el checkout están en modo de pruebas: no se cobra dinero real.**
-> **No subas datos reales de clientes ni información que no quieras compartir.**
-
-> Pendiente: 5 dato(s) `[COMPLETAR]`.
-
 ## 1. Quién está detrás
 
-Catalii es un proyecto escolar hecho por [COMPLETAR] para [COMPLETAR]. Sirve para que un mayorista publique un catálogo con enlace propio y reciba pedidos.
+Catalii lo desarrolla y mantiene Derek Palacios. Sirve para que un mayorista publique un catálogo con enlace propio y reciba pedidos.
 
-Para cualquier cosa sobre tus datos, escribe a [COMPLETAR].
+Para cualquier cosa sobre tus datos, escribe a palacios.derek.ismael@gmail.com.
 
 ## 2. Qué datos se guardan
 
@@ -95,16 +89,16 @@ Según los términos de la API de Gemini, en el nivel gratuito Google puede usar
 
 El vendedor dueño del catálogo ve los pedidos de su catálogo y solo los suyos: la base de datos lo limita por cuenta.
 
-Si eres comprador y quieres que se corrija o se retire tu pedido, pídeselo al vendedor, que es quien lo gestiona, o escribe a [COMPLETAR].
+Si eres comprador y quieres que se corrija o se retire tu pedido, pídeselo al vendedor, que es quien lo gestiona, o escribe a palacios.derek.ismael@gmail.com.
 
 ## 9. Descargar o borrar tus datos
 
 - En Configuración, dentro del panel, puedes descargar tus datos en un archivo JSON.
 - En esa misma pantalla puedes borrar tu cuenta: se eliminan negocio, productos, catálogos, pedidos e imágenes, y se cancela la suscripción de prueba. Es permanente.
-- Si no puedes entrar a tu cuenta, escribe a [COMPLETAR].
+- Si no puedes entrar a tu cuenta, escribe a palacios.derek.ismael@gmail.com.
 
 ## 10. Seguridad y cambios
 
-Las conexiones van cifradas y la base de datos restringe el acceso para que cada cuenta vea solo sus datos. Aun así es un proyecto en desarrollo: no se puede prometer seguridad absoluta.
+Las conexiones van cifradas y la base de datos restringe el acceso para que cada cuenta vea solo sus datos. Aun así, ningún servicio puede prometer seguridad absoluta.
 
 Si este texto cambia, la nueva versión se publica en esta misma página con su fecha.

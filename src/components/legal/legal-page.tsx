@@ -1,26 +1,22 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { Wordmark } from "@/components/brand/wordmark";
 import { LegalLinks } from "@/components/legal/legal-links";
-import {
-  ACADEMIC_NOTICE,
-  formatVersion,
-  pendingMarkers,
-  type LegalDoc,
-} from "@/lib/legal/content";
+import { formatVersion, pendingMarkers, type LegalDoc } from "@/lib/legal/content";
 import { siteConfig } from "@/lib/site";
 
 /**
  * Plantilla de página legal. Server component estático.
  *
- * Arriba va siempre el aviso de proyecto académico: es el contexto que hace
- * honesto al resto del texto, así que no se puede cerrar ni omitir.
- *
- * Si al documento le faltan datos, se avisa debajo y la página no se indexa
+ * Si al documento le faltan datos, se avisa arriba y la página no se indexa
  * (ver el `robots` de cada page.tsx). El aviso desaparece solo en cuanto se
  * rellena `COMPANY` en src/lib/legal/config.ts: así nunca se publica como
  * definitivo un texto con huecos.
+ *
+ * `children` se pinta después del texto, dentro del mismo artículo: lo usa
+ * /contacto para añadir su formulario sin duplicar la plantilla.
  */
-export function LegalPage({ doc }: { doc: LegalDoc }) {
+export function LegalPage({ doc, children }: { doc: LegalDoc; children?: ReactNode }) {
   const pending = pendingMarkers(doc);
 
   return (
@@ -38,23 +34,6 @@ export function LegalPage({ doc }: { doc: LegalDoc }) {
 
       <main id="contenido" className="flex-1">
         <article className="mx-auto max-w-3xl px-5 py-10 lg:px-8 lg:py-14">
-          <div
-            role="note"
-            aria-labelledby="aviso-academico"
-            className="mb-8 border-l-2 border-primary bg-muted px-4 py-3"
-          >
-            <p id="aviso-academico" className="t-label text-foreground">
-              Proyecto escolar
-            </p>
-            <ul className="mt-2 list-disc space-y-1 pl-5">
-              {ACADEMIC_NOTICE.map((line) => (
-                <li key={line} className="t-small text-muted-foreground">
-                  {line}
-                </li>
-              ))}
-            </ul>
-          </div>
-
           {pending.data > 0 && (
             <div
               role="note"
@@ -119,6 +98,8 @@ export function LegalPage({ doc }: { doc: LegalDoc }) {
               </section>
             ))}
           </div>
+
+          {children}
         </article>
       </main>
 

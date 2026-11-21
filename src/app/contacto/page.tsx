@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/legal/legal-page";
 import { hasPendingData, LEGAL_DOCS } from "@/lib/legal/content";
+import { ContactForm } from "./contact-form";
 
 const doc = LEGAL_DOCS.contact;
 
@@ -17,5 +18,9 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <LegalPage doc={doc} />;
+  return (
+    <LegalPage doc={doc}>
+      <ContactForm />
+    </LegalPage>
+  );
 }

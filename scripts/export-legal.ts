@@ -13,7 +13,6 @@
 import { existsSync, mkdirSync, readdirSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
-  ACADEMIC_NOTICE,
   LEGAL_DOCS,
   formatVersion,
   pendingMarkers,
@@ -38,9 +37,6 @@ function toMarkdown(doc: LegalDoc): string {
     doc.description,
     "",
     "> Generado desde `src/lib/legal/content.ts` con `pnpm legal:export`. No lo edites a mano.",
-    "",
-    // El aviso de proyecto escolar va arriba también aquí, igual que en la web.
-    ...ACADEMIC_NOTICE.map((line) => `> **${line}**`),
     "",
   ];
 

@@ -6,15 +6,13 @@
  * aquí: viven en `./config` (COMPANY), que es el único sitio que hay que
  * rellenar. Lo que no se sabe queda marcado como [COMPLETAR].
  *
- * Criterio de redacción: Catalii es un proyecto escolar, así que estos textos
- * son cortos y solo dicen cosas comprobables en el código (qué se guarda, en
- * qué servicios, qué queda en el navegador, cómo descargar o borrar la cuenta).
+ * Criterio de redacción: textos cortos que solo dicen cosas comprobables en el
+ * código (qué se guarda, en qué servicios, qué queda en el navegador, cómo
+ * descargar o borrar la cuenta).
  * No afirman cumplimiento normativo, no citan leyes ni plazos legales y no
  * sustituyen a asesoría profesional. Si algo no se puede afirmar, no se escribe.
  */
 import { BILLING_CURRENCY, COMPANY, COMPLETAR, LEGAL_PATHS, LEGAL_VERSIONS } from "./config";
-
-export { ACADEMIC_NOTICE, ACADEMIC_NOTICE_SHORT } from "./config";
 
 export type LegalBlock =
   | { type: "p"; text: string }
@@ -38,12 +36,6 @@ const ul = (...items: string[]): LegalBlock => ({ type: "ul", items });
 
 const BRAND = COMPANY.brand;
 
-/**
- * Aviso de proyecto académico. Se muestra arriba en las tres páginas y es lo
- * más importante que dicen: explica el contexto real en lugar de prometer
- * garantías que un trabajo de clase no puede dar. Vive en `./config` porque lo
- * comparten páginas legales y componentes de cliente.
- */
 
 /* ── Privacidad ─────────────────────────────────────────────────────────── */
 const privacy: LegalDoc = {
@@ -59,7 +51,7 @@ const privacy: LegalDoc = {
       title: "1. Quién está detrás",
       blocks: [
         p(
-          `${BRAND} es un proyecto escolar hecho por ${COMPANY.owner} para ${COMPANY.institution}. Sirve para que un mayorista publique un catálogo con enlace propio y reciba pedidos.`,
+          `${BRAND} lo desarrolla y mantiene ${COMPANY.owner}. Sirve para que un mayorista publique un catálogo con enlace propio y reciba pedidos.`,
         ),
         p(`Para cualquier cosa sobre tus datos, escribe a ${COMPANY.contactEmail}.`),
       ],
@@ -201,7 +193,7 @@ const privacy: LegalDoc = {
       title: "10. Seguridad y cambios",
       blocks: [
         p(
-          "Las conexiones van cifradas y la base de datos restringe el acceso para que cada cuenta vea solo sus datos. Aun así es un proyecto en desarrollo: no se puede prometer seguridad absoluta.",
+          "Las conexiones van cifradas y la base de datos restringe el acceso para que cada cuenta vea solo sus datos. Aun así, ningún servicio puede prometer seguridad absoluta.",
         ),
         p("Si este texto cambia, la nueva versión se publica en esta misma página con su fecha."),
       ],
@@ -223,7 +215,7 @@ const terms: LegalDoc = {
       title: "1. Qué es Catalii",
       blocks: [
         p(
-          `${BRAND} es un proyecto escolar que permite importar una lista de productos, armar catálogos públicos con enlace propio y recibir pedidos. Lo mantiene ${COMPANY.owner}.`,
+          `${BRAND} permite importar una lista de productos, armar catálogos públicos con enlace propio y recibir pedidos. Lo mantiene ${COMPANY.owner}.`,
         ),
         p(
           `${BRAND} no participa en la compraventa: precios, disponibilidad, entrega y pago los acuerdan el vendedor y su comprador entre ellos.`,
@@ -304,7 +296,7 @@ const terms: LegalDoc = {
       title: "8. Límites, cambios y contacto",
       blocks: [
         p(
-          "Es un proyecto en desarrollo y se ofrece tal cual: puede fallar, estar caído o perder datos de prueba, y no hay compromiso de disponibilidad ni de soporte.",
+          "El servicio se ofrece tal cual: puede fallar o estar caído, y mientras el checkout siga en pruebas no hay compromiso de disponibilidad ni de soporte.",
         ),
         p(
           `El tratamiento de datos se explica en ${LEGAL_PATHS.privacy}. Estos términos pueden cambiar; la versión vigente aparece al inicio de esta página. Contacto: ${COMPANY.contactEmail}.`,
@@ -329,12 +321,11 @@ const contact: LegalDoc = {
       blocks: [
         ul(
           `Responsable del proyecto: ${COMPANY.owner}`,
-          `Institución o materia: ${COMPANY.institution}`,
           `Correo: ${COMPANY.contactEmail}`,
           `Sitio: ${COMPANY.site}`,
         ),
         p(
-          "Ese correo sirve para todo: dudas, problemas con la cuenta, datos personales y avisos sobre contenido de un catálogo. Al ser un proyecto escolar, las respuestas no son inmediatas.",
+          "Ese correo sirve para todo: dudas, problemas con la cuenta, datos personales y avisos sobre contenido de un catálogo. También puedes usar el formulario de abajo. Las respuestas no son inmediatas.",
         ),
       ],
     },
