@@ -54,12 +54,80 @@ function isPublishableImageUrl(value: string): boolean {
 const imageUrlSchema = (message: string) =>
   z.string().trim().max(600).refine(isPublishableImageUrl, message);
 
+/** Texto opcional de formulario: "" se trata como "sin valor". */
+const optional = (max: number) => z.string().trim().max(max).optional().or(z.literal(""));
+
+/**
+ * Datos básicos del negocio. Es lo mínimo para empezar a trabajar, y lo único
+ * que se pide al crear la cuenta.
+ */
 export const businessSchema = z.object({
   name: z.string().trim().min(1, "Nombre requerido").max(120),
   slug: slugSchema.max(60),
   whatsapp: z.string().trim().max(25).optional().or(z.literal("")),
   email: z.string().trim().email().max(160).optional().or(z.literal("")),
   theme: z.enum(themeIds),
+});
+
+/**
+ * Perfil público del negocio: lo que se muestra en su página.
+ *
+ * Instagram y Facebook se guardan como usuario, sin URL ni arroba, y el enlace
+ * se arma al mostrarlo. Así nadie puede colar un enlace a otro sitio y no hay
+ * que validar dominios. Se acepta que el usuario pegue la URL completa o el
+ * arroba y se limpia aquí mismo, porque es lo que hace la gente.
+ */
+const handle = (max: number, label: string) =>
+  z
+    .string()
+    .trim()
+    .transform((v) =>
+      v
+        .replace(/^https?:\/\/(www\.)?(instagram|facebook)\.com\//i, "")
+        .replace(/^@/, "")
+        .replace(/\/+$/, "")
+        .trim(),
+    )
+    .refine((v) => v === "" || v.length <= max, `${label} demasiado largo`)
+    .optional()
+    .or(z.literal(""));
+
+export const businessProfileSchema = z.object({
+  tagline: optional(160),
+  description: optional(2000),
+  category: optional(80),
+  phone: optional(25),
+  address: optional(240),
+  city: optional(120),
+  country: optional(80),
+  website: z
+    .union([
+      z
+        .string()
+        .trim()
+        .max(300)
+        .refine((v) => {
+          try {
+            const u = new URL(v);
+            return u.protocol === "https:" || u.protocol === "http:";
+          } catch {
+            return false;
+          }
+        }, "El sitio web debe ser una URL completa (https://…)"),
+      z.literal(""),
+    ])
+    .optional(),
+  instagram: handle(30, "Usuario de Instagram").refine(
+    (v) => !v || /^[A-Za-z0-9._]{1,30}$/.test(v),
+    "Usuario de Instagram inválido",
+  ),
+  facebook: handle(60, "Usuario de Facebook").refine(
+    (v) => !v || /^[A-Za-z0-9._-]{1,60}$/.test(v),
+    "Usuario de Facebook inválido",
+  ),
+  hours: optional(300),
+  is_public: checkboxBool,
+  show_products: checkboxBool,
 });
 
 export const productSchema = z.object({

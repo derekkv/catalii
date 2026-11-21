@@ -1,18 +1,23 @@
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { MessageCircle, PackageOpen } from "lucide-react";
+import Link from "next/link";
+import { ArrowUpRight, MessageCircle, PackageOpen } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { resolveTheme } from "@/lib/themes";
 import { getSiteUrl, siteConfig } from "@/lib/site";
 import { LegalLinks } from "@/components/legal/legal-links";
 import { LEGAL_PATHS } from "@/lib/legal/config";
 import { absoluteUrl, productImages, resolveBrandImage } from "@/lib/media/config";
+import { whatsappHref } from "@/lib/whatsapp";
 import { Storefront, type PublicProduct } from "./storefront";
 import { ShareButton } from "./catalog-actions";
 import { Monogram } from "@/components/brand/wordmark";
 import { BrandLogo } from "@/components/brand/brand-logo";
-import type { Catalog } from "@/types/database";
+import { TrackPageView } from "@/components/metrics/track-page-view";
+import { WhatsappLink } from "@/components/metrics/whatsapp-link";
+import { PUBLIC_BUSINESS_COLUMNS, type Catalog, type PublicBusiness } from "@/types/database";
 
 export const revalidate = 60; // ISR: regenera catálogos públicos cada 60s
 
@@ -25,17 +30,44 @@ interface CatalogProductRow {
   product: RawProduct | null;
 }
 
-async function loadCatalog(slug: string) {
+/**
+ * El negocio dueño viene EMBEBIDO en la consulta del catálogo, no en una
+ * consulta aparte: así el catálogo sabe de quién es sin pagar otro viaje a
+ * Supabase. La política `business_public_select` de la 0009 solo deja ver los
+ * negocios publicados, así que si llega `null` es que no hay página pública
+ * que enlazar (o el dueño no la publicó).
+ */
+type CatalogWithBusiness = Catalog & { business?: PublicBusiness | null };
+
+const loadCatalog = cache(async (slug: string) => {
   const supabase = await createClient();
-  const { data: catalog } = await supabase
+
+  let row: CatalogWithBusiness | null = null;
+  const embedded = await supabase
     .from("catalog")
-    .select("*")
+    .select(`*, business:business(${PUBLIC_BUSINESS_COLUMNS})`)
     .eq("slug", slug)
     .eq("is_public", true)
     .maybeSingle();
 
-  if (!catalog) return null;
-  const cat = catalog as Catalog;
+  if (embedded.error) {
+    // Reserva mientras la migración 0009 no esté aplicada: sin los permisos
+    // de columna sobre `business`, PostgREST rechaza la consulta entera y el
+    // catálogo público se caería. Se vuelve a pedir sin el negocio.
+    const plain = await supabase
+      .from("catalog")
+      .select("*")
+      .eq("slug", slug)
+      .eq("is_public", true)
+      .maybeSingle();
+    row = (plain.data as CatalogWithBusiness | null) ?? null;
+  } else {
+    row = (embedded.data as unknown as CatalogWithBusiness | null) ?? null;
+  }
+
+  if (!row) return null;
+  const { business = null, ...rest } = row;
+  const cat = rest as Catalog;
 
   const { data: rows } = await supabase
     .from("catalog_product")
@@ -47,12 +79,18 @@ async function loadCatalog(slug: string) {
     .map((r) => r.product)
     .filter((p): p is RawProduct => p !== null && p.active);
 
-  // Logo/banner: los del catálogo; si no tiene, los heredados del negocio
-  // (vía RPC, porque `business` no es legible por anon).
+  // Logo/banner: los del catálogo; si no tiene, los heredados del negocio.
+  // Si el negocio es público ya vienen en la consulta de arriba; si no lo es,
+  // se piden al RPC `public_catalog_branding` (su `business` no es legible).
   let logo = resolveBrandImage(cat.logo_key, cat.logo_url, "thumb");
   let logoFull = resolveBrandImage(cat.logo_key, cat.logo_url);
   let banner = resolveBrandImage(cat.banner_key, cat.banner_url);
-  if (!logo || !banner) {
+  if (!logo && business?.logo_key) {
+    logo = resolveBrandImage(business.logo_key, null, "thumb");
+    logoFull = resolveBrandImage(business.logo_key, null);
+  }
+  if (!banner && business?.banner_key) banner = resolveBrandImage(business.banner_key, null);
+  if ((!logo || !banner) && !business) {
     const { data: inherited } = await supabase.rpc("public_catalog_branding", { p_slug: slug });
     const row = (Array.isArray(inherited) ? inherited[0] : inherited) as
       | { logo_key: string | null; banner_key: string | null }
@@ -64,8 +102,8 @@ async function loadCatalog(slug: string) {
     if (!banner && row?.banner_key) banner = resolveBrandImage(row.banner_key, null);
   }
 
-  return { catalog: cat, products, branding: { logo, logoFull, banner } };
-}
+  return { catalog: cat, business, products, branding: { logo, logoFull, banner } };
+});
 
 export async function generateMetadata({
   params,
@@ -107,11 +145,12 @@ export default async function PublicCatalogPage({
   const data = await loadCatalog(slug);
   if (!data) notFound();
 
-  const { catalog, products, branding } = data;
+  const { catalog, business, products, branding } = data;
   const theme = resolveTheme(catalog.theme);
   const displayName = catalog.display_name || catalog.name;
   const url = `${getSiteUrl()}/c/${catalog.slug}`;
   const site = getSiteUrl();
+  const waHref = whatsappHref(catalog.whatsapp);
 
   // JSON-LD para SEO (tienda + listado de productos)
   const jsonLd = {
@@ -121,6 +160,16 @@ export default async function PublicCatalogPage({
     url,
     ...(catalog.description ? { description: catalog.description } : {}),
     ...(branding.logoFull ? { logo: absoluteUrl(branding.logoFull, site) } : {}),
+    // El catálogo es de un negocio, y ahora ese negocio tiene página propia.
+    ...(business
+      ? {
+          parentOrganization: {
+            "@type": "Organization",
+            name: business.name,
+            url: `${site}/n/${business.slug}`,
+          },
+        }
+      : {}),
     makesOffer: products.slice(0, 30).map((p) => {
       const img = productImages(p)[0];
       return {
@@ -154,6 +203,7 @@ export default async function PublicCatalogPage({
         nonce={nonce}
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      <TrackPageView kind="catalog_view" catalogSlug={catalog.slug} />
 
       {/* ══ Cabecera del catálogo ═══════════════════════════════════════
           Maquetada como la cabecera de una lista de precios impresa: marca a
@@ -180,17 +230,16 @@ export default async function PublicCatalogPage({
 
           {/* Contacto directo: muchos compradores mayoristas prefieren
               preguntar antes de armar el pedido (crédito, flete, existencias). */}
-          {catalog.whatsapp && (
-            <a
-              href={`https://wa.me/${catalog.whatsapp.replace(/[^0-9]/g, "")}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`Escribir a ${displayName} por WhatsApp`}
+          {waHref && (
+            <WhatsappLink
+              href={waHref}
+              catalogSlug={catalog.slug}
+              label={`Escribir a ${displayName} por WhatsApp`}
               title="Escribir por WhatsApp"
               className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-[var(--radius-theme-sm)] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               <MessageCircle className="size-5" aria-hidden="true" />
-            </a>
+            </WhatsappLink>
           )}
           <ShareButton url={url} title={displayName} />
         </div>
@@ -207,6 +256,27 @@ export default async function PublicCatalogPage({
           />
         )}
 
+        {/* ══ El catálogo pertenece a un negocio ═══════════════════════════
+            Sin este enlace, cada catálogo parece una tienda suelta: el
+            comprador no sabe que el mismo proveedor tiene otras listas, ni
+            dónde ver su dirección o su horario. Solo aparece si el dueño
+            publicó la página del negocio (si no, `business` llega nulo). */}
+        {business && (
+          <Link
+            href={`/n/${business.slug}`}
+            className="mt-4 flex items-center justify-between gap-3 border border-border bg-card px-4 py-3 transition-colors hover:border-input"
+          >
+            <span className="min-w-0">
+              <span className="t-label block text-muted-foreground">Un catálogo de</span>
+              <span className="t-h3 mt-0.5 block truncate text-base">{business.name}</span>
+            </span>
+            <span className="t-label inline-flex shrink-0 items-center gap-1 text-primary">
+              Ver todo el negocio
+              <ArrowUpRight className="size-3" aria-hidden="true" />
+            </span>
+          </Link>
+        )}
+
         {products.length === 0 ? (
           <div className="flex flex-col items-center gap-4 py-24 text-center">
             <PackageOpen className="size-9 text-muted-foreground" aria-hidden="true" />
@@ -216,15 +286,14 @@ export default async function PublicCatalogPage({
                 {displayName} todavía no publicó productos aquí. Vuelve en un rato.
               </p>
             </div>
-            {catalog.whatsapp && (
-              <a
-                href={`https://wa.me/${catalog.whatsapp.replace(/[^0-9]/g, "")}`}
-                target="_blank"
-                rel="noopener noreferrer"
+            {waHref && (
+              <WhatsappLink
+                href={waHref}
+                catalogSlug={catalog.slug}
                 className="inline-flex h-11 items-center gap-2 rounded-[var(--radius-theme-sm)] bg-primary px-5 text-sm font-medium text-on-primary transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_88%,black)]"
               >
                 <MessageCircle className="size-4" aria-hidden="true" /> Escribir por WhatsApp
-              </a>
+              </WhatsappLink>
             )}
           </div>
         ) : (

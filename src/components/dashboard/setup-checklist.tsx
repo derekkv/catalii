@@ -14,12 +14,12 @@ export interface SetupStep {
  * Primeros pasos.
  *
  * Un mayorista recién registrado no sabe que el camino es
- * productos → catálogo → publicar → compartir. Sin esta guía llega al panel,
- * ve cuatro ceros y se va.
+ * productos → catálogo → publicar → compartir → página del negocio. Sin esta
+ * guía llega al panel, ve cuatro ceros y se va.
  *
  * Maquetado como un sumario numerado: ordinal monoespaciado, regla por paso y
  * acción sólo en el paso siguiente, para que haya una única cosa que hacer.
- * Desaparece al completarse los cuatro.
+ * Desaparece al completarse todos.
  */
 export function SetupChecklist({ steps }: { steps: SetupStep[] }) {
   const done = steps.filter((s) => s.done).length;
@@ -35,7 +35,7 @@ export function SetupChecklist({ steps }: { steps: SetupStep[] }) {
     >
       <div className="flex flex-wrap items-baseline justify-between gap-2 rule-b px-5 py-4">
         <h2 id="setup-title" className="t-h3">
-          Pon tu catálogo en marcha
+          Pon tu negocio en marcha
         </h2>
         <p className="t-label text-muted-foreground">
           {done} de {steps.length} listos

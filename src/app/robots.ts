@@ -8,7 +8,7 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
       // No indexar el panel ni endpoints internos.
-      disallow: ["/dashboard", "/login", "/auth", "/api"],
+      disallow: ["/dashboard", "/admin", "/login", "/auth", "/api"],
     },
     sitemap: `${base}/sitemap.xml`,
   };

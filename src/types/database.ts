@@ -19,8 +19,75 @@ export interface Business {
   email: string | null;
   theme: string;
   plan: PlanTier;
+  // Perfil público del negocio (migración 0009). Todo opcional: el dueño
+  // rellena lo que quiera y la página se adapta a lo que haya.
+  tagline: string | null;
+  description: string | null;
+  category: string | null;
+  phone: string | null;
+  address: string | null;
+  city: string | null;
+  country: string | null;
+  website: string | null;
+  /** Solo el usuario, sin arroba ni URL. */
+  instagram: string | null;
+  /** Solo el usuario o el nombre de la página. */
+  facebook: string | null;
+  hours: string | null;
+  /** Si la página pública del negocio está publicada. */
+  is_public: boolean;
+  /** Si esa página lista además todos los productos visibles. */
+  show_products: boolean;
   created_at: string;
   updated_at: string;
+}
+
+/**
+ * Campos del negocio que se pueden leer sin sesión.
+ *
+ * Coincide con el `grant select (...)` de la migración 0009: `email`, `plan` y
+ * `owner_id` no están, y pedirlos como `anon` falla por permisos.
+ */
+export type PublicBusiness = Pick<
+  Business,
+  | "id"
+  | "name"
+  | "slug"
+  | "tagline"
+  | "description"
+  | "category"
+  | "whatsapp"
+  | "phone"
+  | "address"
+  | "city"
+  | "country"
+  | "website"
+  | "instagram"
+  | "facebook"
+  | "hours"
+  | "theme"
+  | "logo_url"
+  | "logo_key"
+  | "banner_key"
+  | "is_public"
+  | "show_products"
+  | "created_at"
+>;
+
+/** Columnas públicas del negocio, para usar en `.select()`. */
+export const PUBLIC_BUSINESS_COLUMNS =
+  "id, name, slug, tagline, description, category, whatsapp, phone, address, city, country, website, instagram, facebook, hours, theme, logo_url, logo_key, banner_key, is_public, show_products, created_at";
+
+export type MetricKind = "business_view" | "catalog_view" | "whatsapp_click" | "order_sent";
+
+export interface PageMetric {
+  id: string;
+  business_id: string;
+  catalog_id: string | null;
+  kind: MetricKind;
+  /** Fecha (UTC) en formato YYYY-MM-DD. */
+  day: string;
+  count: number;
 }
 
 export interface Product {

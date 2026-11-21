@@ -12,14 +12,26 @@ import { useToast } from "@/components/ui/toast";
  * copiar la URL de la barra del navegador (en móvil, dentro de un webview de
  * WhatsApp, a veces ni se ve). Usa la Web Share API nativa y cae a portapapeles.
  */
-export function ShareButton({ url, title }: { url: string; title: string }) {
+export function ShareButton({
+  url,
+  title,
+  label = "Compartir catálogo",
+  shareText,
+}: {
+  url: string;
+  title: string;
+  /** Texto accesible del botón. Se cambia en la página del negocio. */
+  label?: string;
+  /** Mensaje que acompaña al enlace en la hoja de compartir del sistema. */
+  shareText?: string;
+}) {
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 
   async function share() {
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
-        await navigator.share({ title, text: `Mira el catálogo de ${title}`, url });
+        await navigator.share({ title, text: shareText ?? `Mira el catálogo de ${title}`, url });
         return;
       } catch {
         // El usuario canceló la hoja de compartir: no es un error que avisar.
@@ -40,8 +52,8 @@ export function ShareButton({ url, title }: { url: string; title: string }) {
     <button
       type="button"
       onClick={share}
-      aria-label="Compartir catálogo"
-      title="Compartir catálogo"
+      aria-label={label}
+      title={label}
       className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-[var(--radius-theme-sm)] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
     >
       {copied ? (

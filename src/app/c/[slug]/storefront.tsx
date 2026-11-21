@@ -23,6 +23,7 @@ import { Drawer, Modal } from "@/components/ui/overlay";
 import { useToast } from "@/components/ui/toast";
 import { formatMoney, cn } from "@/lib/utils";
 import { productImages } from "@/lib/media/config";
+import { sendMetric } from "@/lib/metrics/track";
 import type { StoredImage } from "@/types/database";
 
 export interface PublicProduct {
@@ -870,7 +871,16 @@ function CartDrawer({
           <p className="text-sm text-muted-foreground">
             Avisar por WhatsApp acelera la respuesta.
           </p>
-          <a href={waHref} target="_blank" rel="noopener noreferrer" className="w-full">
+          {/* Este clic también cuenta como `whatsapp_click`: para el mayorista
+              es la señal de que el comprador le escribió, no un dato nuevo del
+              pedido (que ya está en la tabla `order`). */}
+          <a
+            href={waHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full"
+            onClick={() => sendMetric("whatsapp_click", { catalogSlug: slug })}
+          >
             <Button variant="accent" size="lg" className="w-full gap-2">
               <MessageCircle className="size-5" aria-hidden="true" /> Avisar por WhatsApp
             </Button>

@@ -92,6 +92,38 @@ export default async function DashboardPage() {
       cta: "Compartir",
       done: orders.length > 0,
     },
+    // La página del negocio va al final: es la portada que reúne todo (datos,
+    // contacto, horario y catálogos), así que tiene sentido abrirla cuando ya
+    // hay algo que enseñar.
+    {
+      title: "Publica la página de tu negocio",
+      description: "Tus datos, contacto y horario en una página propia para compartir.",
+      href: "/dashboard/configuracion#publicacion",
+      cta: "Completar",
+      done: business.is_public,
+    },
+  ];
+
+  // Enlaces que el mayorista comparte: la página del negocio y sus catálogos
+  // publicados. Van juntos porque para él son lo mismo —direcciones que puede
+  // mandar por WhatsApp— y separarlos en dos listas de una fila no ayuda.
+  const publicLinks = [
+    ...(business.is_public
+      ? [
+          {
+            key: "business",
+            kind: "Negocio",
+            title: business.name,
+            path: `/n/${business.slug}`,
+          },
+        ]
+      : []),
+    ...published.slice(0, 4).map((c) => ({
+      key: c.id,
+      kind: "Catálogo",
+      title: c.display_name || c.name,
+      path: `/c/${c.slug}`,
+    })),
   ];
 
   return (
@@ -152,28 +184,29 @@ export default async function DashboardPage() {
         ]}
       />
 
-      {/* Catálogos publicados: lo que el mayorista comparte cada día. */}
-      {published.length > 0 && (
+      {/* Enlaces públicos: lo que el mayorista comparte cada día. */}
+      {publicLinks.length > 0 && (
         <section>
           <div className="mb-4 flex items-baseline justify-between gap-3">
-            <h2 className="t-h2">Tus catálogos públicos</h2>
+            <h2 className="t-h2">Tus enlaces públicos</h2>
             <Link href="/dashboard/catalogos" className="t-label link-ink text-primary">
               Gestionar
             </Link>
           </div>
 
           <ul className="grid-ruled grid sm:grid-cols-2">
-            {published.slice(0, 4).map((c) => (
-              <li key={c.id} className="flex items-center gap-3 p-4">
+            {publicLinks.map((item) => (
+              <li key={item.key} className="flex items-center gap-3 p-4">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{c.display_name || c.name}</p>
-                  <p className="t-label mt-1 truncate text-muted-foreground">/c/{c.slug}</p>
+                  <p className="t-label text-muted-foreground">{item.kind}</p>
+                  <p className="mt-1.5 truncate text-sm font-medium">{item.title}</p>
+                  <p className="t-label mt-1 truncate text-muted-foreground">{item.path}</p>
                 </div>
                 <Link
-                  href={`/c/${c.slug}`}
+                  href={item.path}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={`Abrir catálogo ${c.name} en una pestaña nueva`}
+                  aria-label={`Abrir ${item.title} en una pestaña nueva`}
                   className="flex size-11 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 >
                   <ExternalLink className="size-4" aria-hidden="true" />

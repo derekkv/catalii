@@ -22,7 +22,8 @@ export default async function OnboardingPage() {
       <p className="t-eyebrow mt-9">Paso 1 de 1</p>
       <h1 className="t-h1 mt-4">Cuéntanos de tu negocio</h1>
       <p className="t-body mt-3 text-muted-foreground">
-        Con esto creamos tu espacio. Todo se puede cambiar después.
+        Con esto creamos tu espacio y la página de tu negocio. Sólo el nombre es obligatorio; todo
+        se puede cambiar después.
       </p>
 
       <div className="mt-9 rule-t pt-8">

@@ -50,7 +50,10 @@ export async function updateSession(request: NextRequest) {
   if (!url || !key) return supabaseResponse;
 
   const path = request.nextUrl.pathname;
-  const isProtected = path.startsWith("/dashboard");
+  // `/admin` se protege aquí solo para exigir sesión. Quién es administrador se
+  // decide en el servidor (src/lib/admin.ts), no en el middleware: el correo
+  // verificado no está disponible de forma fiable sin llamar a Auth.
+  const isProtected = path.startsWith("/dashboard") || path.startsWith("/admin");
 
   // Atajo: sin cookie de sesión no hay nada que refrescar ni verificar, así
   // que las rutas públicas no pagan ni una llamada de red.
