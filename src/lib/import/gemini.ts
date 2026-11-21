@@ -40,11 +40,28 @@ import {
   cellText,
 } from "./types";
 
-/** Modelo por defecto. Configurable: la familia cambia cada pocos meses. */
-const DEFAULT_MODEL = "gemini-3.8-flash";
+/**
+ * Modelo por defecto. Configurable: la familia cambia cada pocos meses.
+ *
+ * Es un **flash-lite** a propósito, comprobado contra la API real: para esta
+ * tarea responde en menos de 2 s, mientras que los `flash` grandes (3.5 a 3.8
+ * y el alias `gemini-flash-latest`) se pasan de 30 s porque razonan antes de
+ * contestar, y `gemini-3.8-flash` además devuelve 503 por saturación. Decidir
+ * a qué campo corresponde una columna no necesita razonamiento largo.
+ *
+ * Se usa el alias `-latest` y no una versión fija porque los modelos concretos
+ * se retiran cada pocos meses (`gemini-2.5-flash` desaparece el 1-dic-2026) y
+ * esto es un proyecto escolar que nadie va a estar actualizando. Si algún día
+ * el alias se vuelve lento, se fija uno concreto con `GEMINI_MODEL`.
+ */
+const DEFAULT_MODEL = "gemini-flash-lite-latest";
 
-/** Un solo intento y espera corta: detrás hay un usuario esperando. */
-const TIMEOUT_MS = 10_000;
+/**
+ * Un solo intento. 15 s es ~7 veces lo que tarda el modelo por defecto: margen
+ * para un mal día de la red sin dejar al usuario esperando de más, porque al
+ * agotarse se cae al respaldo heurístico y la importación sigue.
+ */
+const TIMEOUT_MS = 15_000;
 
 export function geminiModel(): string {
   return process.env.GEMINI_MODEL?.trim() || DEFAULT_MODEL;
@@ -244,7 +261,10 @@ export async function proposeMapping(
   try {
     const call = (async () => {
       const { GoogleGenAI } = await import("@google/genai");
-      const ai = new GoogleGenAI({ apiKey });
+      // `v1beta` es obligatorio: con `v1` la API rechaza la petición con
+      // «Developer instruction is not enabled for api version v1», porque
+      // `system_instruction` solo existe en beta. Comprobado contra la API real.
+      const ai = new GoogleGenAI({ apiKey, httpOptions: { apiVersion: "v1beta" } });
       return ai.interactions.create(
         {
           model: geminiModel(),
