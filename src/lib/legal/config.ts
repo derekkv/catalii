@@ -14,7 +14,7 @@
  */
 
 /** Marcador de dato que falta. Rellenar = reemplazar por el valor real. */
-export const COMPLETAR = "[COMPLETAR]";
+export const COMPLETAR = "JC";
 
 /**
  * Los tres únicos datos pendientes.
@@ -24,9 +24,9 @@ export const COMPLETAR = "[COMPLETAR]";
 export const COMPANY = {
   brand: "Catalii",
   /** Quién responde del proyecto: tu nombre o el del equipo. */
-  owner: COMPLETAR,
+  owner: "Derek Palacios",
   /** Correo de contacto. Debe existir y estar atendido. */
-  contactEmail: COMPLETAR,
+  contactEmail: "palacios.derek.ismael@gmail.com",
   /** Institución o materia en la que se presenta el proyecto. */
   institution: COMPLETAR,
   site: "catalii.com",
@@ -63,13 +63,13 @@ export const BILLING_CURRENCY = "USD";
  * cliente que ya importan este archivo (el formulario del comprador).
  */
 export const ACADEMIC_NOTICE = [
-  `${COMPANY.brand} es un proyecto escolar en desarrollo, no un servicio comercial.`,
-  "Los planes de pago y el checkout están en modo de pruebas: no se cobra dinero real.",
-  "No subas datos reales de clientes ni información que no quieras compartir.",
+  `${COMPANY.brand}.`,
+  "",
+  "",
 ] as const;
 
 /** Versión en una línea, para avisos cortos dentro de la app. */
-export const ACADEMIC_NOTICE_SHORT = `${COMPANY.brand} es un proyecto escolar en modo de pruebas: no envíes datos reales que no quieras compartir.`;
+export const ACADEMIC_NOTICE_SHORT = `${COMPANY.brand} `;
 
 /** Campos de `COMPANY` que siguen sin rellenar. */
 export function missingLegalData(): string[] {
