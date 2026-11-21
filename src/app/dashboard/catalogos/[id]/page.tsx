@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { ArrowLeft } from "lucide-react";
 import { requireBusiness } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { getSiteUrl } from "@/lib/site";
+import { getRequestSiteUrl } from "@/lib/site";
 import { resolveBrandImage } from "@/lib/media/config";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -41,7 +41,9 @@ export default async function CatalogDetailPage({
 
   const products = (productsData as Product[] | null) ?? [];
   const selectedIds = (linkData ?? []).map((r) => r.product_id as string);
-  const base = getSiteUrl();
+  // Host real de la petición: así el enlace que se comparte funciona
+  // aunque el dominio canónico todavía no esté conectado al Worker.
+  const base = await getRequestSiteUrl();
   const publicUrl = `${base}/c/${cat.slug}`;
 
   return (

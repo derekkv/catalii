@@ -4,7 +4,7 @@ import { BookOpen, ExternalLink, Settings2 } from "lucide-react";
 import { requireBusiness } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getPlan } from "@/lib/plans";
-import { getSiteUrl } from "@/lib/site";
+import { getRequestSiteUrl } from "@/lib/site";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { UsageMeter } from "@/components/dashboard/usage-meter";
@@ -39,7 +39,9 @@ export default async function CatalogosPage() {
 
   const limit = getPlan(business.plan).limits.maxCatalogs;
   const canCreate = catalogs.length < limit;
-  const base = getSiteUrl();
+  // Host real de la petición: así el enlace que se comparte funciona
+  // aunque el dominio canónico todavía no esté conectado al Worker.
+  const base = await getRequestSiteUrl();
 
   return (
     <div className="mx-auto max-w-4xl space-y-7">

@@ -16,7 +16,7 @@ import {
   Info,
 } from "lucide-react";
 import { submitOrder } from "@/lib/actions/order-actions";
-import { ACADEMIC_NOTICE_SHORT, LEGAL_PATHS } from "@/lib/legal/config";
+import { LEGAL_PATHS } from "@/lib/legal/config";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Textarea } from "@/components/ui/input";
 import { Drawer, Modal } from "@/components/ui/overlay";
@@ -375,6 +375,30 @@ function ProductCard({
   const cover = images[0];
   const hasDetail = Boolean(p.description || cover || p.category);
 
+  // Rotación de fotos al pasar el ratón.
+  //
+  // Las fotos adicionales solo se montan mientras el puntero está encima: si se
+  // montaran siempre, una rejilla de 50 productos con 3 fotos descargaría el
+  // triple de imágenes sin que nadie las mire.
+  const rotates = images.length > 1;
+  const [hovering, setHovering] = useState(false);
+  const [frame, setFrame] = useState(0);
+
+  useEffect(() => {
+    if (!hovering || !rotates) return;
+    // Respeta a quien pidió menos movimiento en el sistema: ve la portada fija.
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const id = window.setInterval(() => {
+      setFrame((f) => (f + 1) % images.length);
+    }, 1100);
+    return () => window.clearInterval(id);
+  }, [hovering, rotates, images.length]);
+
+  function stopRotation() {
+    setHovering(false);
+    setFrame(0); // al salir vuelve a la portada
+  }
+
   return (
     <li>
       <article className="flex h-full flex-col border border-border bg-card">
@@ -385,33 +409,57 @@ function ProductCard({
           type="button"
           onClick={onOpenDetail}
           disabled={!hasDetail}
+          onMouseEnter={rotates ? () => setHovering(true) : undefined}
+          onMouseLeave={rotates ? stopRotation : undefined}
           className={cn("group block text-left", hasDetail ? "cursor-pointer" : "cursor-default")}
           aria-label={hasDetail ? `Ver detalle de ${p.name}` : undefined}
         >
           <div className="relative aspect-square overflow-hidden border-b border-border bg-muted">
             {cover ? (
-              // Miniatura en la rejilla: ~30 KB en vez de la foto completa.
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={cover.thumb}
-                alt={p.name}
-                loading="lazy"
-                decoding="async"
-                className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
-              />
+              <>
+                {/* Miniatura en la rejilla: ~30 KB en vez de la foto completa. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={cover.thumb}
+                  alt={p.name}
+                  loading="lazy"
+                  decoding="async"
+                  className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
+                />
+                {/* Fotos siguientes superpuestas: cambian por opacidad para que
+                    el paso sea suave y no haya parpadeo al cambiar el `src`.
+                    Decorativas (`alt=""`): la rotación es visual y el nombre ya
+                    lo da la portada; el detalle tiene la galería navegable. */}
+                {hovering &&
+                  images.slice(1).map((img, i) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      key={img.src}
+                      src={img.thumb}
+                      alt=""
+                      aria-hidden="true"
+                      decoding="async"
+                      className={cn(
+                        "absolute inset-0 size-full object-cover transition-opacity duration-500",
+                        "group-hover:scale-[1.04] transition-transform",
+                        frame === i + 1 ? "opacity-100" : "opacity-0",
+                      )}
+                    />
+                  ))}
+              </>
             ) : (
               <div className="flex size-full items-center justify-center text-muted-foreground">
                 <PackageOpen className="size-7" aria-hidden="true" />
               </div>
             )}
             {lowStock && (
-              <span className="t-label absolute left-0 top-0 bg-accent px-2 py-1 text-on-accent">
+              <span className="t-label absolute left-0 top-0 z-10 bg-accent px-2 py-1 text-on-accent">
                 Quedan {p.stock}
               </span>
             )}
-            {images.length > 1 && (
-              <span className="t-label absolute bottom-0 right-0 bg-background/90 px-1.5 py-0.5 text-[0.5625rem] text-muted-foreground">
-                {images.length} fotos
+            {rotates && (
+              <span className="t-label absolute bottom-0 right-0 z-10 bg-background/90 px-1.5 py-0.5 text-[0.5625rem] text-muted-foreground">
+                {hovering ? `${frame + 1}/${images.length}` : `${images.length} fotos`}
               </span>
             )}
           </div>
@@ -968,10 +1016,6 @@ function CartDrawer({
             Recordar mis datos en este dispositivo
           </label>
         </div>
-
-        <p className="t-small text-muted-foreground">
-          {ACADEMIC_NOTICE_SHORT}
-        </p>
 
         <p className="t-small text-muted-foreground">
           Usamos tu nombre y WhatsApp solo para enviar este pedido a {displayName}. Más info en{" "}

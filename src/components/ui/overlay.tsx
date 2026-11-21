@@ -45,6 +45,24 @@ function useDialogBehavior(
   onClose: () => void,
   ref: React.RefObject<HTMLDivElement | null>,
 ) {
+  // `onClose` se guarda en un ref a propósito.
+  //
+  // Antes estaba en las dependencias del efecto de abajo, y eso provocaba un
+  // fallo muy visible: casi todos los consumidores pasan una función creada en
+  // su propio render (`onClose={close}` o una flecha en línea), así que al
+  // escribir una letra en un campo del diálogo, el padre se re-renderizaba, la
+  // identidad de `onClose` cambiaba, el efecto se limpiaba y se volvía a
+  // ejecutar, y entre el cleanup (que devuelve el foco al elemento previo) y el
+  // arranque (que enfoca el primer control) el campo perdía el foco en cuanto
+  // se pulsaba la primera tecla.
+  //
+  // Con el ref, el efecto solo depende de si el diálogo está abierto: el foco
+  // se coloca al abrir y se devuelve al cerrar, nunca en medio de la escritura.
+  const onCloseRef = React.useRef(onClose);
+  React.useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
   React.useEffect(() => {
     if (!active) return;
     const previouslyFocused = document.activeElement as HTMLElement | null;
@@ -57,7 +75,7 @@ function useDialogBehavior(
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
         e.stopPropagation();
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key !== "Tab" || !ref.current) return;
@@ -81,7 +99,7 @@ function useDialogBehavior(
       document.removeEventListener("keydown", onKeyDown, true);
       previouslyFocused?.focus?.({ preventScroll: true });
     };
-  }, [active, onClose, ref]);
+  }, [active, ref]);
 }
 
 interface BaseOverlayProps {
